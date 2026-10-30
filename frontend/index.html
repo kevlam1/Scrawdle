@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Scrawdle</title>
+  <style>
+    body { font-family: sans-serif; display: flex; flex-direction: column; align-items: center; gap: 12px; margin: 2rem; }
+    canvas { border: 1px solid #333; touch-action: none; cursor: crosshair; }
+  </style>
+</head>
+<body>
+  <h1>Scrawdle</h1>
+  <p>Placeholder drawing canvas — not the real app yet.</p>
+  <canvas id="board" width="600" height="400"></canvas>
+
+  <script>
+    const canvas = document.getElementById("board");
+    const ctx = canvas.getContext("2d");
+    ctx.lineWidth = 3;
+    ctx.lineCap = "round";
+
+    let drawing = false;
+
+    function pos(e) {
+      const rect = canvas.getBoundingClientRect();
+      return { x: e.clientX - rect.left, y: e.clientY - rect.top };
+    }
+
+    canvas.addEventListener("pointerdown", (e) => {
+      drawing = true;
+      const { x, y } = pos(e);
+      ctx.beginPath();
+      ctx.moveTo(x, y);
+    });
+
+    canvas.addEventListener("pointermove", (e) => {
+      if (!drawing) return;
+      const { x, y } = pos(e);
+      ctx.lineTo(x, y);
+      ctx.stroke();
+    });
+
+    canvas.addEventListener("pointerup", () => { drawing = false; });
+    canvas.addEventListener("pointerleave", () => { drawing = false; });
+  </script>
+</body>
+</html>

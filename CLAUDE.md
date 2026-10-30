@@ -56,7 +56,8 @@ Replace this with whatever the three of you actually agree on.
 - Structure, copied from `../midi-companion/log.md` (the model for this course) so a `/logs/` page script can read it later if the team wants one: a title and tool/host/stack line, then `## What I set out to build`, then numbered `## N. Title (YYYY-MM-DD)` sections with bold labels (`**What I asked for**`, `**What changed**`, `**What I checked**`, `**Decisions**`), then two closing sections, `## Where AI misread me, or I had to correct course` and `## Decisions and abandoned ideas`. No other `##` headings — a page-generator script looks for exactly these.
 
 ## Status
-- 2026-10-29: repo created, no real code yet — only test commits from setting up branches and permissions (`Test`, `Test 2`, merge tests, a placeholder `README.md` saying "temp"). `log.md` exists now (see "The log protocol" above). Team roles, stack, and branch workflow are all still open, as noted above.
+- 2026-10-29: `frontend/` and `backend/` scaffolded as placeholders, at Kevin's request, matching the proposed stack above. `frontend/index.html` is a bare canvas you can draw a single line on with a mouse or touch — no prompts, no tools, no backend connection. `backend/supabase/schema.sql` is a draft schema (`daily_prompts`, `drawings`) and a commented-out `pg_cron` daily-wipe job — not run against any real database, since no Supabase project exists yet. `.env.example` and `.gitignore` added for the Supabase keys the frontend will eventually need. None of this is final; it exists so there's something to build on top of or replace once roles and the stack are actually confirmed by all three of us.
+- `log.md` exists (see "The log protocol" above). Team roles and branch workflow are still open, as noted above.
 
 ## Open questions
 - Team roles: unassigned.
