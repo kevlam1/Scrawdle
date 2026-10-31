@@ -133,6 +133,40 @@ Artifact 4 is "For Someone Else," due Sunday, November 8. My team (me, Angie, Tr
 
 ---
 
+## 8. Tried readme-architect, then wrote the README update by hand (2026-10-31)
+
+**What I asked for**
+- Asked Claude to run `readme-architect` (my Artifact 3 tool) against this repo, then to have it update the README. When generate mode couldn't produce a draft, I said to just write the update myself.
+
+**What changed**
+- Ran `readme-architect` in check mode first: PASS, 13 claims, 2 backed by code (`frontend/index.html`), 11 backed only by `CLAUDE.md`/`log.md` since most of the README describes planned features that aren't built yet. Cost about $0.43.
+- Ran generate mode next, hoping for a drafted README. It stopped at step 2: gather couldn't tell what kind of project this is (no top-level `package.json`, and the only HTML file is under `frontend/`, not at the repo root), a limitation already written down in `readme-architect`'s own `CLAUDE.md`. Cost about $0.22, no file written.
+- `README.md` updated directly (not by the tool): added a Status section naming `frontend/` and `backend/` as placeholder scaffolding, and a short Stack section (Canvas frontend proposed, Supabase decided pending sign-off, Vercel hosting).
+
+**What I checked**
+- Both `readme-architect` runs only touched its own gitignored `readme-architect-out/` folder; nothing in Scrawdle was changed by either run.
+
+**Decisions**
+- Didn't extend `readme-architect`'s gather script to handle a `frontend`/`backend` split just for this one README — that's a change to a different repo and needs its own tests, not a one-off fix. Wrote the README by hand instead.
+
+---
+
+## 9. Added a "Running locally" section (2026-10-31)
+
+**What I asked for**
+- Asked Claude to add a guide for running the project locally.
+
+**What changed**
+- `README.md`: a "Running locally" section saying to open `frontend/index.html` directly, or serve the folder with `npx serve frontend` or Python's `http.server`, and noting there's nothing to install or configure yet since no Supabase project exists.
+
+**What I checked**
+- Read `frontend/index.html` for `fetch`, `import`, or `type="module"` before saying it can be opened directly with no server — found none, so opening the file works for now (that'll stop being true once it talks to Supabase).
+
+**Decisions**
+- Kept it short and tied to what actually exists today (one static page, no backend wired up), rather than writing setup steps for a backend connection that doesn't exist yet.
+
+---
+
 ## Where AI misread me, or I had to correct course
 
 - In session 2, I said "while I'm on main branch," but there was no `main` branch yet. Claude didn't assume what I meant — it asked whether to commit to `Angie` instead, create `main` from `Angie`, or stop, and I picked creating `main`.
