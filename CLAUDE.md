@@ -38,7 +38,7 @@ Replace this with whatever the three of you actually agree on.
   - Supabase also gives real-time subscriptions on a Postgres table for free, which fits "show other players' drawings after they finish."
   - Caveat: free Supabase projects pause after about a week of inactivity, so it needs a periodic ping or steady use during the term ([runhooks.app](https://runhooks.app/blog/preventing-supabase-free-tier-pausing/)).
   - **Kevin decided this in his own session on 2026-10-29. Angie and Trenten have not weighed in yet** — if either of you has a reason to prefer Firebase, raise it before real backend code is built against Supabase.
-- Hosting: Vercel (already specified in the idea doc).
+- Hosting: Vercel (already specified in the idea doc). Live at **https://scrawdle.vercel.app**. **Once a card links to this URL, never move or rename it** (same rule as the other artifacts). Checked 2026-10-31: the deployed page 404'd at `/` because the repo has no top-level `index.html` and the real page is under `frontend/`; added `vercel.json` (`"outputDirectory": "frontend"`) to fix it. Not yet re-checked live after that push — whoever owns hosting should confirm `/` loads after the next deploy, and check whether the Vercel dashboard's own "Root Directory" project setting also needs to point at `frontend` (I can't see or change Vercel dashboard settings from here).
 - Local caching: browser storage (e.g. `localStorage`/IndexedDB) so a player can keep today's drawing before the daily database reset, per the idea doc.
 
 ## Shared rules (all three agents should follow)

@@ -167,6 +167,26 @@ Artifact 4 is "For Someone Else," due Sunday, November 8. My team (me, Angie, Tr
 
 ---
 
+## 10. Live Vercel link added, and a 404 found and fixed (2026-10-31)
+
+**What I asked for**
+- Told Claude a Vercel app is live at scrawdle.vercel.app and asked it to update whatever needed updating.
+
+**What changed**
+- Found the real problem first, not just assumed the link worked: the site responded 404 at `/`, but the actual file was reachable at `/frontend/index.html` (HTTP 200), because there's no top-level `index.html` and no `vercel.json` to tell Vercel where the site root is.
+- Added `vercel.json` (`{"outputDirectory": "frontend"}`) so the next deploy should serve the real page at `/`.
+- `CLAUDE.md`: Stack section now has the live URL, the "never move or rename it" rule from the other artifacts, and the 404 finding, marked not yet re-checked after the fix deploys.
+- `README.md`: live link added near the top, and the Status section now mentions the 404 and the fix.
+
+**What I checked**
+- `curl`'d the live URL directly: `/` and `/index.html` both 404, `/frontend/index.html` returned 200. Didn't just take the link at face value.
+- Could not check: whether the fix actually works, since it hasn't been pushed and redeployed yet. Also couldn't check or change the Vercel dashboard's own "Root Directory" project setting — if that's set to something else, it may need changing there too, and I have no way to see it from here.
+
+**Decisions**
+- Fixed via `vercel.json` in the repo rather than guessing at a dashboard setting I can't see. Whoever owns hosting should confirm `/` loads after the next deploy and check the dashboard setting if it doesn't.
+
+---
+
 ## Where AI misread me, or I had to correct course
 
 - In session 2, I said "while I'm on main branch," but there was no `main` branch yet. Claude didn't assume what I meant — it asked whether to commit to `Angie` instead, create `main` from `Angie`, or stop, and I picked creating `main`.

@@ -4,9 +4,11 @@ A daily drawing game: a new prompt (or a few) each day, a browser canvas with dr
 
 TCSS 490 Artifact 4, built by a team of three: [kevlam1](https://github.com/kevlam1), [arcangieo](https://github.com/arcangieo), [trentenmuw](https://github.com/trentenmuw).
 
+**Live at [scrawdle.vercel.app](https://scrawdle.vercel.app)** (currently shows only the placeholder canvas — see Status).
+
 ## Status
 
-Still in planning — `frontend/` and `backend/` currently hold placeholder scaffolding only, not the real app. See `CLAUDE.md` for the project plan and `log.md` for the build log.
+Still in planning — `frontend/` and `backend/` currently hold placeholder scaffolding only, not the real app. The live URL was 404'ing at `/` as of 2026-10-31 because the repo had no top-level `index.html`; a `vercel.json` was added to point Vercel at `frontend/`, not yet confirmed live after redeploy. See `CLAUDE.md` for the project plan and `log.md` for the build log.
 
 ## Stack
 
