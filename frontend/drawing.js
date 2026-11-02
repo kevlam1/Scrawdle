@@ -3,24 +3,18 @@
  * The canvas is stored at twice its display size so lines stay sharp, and every drawing is the
  * same size no matter whose screen it was made on.
  *
- * Publishing is not connected yet. To connect it, set:
+ * To connect publishing, set:
  *   window.scrawdlePublish = async ({ blob, mode, prompts, day }) => { ... };
- * The Publish button turns on when that exists. `blob` is the plain PNG of the drawing, and
- * `prompts` is [{ label, value, optional }].
+ * A "Publish drawing" button appears on the finish screen when that exists. `blob` is the
+ * plain PNG of the drawing, and `prompts` is [{ label, value, optional }]. If it throws, the player
+ * sees `err.userMessage` when it's set, and `err.alreadyPublished` turns the button off for that round.
  */
 (function (root) {
   "use strict";
 
   const SCALE = 2;
   const HISTORY_BYTES = 96 * 1024 * 1024;
-  const COLORS = ["#2b2540", "#ffffff", "#ff6b6b", "#ff9f43", "#ffd93d", "#6bcb77", "#4d96ff", "#9b5de5", "#f78fb3", "#8d6e63"];
-  // Undo, Redo, and Clear. The drawing tools use the illustrations in assets/tools.
-  const ICONS = {
-    undo: '<path d="M11 7L5 13l6 6"/><path d="M5 13h13a7 7 0 0 1 0 14h-5"/>',
-    redo: '<path d="M21 7l6 6-6 6"/><path d="M27 13H14a7 7 0 0 0 0 14h5"/>',
-    clear: '<path d="M8 4h16v24H8z"/><path d="M12.5 12.5l7 7M19.5 12.5l-7 7"/>',
-  };
-
+  const COLORS = ["#292b2c", "#99938a", "#ffffff", "#da382e", "#e67732", "#f4c735", "#3f854d", "#198d8c", "#78b4d9", "#2c507e", "#855087", "#d984ab"];
   const TOOLS = [
     { id: "pen", label: "Pen", size: 3 },
     { id: "pencil", label: "Pencil", size: 4 },
@@ -42,6 +36,30 @@
   // These build the whole stroke on a separate layer first, so a stroke doesn't darken
   // where it crosses itself. Later strokes still layer over earlier ones.
   const LAYERED = { marker: { alpha: 0.72, blend: "multiply" }, watercolor: { alpha: 0.5, blur: 0.14 } };
+
+  const SIZE_PRESETS = [{ label: "Small", size: 2, dot: 5 }, { label: "Medium", size: 8, dot: 9 }, { label: "Large", size: 24, dot: 14 }];
+
+  // Undo, Redo, and Clear. The drawing tools use the illustrations in assets/tools.
+  const ICONS = {
+    undo: '<path d="M11 7L5 13l6 6"/><path d="M5 13h13a7 7 0 0 1 0 14h-5"/>',
+    redo: '<path d="M21 7l6 6-6 6"/><path d="M27 13H14a7 7 0 0 0 0 14h5"/>',
+    clear: '<path d="M8 4h16v24H8z"/><path d="M12.5 12.5l7 7M19.5 12.5l-7 7"/>',
+  };
+  const iconOf = (name) => {
+    if (!ICONS[name]) {
+      const art = document.createElement("img");
+      art.className = "art-tool";
+      art.src = `assets/tools/${name}.png`;
+      art.alt = "";
+      art.draggable = false;
+      return art;
+    }
+    const span = document.createElement("span");
+    span.className = "tool-icon";
+    span.setAttribute("aria-hidden", "true");
+    span.innerHTML = `<svg viewBox="0 0 32 32" width="30" height="30">${ICONS[name]}</svg>`;
+    return span;
+  };
 
   // Versioned so pre-existing replay records retain their original width behavior.
   function brushWidthFactor(mode, pressure, speed = 0) {
@@ -165,13 +183,22 @@
         tx.onerror = tx.onabort = () => { db.close(); reject(tx.error); };
       });
     },
-    get() { return this.run("readonly", (s) => s.get("current")); },
-    put(draft) { return this.run("readwrite", (s) => s.put(draft, "current")); },
-    remove() { return this.run("readwrite", (s) => s.delete("current")); },
+    get(slot) { return this.run("readonly", (s) => s.get(slot)); },
+    put(draft, slot) { return this.run("readwrite", (s) => s.put(draft, slot)); },
+    remove(slot) { return this.run("readwrite", (s) => s.delete(slot)); },
+    // Saves from before Today and Free play had their own slots were all kept under "current".
+    async migrate() {
+      const old = await this.get("current");
+      if (!old) return;
+      await this.put(old, old.daily === false ? "free" : "today");
+      await this.remove("current");
+    },
   };
+  const slotOf = (round) => (round.daily === false ? "free" : "today");
+  const draftImage = async (draft) => draft.blob || (await fetch(draft.dataUrl)).blob();
 
   /* ---------- The board ---------- */
-  function createBoard({ canvas, toolbar }) {
+  function createBoard({ canvas, toolbar, settings }) {
     let ctx = canvas.getContext("2d", { willReadFrequently: true });
     const W = canvas.width;
     const H = canvas.height;
@@ -212,57 +239,125 @@
       n.append(...kids);
       return n;
     };
-    const actionIcon = (name) => {
-      const span = el("span", { className: "tool-icon", innerHTML: `<svg viewBox="0 0 32 32" width="18" height="18">${ICONS[name]}</svg>` });
-      span.setAttribute("aria-hidden", "true");
-      return span;
-    };
+    const trayButton = (icon, label, onclick) => el("button", { type: "button", className: "tool", onclick },
+      iconOf(icon), el("span", { className: "tool-label", textContent: label }));
     const status = el("span", { className: "save-status", role: "status" });
     const toolButtons = {};
-    for (const t of TOOLS) {
-      const art = el("img", { className: "tool-art", src: `assets/tools/${t.id}.png`, alt: "", width: 40, height: 40, draggable: false });
-      toolButtons[t.id] = el("button", { type: "button", className: "tool art", onclick: () => setTool(t.id) }, art, t.label);
-    }
+    for (const t of TOOLS) toolButtons[t.id] = trayButton(t.id, t.label, () => setTool(t.id));
     const swatches = COLORS.map((c) => {
       const b = el("button", { type: "button", className: "swatch", title: c, onclick: () => setColor(c) });
-      b.style.background = c;
+      b.style.setProperty("--swatch", c);
       b.dataset.color = c;
       b.setAttribute("aria-label", `Color ${c}`);
       return b;
     });
     const picker = el("input", { type: "color", className: "picker", value: color, title: "Pick any color", oninput: (e) => setColor(e.target.value) });
     picker.setAttribute("aria-label", "Pick any color");
-    const sizeInput = el("input", { type: "range", min: 1, max: 60, value: 3, id: "tool-size", oninput: (e) => { if (sizes[tool] !== null) sizes[tool] = Number(e.target.value); } });
-    const sizeLabel = el("label", { className: "size", htmlFor: "tool-size" }, "Size ", sizeInput);
-    const brushSelect = el("select", { id: "brush-kind", className: "tool", onchange: (e) => { brushKind = e.target.value; } },
+    const wheel = el("label", { className: "wheel" }, picker);
+    const sizeInput = el("input", { type: "range", min: 1, max: 60, value: 3, id: "tool-size", oninput: (e) => {
+      if (sizes[tool] !== null) sizes[tool] = Number(e.target.value);
+      refreshToolbar();
+    } });
+    sizeInput.setAttribute("aria-label", "Stroke size");
+    const presetButtons = SIZE_PRESETS.map((p) => {
+      const dot = el("i");
+      dot.style.width = dot.style.height = `${p.dot}px`;
+      const b = el("button", { type: "button", className: "size-dot", onclick: () => {
+        if (sizes[tool] !== null) sizes[tool] = p.size;
+        refreshToolbar();
+      } }, dot);
+      b.setAttribute("aria-label", `${p.label} stroke`);
+      return b;
+    });
+    const preview = el("span", { className: "stroke-preview" });
+    preview.setAttribute("aria-hidden", "true");
+    preview.innerHTML = '<svg viewBox="0 0 48 30" width="48" height="30"><path d="M5 20c8-14 14-14 19-5s11 7 19-5"/></svg>';
+    const previewLine = preview.querySelector("path");
+    const sizeGroup = el("div", { className: "tray-group tray-sizes" },
+      el("div", { className: "size-top" }, ...presetButtons, preview), sizeInput);
+    const brushSelect = el("select", { id: "brush-kind", onchange: (e) => { brushKind = e.target.value; } },
       ...BRUSHES.map((b) => el("option", { value: b.id, textContent: b.label })));
-    const brushLabel = el("label", { className: "size", htmlFor: "brush-kind" }, "Brush type ", brushSelect);
-    const undoBtn = el("button", { type: "button", className: "tool with-icon", onclick: undo }, actionIcon("undo"), "Undo");
-    const redoBtn = el("button", { type: "button", className: "tool with-icon", onclick: redo }, actionIcon("redo"), "Redo");
-    const clearBtn = el("button", { type: "button", className: "tool with-icon", onclick: clearAll }, actionIcon("clear"), "Clear");
-    const doneBtn = el("button", { type: "button", className: "tool done", textContent: "Done", onclick: () => onDone() });
+    const brushLabel = el("label", { className: "brush-kind", htmlFor: "brush-kind" }, el("span", { textContent: "Brush type" }), brushSelect);
+    const undoBtn = trayButton("undo", "Undo", undo);
+    const redoBtn = trayButton("redo", "Redo", redo);
+    const clearBtn = trayButton("clear", "Clear", clearAll);
+    clearBtn.setAttribute("aria-label", "Clear canvas");
+    const doneBtn = el("button", { type: "button", className: "btn primary done", textContent: "Done drawing", onclick: () => onDone() });
+    const brushPanel = el("div", { className: "brush-panel", hidden: true, id: "brush-panel" });
+    const wideSettings = window.matchMedia("(min-width: 1000px)");
+    const brushToggle = el("button", {type: "button", className: "brush-toggle", textContent: "Round · brush settings"});
+    brushToggle.setAttribute("aria-controls", "brush-panel");
+    brushToggle.setAttribute("aria-expanded", "false");
+    const brushChoices = BRUSHES.map((b) => {
+      const choice = el("button", {type: "button", className: "brush-choice", textContent: b.label, onclick: () => {
+        brushKind = b.id; brushSelect.value = b.id; refreshToolbar();
+      }});
+      choice.dataset.kind = b.id;
+      brushPanel.append(choice);
+      return choice;
+    });
+    brushToggle.onclick = () => {
+      brushPanel.hidden = !brushPanel.hidden;
+      if (!brushPanel.hidden) renderBrushPreviews();
+      brushToggle.setAttribute("aria-expanded", String(!brushPanel.hidden));
+    };
+    brushPanel.addEventListener("keydown", (e) => {
+      if (e.key === "Escape") { brushPanel.hidden = true; brushToggle.setAttribute("aria-expanded", "false"); brushToggle.focus(); }
+    });
+    const brushControls = el("div", {className: "brush-controls"}, brushToggle, brushPanel);
+    const sizeValue = el("output", {className: "size-value", textContent: "3 px"});
+    sizeValue.htmlFor = "tool-size";
+    sizeGroup.prepend(sizeValue);
+    const custom = el("div", {className: "custom-color"}, wheel, el("span", {textContent: "Custom"}));
     toolbar.append(
-      el("div", { className: "tool-group" }, ...Object.values(toolButtons)),
-      el("div", { className: "tool-group" }, ...swatches, picker),
-      el("div", { className: "tool-group" }, sizeLabel, brushLabel),
-      el("div", { className: "tool-group" }, undoBtn, redoBtn, clearBtn),
-      el("div", { className: "tool-group" }, status, doneBtn),
+      el("div", {className: "tray"},
+        el("div", {className: "tray-group tray-tools"}, ...Object.values(toolButtons)),
+        el("div", {className: "tray-group tray-colors"}, el("div", {className: "swatches"}, ...swatches), custom),
+        ...(settings ? [] : [sizeGroup])),
+      el("div", {className: "studio-footer"}, status,
+        el("div", {className: "history-actions"}, undoBtn, redoBtn, clearBtn), doneBtn)
     );
+
+    const settingsTitle = el("h2", {className: "settings-title", textContent: "Pen"});
+    if (settings) settings.append(settingsTitle, brushControls, sizeGroup);
+    else toolbar.append(brushControls);
+    function syncBrushPanel() {
+      brushPanel.hidden = !(wideSettings.matches && tool === "brush");
+      brushToggle.setAttribute("aria-expanded", String(!brushPanel.hidden));
+      if (!brushPanel.hidden) renderBrushPreviews();
+    }
+    wideSettings.addEventListener("change", syncBrushPanel);
 
     function refreshToolbar() {
       for (const [id, b] of Object.entries(toolButtons)) b.setAttribute("aria-pressed", String(id === tool));
       for (const b of swatches) b.setAttribute("aria-pressed", String(b.dataset.color === color));
-      sizeInput.disabled = sizes[tool] === null;
+      wheel.classList.toggle("on", !COLORS.includes(color));
+      const noSize = sizes[tool] === null;
+      sizeInput.disabled = noSize;
+      for (const b of presetButtons) b.disabled = noSize;
+      sizeGroup.classList.toggle("off", noSize);
+      settingsTitle.textContent = tool === "brush" ? "Brushes" : TOOLS.find(t => t.id === tool).label;
       brushLabel.hidden = tool !== "brush";
-      if (sizes[tool] !== null) sizeInput.value = sizes[tool];
+      brushControls.hidden = tool !== "brush";
+      brushToggle.textContent = `${BRUSHES.find(b => b.id === brushKind).label} · brush settings`;
+      brushChoices.forEach(b => b.setAttribute("aria-pressed", String(b.dataset.kind === brushKind)));
+      sizeValue.textContent = noSize ? "Fill area" : `${sizes[tool]} px`;
+      if (!noSize) {
+        sizeInput.value = sizes[tool];
+        SIZE_PRESETS.forEach((p, i) => presetButtons[i].setAttribute("aria-pressed", String(p.size === sizes[tool])));
+        previewLine.style.strokeWidth = Math.min(16, Math.max(1.5, sizes[tool] * 0.75));
+      }
+      // White and the eraser wouldn't show on the tray, so they preview in soft grey.
+      previewLine.style.stroke = tool === "eraser" || color === "#ffffff" ? "#c9c2b2" : color;
       undoBtn.disabled = locked || !history.canUndo;
       redoBtn.disabled = locked || !history.canRedo;
       clearBtn.disabled = locked;
       canvas.dataset.tool = tool;
     }
-    function setTool(id) { tool = id; refreshToolbar(); }
+    function setTool(id) { tool = id; refreshToolbar(); syncBrushPanel(); }
     function setColor(c) {
       color = c;
+      if (!brushPanel.hidden) renderBrushPreviews();
       picker.value = c;
       if (tool === "eraser") tool = "pen";
       refreshToolbar();
@@ -484,7 +579,7 @@
         grow(p.x, p.y, s.width);
         grow(s.last.x, s.last.y, s.width);
       },
-      round(p) { // width follows stylus pressure, within the selected size
+      round(p) { // width follows stylus pressure, or speed for a mouse or finger
         const s = stroke;
         const dist = Math.hypot(p.x - s.last.x, p.y - s.last.y);
         const dt = Math.max(p.t - s.last.t, 4);
@@ -502,6 +597,30 @@
         grow(s.last.x, s.last.y, s.width);
       },
     };
+
+    // Render samples with the actual brush engine, without modifying the drawing or history.
+    function renderBrushPreviews() {
+      const realCtx = ctx, realStroke = stroke;
+      if (realStroke) return;
+      const surface = document.createElement("canvas");
+      surface.width = W; surface.height = H;
+      try {
+        for (const choice of brushChoices) {
+          ctx = surface.getContext("2d", {willReadFrequently: true});
+          ctx.clearRect(0, 0, W, H);
+          const points = Array.from({length: 41}, (_, i) => ({x: 20 + i * 4, y: 38 - Math.sin(i / 40 * Math.PI * 2) * 12, t: i * 16, pressure: null}));
+          const op = {tool: "brush", kind: choice.dataset.kind, color, width: 15, widthMode: "bounded", seed: 1234, points};
+          openStroke(op); stroke.quiet = true;
+          for (const point of points.slice(1)) extend(point);
+          closeStroke();
+          let sample = choice.querySelector("canvas");
+          if (!sample) { sample = document.createElement("canvas"); sample.width = 200; sample.height = 76; sample.setAttribute("aria-hidden", "true"); choice.prepend(sample); }
+          const sampleCtx = sample.getContext("2d");
+          sampleCtx.clearRect(0, 0, 200, 76);
+          sampleCtx.drawImage(surface, 0, 0, 200, 76, 0, 0, 200, 76);
+        }
+      } finally { ctx = realCtx; stroke = realStroke; }
+    }
 
     function begin(e) {
       if (locked || !e.isPrimary || e.button !== 0 || stroke) return;
@@ -526,7 +645,7 @@
       const { tool: strokeTool, kind, width } = op;
       ctx.fillStyle = ctx.strokeStyle = op.color;
       ctx.lineCap = ctx.lineJoin = "round";
-      stroke = { widthMode: op.widthMode, tool: strokeTool, kind, color: op.color, width, random: seededRandom(op.seed), base: ctx.getImageData(0, 0, W, H), start: p, last: p, mid: p, radius: strokeTool === "brush" ? width * 0.4 : width / 2, speed: 0, travel: 0, moved: false, box: { minX: p.x, maxX: p.x, minY: p.y, maxY: p.y } };
+      stroke = { widthMode: op.widthMode, tool: strokeTool, kind, color: op.color, width, random: seededRandom(op.seed), base: ctx.getImageData(0, 0, W, H), start: p, last: p, mid: p, radius: op.widthMode === "bounded" ? width / 2 * brushWidthFactor(op.widthMode, p.pressure) : strokeTool === "brush" ? width * 0.4 : width / 2, speed: 0, travel: 0, moved: false, box: { minX: p.x, maxX: p.x, minY: p.y, maxY: p.y } };
       grow(p.x, p.y, width * 1.5 + 3);
       if (LAYERED[kind]) {
         const layer = document.createElement("canvas");
@@ -697,12 +816,15 @@
     });
 
     /* --- saving --- */
-    function setStatus(text) { status.textContent = text; }
+    function setStatus(text, state) {
+      status.textContent = text;
+      status.dataset.state = state || "";
+    }
     function scheduleSave() {
       clearTimeout(saveTimer);
       saveGeneration++;
       unsaved = true;
-      setStatus("Saving...");
+      setStatus("Saving\u2026", "saving");
       saveTimer = setTimeout(save, 400);
     }
     function canvasBlob() {
@@ -715,13 +837,18 @@
       try {
         const blob = await canvasBlob();
         if (generation !== saveGeneration || !round) return;
-        await draftStore.put(draftOf({ blob }));
+        await draftStore.put(draftOf({ blob }), slotOf(round));
         if (generation !== saveGeneration) return;
         unsaved = false;
-        setStatus("Saved in this browser");
+        setStatus("Saved in this browser", "saved");
       } catch (err) {
-        setStatus("Couldn't save. Download your drawing to keep it.");
+        setStatus("Couldn't save", "failed");
       }
+    }
+    // Finishes any waiting save before leaving this drawing.
+    async function flush() {
+      clearTimeout(saveTimer);
+      if (unsaved) await save();
     }
     // The page may be closing, so nothing here can wait. Start the write and let it finish.
     function saveNow() {
@@ -730,7 +857,7 @@
       saveGeneration++;
       try {
         const tx = openDb.transaction("drafts", "readwrite");
-        tx.objectStore("drafts").put(draftOf({ dataUrl: canvas.toDataURL("image/png") }), "current");
+        tx.objectStore("drafts").put(draftOf({ dataUrl: canvas.toDataURL("image/png") }), slotOf(round));
         if (tx.commit) tx.commit(); // don't let the page closing abort it
         unsaved = false;
       } catch (err) { /* the 400 ms save may already have it */ }
@@ -753,37 +880,59 @@
       refreshToolbar();
       return save();
     }
-    // Brings back today's unfinished drawing. A draft from an earlier day is thrown away.
-    async function restore() {
-      let draft;
-      try { draft = await draftStore.get(); } catch (err) { return null; }
-      if (!draft) return null;
-      if (draft.day !== dayKey()) {
-        await draftStore.remove().catch(() => {});
-        return null;
+    // What's saved in each slot, for the home screen. A today's drawing from an earlier day is
+    // thrown away; Free play isn't tied to a date, so it stays.
+    async function drafts() {
+      const found = {};
+      try { await draftStore.migrate(); } catch (err) { return found; }
+      for (const slot of ["today", "free"]) {
+        try {
+          const draft = await draftStore.get(slot);
+          if (!draft) continue;
+          if (slot === "today" && draft.day !== dayKey()) {
+            await draftStore.remove(slot);
+            continue;
+          }
+          const image = await draftImage(draft);
+          (await createImageBitmap(image)).close();
+          const marked = !Array.isArray(draft.ops) || draft.ops.length > 0 || draft.canReplay === false;
+          found[slot] = { slot, mode: draft.mode, prompts: draft.prompts, image, marked };
+        } catch (err) { // a damaged save shouldn't stop the game from opening
+          await draftStore.remove(slot).catch(() => {});
+        }
       }
+      return found;
+    }
+    // Brings a saved drawing back onto the canvas.
+    async function restore(slot) {
+      let draft;
+      try { draft = await draftStore.get(slot); } catch (err) { return null; }
+      if (!draft) return null;
       try {
-        const source = draft.blob || await (await fetch(draft.dataUrl)).blob();
-        const bitmap = await createImageBitmap(source);
+        const bitmap = await createImageBitmap(await draftImage(draft));
         ctx.drawImage(bitmap, 0, 0, W, H);
         bitmap.close();
-      } catch (err) { // a damaged save shouldn't stop the game from opening
-        await draftStore.remove().catch(() => {});
+      } catch (err) {
+        await draftStore.remove(slot).catch(() => {});
         return null;
       }
+      clearTimeout(saveTimer);
+      saveGeneration++;
+      unsaved = false;
       ops = Array.isArray(draft.ops) ? draft.ops : [];
       opsAt = ops.length;
       canReplay = Array.isArray(draft.ops) && draft.canReplay !== false;
       round = { mode: draft.mode, prompts: draft.prompts, daily: draft.daily !== false, day: draft.day };
       history.clear();
       refreshToolbar();
-      setStatus("Saved in this browser");
+      setStatus("Saved in this browser", "saved");
       return round;
     }
     function discard() {
       clearTimeout(saveTimer);
       saveGeneration++;
       unsaved = false;
+      const slot = round && slotOf(round);
       round = null;
       blank();
       history.clear();
@@ -792,7 +941,12 @@
       canReplay = true;
       setStatus("");
       refreshToolbar();
-      return draftStore.remove().catch(() => {});
+      return slot ? draftStore.remove(slot).catch(() => {}) : Promise.resolve();
+    }
+    function setLocked(value) {
+      locked = value;
+      canvas.classList.toggle("locked", locked);
+      refreshToolbar();
     }
 
     /* --- finished image: the drawing with its prompts and date underneath --- */
@@ -800,7 +954,7 @@
       const m = 40;
       const lineHeight = 44;
       const measure = document.createElement("canvas").getContext("2d");
-      const font = '30px "Comic Sans MS", "Chalkboard SE", "Trebuchet MS", sans-serif';
+      const font = '32px "Patrick Hand", "Trebuchet MS", sans-serif';
       measure.font = font;
       const lines = [""];
       for (const pr of round.prompts) {
@@ -813,30 +967,24 @@
       out.width = W + m * 2;
       out.height = H + m * 2 + (lines.length + 1) * lineHeight + 20;
       const c = out.getContext("2d");
-      c.fillStyle = "#fffaf0";
+      c.fillStyle = "#fbf8f1";
       c.fillRect(0, 0, out.width, out.height);
       c.drawImage(canvas, m, m);
-      c.strokeStyle = "#2b2540";
-      c.lineWidth = 6;
+      c.strokeStyle = "#2c2a28";
+      c.lineWidth = 3;
       c.strokeRect(m, m, W, H);
-      c.fillStyle = "#2b2540";
+      c.fillStyle = "#2c2a28";
       c.font = font;
       c.textBaseline = "top";
       lines.forEach((line, i) => c.fillText(line, m, H + m + 24 + i * lineHeight));
-      c.font = `bold ${font}`;
+      c.font = '36px "Gochi Hand", "Trebuchet MS", sans-serif';
       c.fillText(`Scrawdle, ${round.day}`, m, H + m + 24 + lines.length * lineHeight);
       return out;
     }
 
-    function setLocked(value) {
-      locked = value;
-      canvas.classList.toggle("locked", locked);
-      refreshToolbar();
-    }
-
     refreshToolbar();
     return {
-      start, restore, discard, undo, redo, exportCanvas, canvasBlob, replay,
+      start, drafts, restore, flush, discard, undo, redo, exportCanvas, canvasBlob, replay,
       save, setLocked,
       get locked() { return locked; },
       get canReplay() { return canReplay && opsAt > 0; },
@@ -847,29 +995,42 @@
   }
 
   /* ---------- Finish screen ---------- */
-  function createFinishScreen(board, gallery) {
+  function createFinishScreen(board, gallery, { onHome } = {}) {
     const dialog = document.createElement("dialog");
     dialog.id = "finish";
     dialog.innerHTML = `
-      <button class="close" type="button" aria-label="Keep drawing">&times;</button>
-      <h2>Nice work!</h2>
-      <img alt="Your finished drawing with its prompts and date">
-      <canvas class="replay" hidden aria-label="Your drawing being redrawn"></canvas>
-      <div class="finish-actions">
-        <button type="button" class="tool" data-act="replay">Watch it redraw</button>
-        <button type="button" class="tool done" data-act="download">Download</button>
-        <button type="button" class="tool" data-act="publish">Publish</button>
-        <button type="button" class="tool" data-act="gallery">See today's drawings</button>
-        <button type="button" class="tool" data-act="keep">Keep drawing</button>
+      <header class="app-header"><span class="wordmark">Scrawdle</span><button type="button" class="quiet" data-act="home">Back to home</button></header>
+      <div class="finish-heading"><p class="finish-date eyebrow"></p><h1>Made by you.</h1><h2 class="finish-prompt"></h2></div>
+      <div class="finish-art">
+        <img alt="Your finished drawing">
+        <canvas class="replay" hidden aria-label="Your drawing being redrawn"></canvas>
       </div>
-      <p class="finish-note" role="status"></p>`;
+      <div class="finish-side">
+        <button type="button" class="quiet" data-act="replay">Watch it redraw</button>
+        <div class="finish-actions">
+          <button type="button" class="btn" data-act="publish">Publish drawing</button>
+          <button type="button" class="btn" data-act="download">Download PNG</button>
+        </div>
+        <p class="publish-disclosure" hidden>Publishing shares your drawing with today’s gallery.</p>
+        <p class="finish-note" role="status"></p>
+        <div class="finish-secondary">
+          <button type="button" class="quiet" data-act="keep">Keep drawing</button>
+          <button type="button" class="quiet" data-act="gallery">See today’s drawings</button>
+          <button type="button" class="quiet" data-act="samples">View sample gallery</button>
+        </div>
+      </div>`;
     document.body.appendChild(dialog);
     const img = dialog.querySelector("img");
     const note = dialog.querySelector(".finish-note");
     const publishBtn = dialog.querySelector('[data-act="publish"]');
+    const downloadBtn = dialog.querySelector('[data-act="download"]');
     const galleryBtn = dialog.querySelector('[data-act="gallery"]');
     const replayBtn = dialog.querySelector('[data-act="replay"]');
     const replayCanvas = dialog.querySelector(".replay");
+    // What to say for each day and mode already published. A player gets one drawing per round, so
+    // this turns sharing off for that round only, and a new round can still be shared.
+    const published = new Map();
+    const roundKey = () => `${board.round.day}|${board.round.mode}`;
     let stopReplay = () => {};
     replayBtn.addEventListener("click", () => {
       stopReplay();
@@ -890,57 +1051,73 @@
       delete dialog.dataset.replayed;
     });
     galleryBtn.addEventListener("click", () => {
-      const shown = url;
+      const shown = viewUrl;
       dialog.close();
       gallery.show(shown);
     });
-    let url = null;
+    dialog.querySelector('[data-act="samples"]').addEventListener("click", () => gallery.showSamples());
+    let viewUrl = null; // the drawing on its own, for the screen
+    let exportUrl = null; // the drawing with its prompt and date, for the download
 
-    const release = () => { if (url) URL.revokeObjectURL(url); url = null; };
+    const release = () => {
+      if (viewUrl) URL.revokeObjectURL(viewUrl);
+      if (exportUrl) URL.revokeObjectURL(exportUrl);
+      viewUrl = exportUrl = null;
+    };
     const close = () => { dialog.close(); release(); };
-    const closeBtn = dialog.querySelector(".close");
     const keepBtn = dialog.querySelector('[data-act="keep"]');
-    closeBtn.addEventListener("click", close);
     keepBtn.addEventListener("click", close);
+    dialog.querySelector('[data-act="home"]').addEventListener("click", () => { close(); if (onHome) onHome(); });
 
-    dialog.querySelector('[data-act="download"]').addEventListener("click", () => {
+    downloadBtn.addEventListener("click", () => {
       const a = document.createElement("a");
-      a.href = url;
+      a.href = exportUrl;
       a.download = `scrawdle-${board.round.day}.png`;
       a.click();
       note.textContent = "Downloaded.";
     });
     publishBtn.addEventListener("click", async () => {
+      const key = roundKey();
       publishBtn.disabled = true;
-      note.textContent = "Publishing...";
+      note.textContent = "Publishing…";
       try {
         const blob = await board.canvasBlob();
         await window.scrawdlePublish({ blob, ...board.round });
-        note.textContent = "Published.";
+        note.textContent = "Your drawing is published.";
+        published.set(key, note.textContent);
       } catch (err) {
-        note.textContent = "Couldn't publish. Your drawing is still saved here, so try again.";
-        publishBtn.disabled = false;
+        note.textContent = err.userMessage || "Couldn't share. Your drawing is still saved here, so try again.";
+        if (err.alreadyPublished) published.set(key, note.textContent);
+        else publishBtn.disabled = false;
       }
     });
 
-    board.onDone = () => {
-      board.exportCanvas().toBlob((blob) => {
-        release();
-        url = URL.createObjectURL(blob);
-        img.src = url;
-        const daily = board.round.daily;
-        const empty = board.isEmpty;
-        const ready = daily && !empty && typeof window.scrawdlePublish === "function";
-        publishBtn.disabled = !ready;
-        galleryBtn.hidden = !daily || empty;
-        replayBtn.hidden = empty || !board.canReplay;
-        keepBtn.textContent = board.locked ? "Back" : "Keep drawing";
-        closeBtn.setAttribute("aria-label", keepBtn.textContent);
-        note.textContent = empty ? "Draw something first."
-          : !daily ? "Free play drawings aren't published, but you can download yours."
-          : ready ? "" : "Publishing isn't available yet, but you can download your drawing.";
-        dialog.showModal();
-      }, "image/png");
+    board.onDone = async () => {
+      const [view, full] = await Promise.all([
+        board.canvasBlob(),
+        new Promise((resolve) => board.exportCanvas().toBlob(resolve, "image/png")),
+      ]);
+      release();
+      viewUrl = URL.createObjectURL(view);
+      exportUrl = URL.createObjectURL(full);
+      img.src = viewUrl;
+      const { daily, day, prompts } = board.round;
+      const empty = board.isEmpty;
+      const ready = daily && !empty && typeof window.scrawdlePublish === "function";
+      dialog.querySelector(".publish-disclosure").hidden = !ready;
+      dialog.querySelector('[data-act="samples"]').hidden = !daily || typeof window.scrawdleGallery === "function";
+      publishBtn.hidden = !ready;
+      const publishedNote = published.get(roundKey());
+      publishBtn.disabled = Boolean(publishedNote);
+      publishBtn.classList.toggle("primary", ready);
+      downloadBtn.classList.toggle("primary", !ready);
+      galleryBtn.hidden = !daily || empty || typeof window.scrawdleGallery !== "function";
+      replayBtn.hidden = empty || !board.canReplay;
+      keepBtn.textContent = board.locked ? "Back" : "Keep drawing";
+      dialog.querySelector(".finish-prompt").textContent = prompts.map((p) => p.value).join(", ");
+      dialog.querySelector(".finish-date").textContent = new Date(`${day}T12:00:00`).toLocaleDateString(undefined, { weekday: "long", year: "numeric", month: "long", day: "numeric" });
+      note.textContent = empty ? "Draw something first." : (ready && publishedNote) || "";
+      dialog.showModal();
     };
   }
 
@@ -948,3 +1125,4 @@
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   else root.ScrawdleDrawing = { ...api, createBoard, createFinishScreen, HISTORY_BYTES };
 })(typeof window !== "undefined" ? window : globalThis);
+

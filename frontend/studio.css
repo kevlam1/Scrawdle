@@ -1,0 +1,81 @@
+/* The drawing workspace: warm paper, an illustrated tool tray, and a settings panel. */
+:root { --paper:#faf7ef; --cream:#fffaf0; --ink:#302f2b; --ink-soft:#6b665d; --yellow:#ffda65; --tan:#f7e7bd; --line:1px solid #c9c0af; --raise:0 2px 4px #302f2b12; }
+body { font-family:Arial, sans-serif; font-size:15px; }
+button, select, input { font-family:inherit; }
+.wordmark { font-family:var(--marker); }
+#game { max-width:1440px; margin:auto; padding:24px 32px; gap:18px; height:auto; min-height:100dvh; }
+.game-top { grid-template-columns:180px 1fr auto; gap:20px; }
+.game-top .wordmark { font-size:36px; }
+.top-prompt { justify-content:center; }
+#prompt-bar { background:none; border:0; box-shadow:none; padding:0; min-width:0; }
+#prompt-label:empty { display:none; }
+#prompt-text { font:32px/1.2 var(--hand); }
+#back-home { font-size:12px; }
+#restart { grid-row:2; margin:0; font-size:12px; }
+#stage { flex:none; container-type:normal; }
+#board { width:min(100%,1000px,calc((100dvh - 320px) * 1.5)); height:auto; aspect-ratio:3/2; background:white; mix-blend-mode:normal; border:1px solid #d8d0c0; border-radius:10px; }
+#tools { position:relative; width:min(100%,1160px); margin:0 auto; display:flex; flex-direction:column; align-items:stretch; gap:12px; }
+.tray { flex-direction:row; flex-wrap:wrap; justify-content:center; align-items:center; gap:18px; padding:14px 16px; background:#fffbf3; border-radius:16px; }
+.tray-group { padding:0; border:0; }
+.tray-tools { gap:4px; }
+.tray-tools .tool { width:66px; min-height:92px; gap:4px; border:1px solid transparent; }
+.tool[aria-pressed="true"] { background:#fff0c4; border-color:#e4ad32; box-shadow:inset 0 0 0 2px #ffe5a0; }
+.tool-label { font:12px/1.2 Arial,sans-serif; }
+.art-tool { display:block; width:56px; height:56px; object-fit:contain; }
+.tray-colors { gap:20px; border-left:1px solid #ded6c7; padding-left:20px; }
+.swatches { grid-template-columns:repeat(6,40px); gap:5px; }
+.swatch { width:40px; height:40px; border:5px solid #fffbf3; box-shadow:inset 0 0 0 1px #302f2b40; }
+.swatch[aria-pressed="true"] { outline:2px solid var(--ink); outline-offset:-2px; box-shadow:inset 0 0 0 1px #302f2b40; }
+.custom-color { display:flex; flex-direction:column; align-items:center; gap:7px; font-size:12px; }
+.wheel { width:48px; height:48px; }
+.tray-sizes { width:145px; padding-left:20px; border-left:1px solid #ded6c7; gap:4px; }
+.size-value { font-size:12px; text-align:center; }
+.size-top { justify-content:center; }
+.size-dot { width:30px; height:30px; }
+.stroke-preview { margin-left:4px; }
+.studio-footer { display:flex; align-items:center; justify-content:space-between; gap:16px; }
+.history-actions { display:flex; gap:8px; }
+.history-actions .tool { flex-direction:row; width:auto; min-height:44px; padding:0 8px; gap:6px; }
+.history-actions .tool-icon, .history-actions svg { width:20px; height:20px; }
+.done { width:auto; min-width:150px; font-size:15px; }
+.save-status { font-size:12px; min-height:28px; }
+.brush-controls { position:relative; align-self:flex-start; }
+.brush-toggle { min-height:44px; padding:8px 14px; background:#fff5d8; border:var(--line); border-radius:10px; font-size:13px; }
+.brush-panel { position:absolute; bottom:calc(100% + 10px); left:0; z-index:5; width:340px; display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:8px; padding:12px; background:#fffbf3; border:var(--line); border-radius:14px; box-shadow:0 8px 30px #302f2b26; }
+.brush-choice { min-height:70px; padding:8px; border:1px solid #d5ccba; background:#fffdfa; border-radius:9px; font-size:12px; }
+.brush-choice[aria-pressed="true"] { background:#fff0c4; border:2px solid #dfa529; }
+.brush-choice canvas { display:block; width:100%; height:34px; margin-bottom:5px; }
+#finish[open] { display:flex; flex-direction:column; justify-content:center; gap:24px; }
+.finish-art { max-width:800px; transform:none; background:white; }
+.finish-art img, .finish-art canvas { mix-blend-mode:normal; }
+.tape { display:none; }
+.finish-side { text-align:center; align-items:center; }
+.finish-actions { flex-direction:row; flex-wrap:wrap; justify-content:center; }
+.finish-prompt { font-family:var(--hand); }
+@media(max-width:1000px) { .tray { gap:12px; } .tray-tools .tool { width:58px; } .tray-colors { border:0; padding-left:0; } .tray-sizes { width:130px; } }
+@media(max-width:640px) {
+ #game { padding:12px; gap:14px; }
+ #board { width:100%; }
+ .game-top { grid-template-columns:1fr auto 1fr; gap:8px; }
+ .game-top .wordmark { font-size:29px; }
+ #prompt-text { font-size:27px; }
+ #prompt-bar { max-width:100%; }
+ .tray { padding:10px 6px; gap:12px; }
+ .tray-tools { width:100%; justify-content:space-between; }
+ .tray-tools .tool { width:calc(100% / 6); min-height:75px; }
+ .art-tool { width:42px; height:42px; }
+ .tool-label { font-size:10px; }
+ .tray-colors { gap:8px; }
+ .swatches { grid-template-columns:repeat(6,34px); gap:1px; }
+ .swatch { width:34px; height:36px; border-width:5px; }
+ .wheel { width:38px; height:38px; }
+ .tray-sizes { flex:0 0 100%; width:100%; padding:8px 10px 0; border-left:0; border-top:1px solid #ded6c7; flex-direction:row; align-items:center; gap:10px; }
+ .size-top { display:none; }
+ .size-value { min-width:50px; }
+ .studio-footer { flex-wrap:wrap; gap:8px; }
+ .history-actions { order:1; width:100%; justify-content:center; }
+ .save-status { order:2; font-size:11px; }
+ .done { order:3; min-width:120px; font-size:13px; }
+ .brush-panel { width:min(340px,calc(100vw - 24px)); }
+ .finish-actions { flex-direction:column; width:100%; }
+}

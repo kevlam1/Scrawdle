@@ -460,6 +460,29 @@ Artifact 4 is "For Someone Else," due Sunday, November 8. My team (me, Angie, Tr
 
 ---
 
+## 25. New look for the whole game (2026-11-02)
+
+**What I asked for**
+- My teammates said I could bring over the design I'd been working on. I wanted it in the team's game without losing anyone's work.
+
+**What changed**
+- `frontend/index.html`, `drawing.js`, `drawing.css`, `gallery.js`, and the new `studio.css` and `flow.css`: warm paper look, a "Ready to draw?" home screen, a reveal screen with one reel per part, and a drawing screen with a tool tray, 12 colors, a custom color, size presets, and a Brushes panel that previews each brush with the real drawing code. The finish screen is "Made by you." and the gallery shows six labeled sample drawings.
+- `frontend/fonts/`: Patrick Hand and Gochi Hand. `frontend/assets/sample-strawberries.webp`: the sample drawings, reduced from 2 MB to about 196 KB.
+- Today's drawing and Free play now save separately, and the home screen offers to continue either one. A drawing saved by the previous version moves over.
+- Kept from the team's game: Basic and Detailed with the same daily parts, Free play, Trenten's Accurate and Inaccurate buttons with the lock, the smooth replay, and the split tool icons. The help dialog is shorter and covers the same steps.
+
+**What I checked**
+- 16 of 16 logic tests pass. In Chromium at 1440x900, 1366x768, 1280x800, 390x844, and 320x740, 93 checks cover every screen, judging, locking, starting over, saving, refreshing, switching modes, and the sample gallery. Today's parts match the live game.
+- 43 more checks cover each tool, all seven brushes, custom color, undo and redo, an exact replay, replay time, and tapping the main buttons at phone size in a touch browser.
+- Most of the older browser checks were written for the old screens, so they don't all run on this one. The 8 bug checks that still apply pass. The ninth expected a turned-off Publish button, and that button is now hidden until publishing is connected. I didn't check real phones, Safari, Firefox, or a real stylus.
+
+**Decisions**
+- Publishing isn't included, so its button and message stay hidden until it's connected.
+- One daily prompt instead of animal parts (a "Simple mode" from my design work) isn't included. The animal parts stay the game.
+- The verdict still isn't saved, so a refresh or switching drawings brings the buttons back.
+
+---
+
 ## Where AI misread me, or I had to correct course
 
 - Claude's first version of the start page put "What is this?" in the top right, where it collided with the "New set" button on the game screen. I caught it by running the page; Claude hadn't opened it in a browser.

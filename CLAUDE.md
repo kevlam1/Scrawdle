@@ -61,6 +61,7 @@ Replace this with whatever the three of you actually agree on.
 - 2026-11-01: drawing tools, brush types, undo, auto-save, and the finish screen are built on the `zainab` branch. See `log.md` entry 14 and the README's Status section. The canvas is no longer a placeholder once that branch is merged.
 - 2026-11-01: daily parts (`frontend/daily.js`), Free play, and the post-finish gallery with labeled sample doodles (`frontend/gallery.js`) are also on the `zainab` branch. See `log.md` entry 16. Angie: this changes how the slot machine's result is picked, so please review it.
 - 2026-11-02: the `zainab` branch merged into `main`, with Trenten's self-judged win condition moved onto the new drawing board. See `log.md` entry 23.
+- 2026-11-02: new look for the whole game, keeping Basic, Detailed, Free play, and the win condition. See `log.md` entry 25.
 
 ## Open questions
 - Team roles: partly assigned (see Team roles above).
