@@ -240,7 +240,166 @@ Artifact 4 is "For Someone Else," due Sunday, November 8. My team (me, Angie, Tr
 
 ---
 
-## 14. Self-judged win condition (2026-11-02)
+## 14. Drawing tools, undo, auto-save, and the finish screen (2026-11-01)
+
+**What I asked for**
+- Joined the team and took the drawing side, since nobody had started it and everyone is back Tuesday: tools, paint bucket, undo, auto-save, and a finish screen with export. Kevin keeps Supabase and publishing, and Angie's start screen and slot machine stay as they are.
+
+**What changed**
+- `frontend/drawing.js` and `frontend/drawing.css`: new files, kept out of `index.html` to avoid colliding with other work. Pen, pencil, brush, line, eraser, and paint bucket, with colors and a size per tool. Undo and redo (buttons and Ctrl/Cmd+Z) with a 96 MB limit. The drawing and its prompts auto-save in the browser (IndexedDB), come back after a refresh, and are dropped when the day changes. Done opens a finish screen with a PNG download that includes the prompts and date.
+- `frontend/index.html`: replaced the placeholder canvas with the board, moved the prompt bar into its own function so a saved round can rebuild it, added the toolbar spot, and updated "What is this?". "New set" now clears the drawing and asks first if there's anything drawn. Before, the old drawing stayed on the canvas.
+- Canvas is now stored at 1800x1200 and shown at up to 900x600, so lines stay sharp and every drawing is the same size.
+- The brush has seven types that draw differently: round, marker (see-through, doesn't darken where it crosses itself), calligraphy (a slanted nib), crayon (waxy grain), watercolor (soft see-through edge), spray, and dry bristle (hairs that run out of paint).
+- Publish button is off until someone sets `window.scrawdlePublish`. Kevin: the comment at the top of `drawing.js` shows what it receives.
+- `tests/drawing.test.js`: tests for the bucket and undo history, using Node's built-in test runner, so no new dependency.
+
+**What I checked**
+- `node --test tests/drawing.test.js`: 10 passed.
+- Ran the page in Chromium through scripted checks: each tool, exact undo and redo, bucket staying inside a shape, refresh, wrong-day drafts, download, a stand-in publish function including a failed publish, the slot machine, each brush type, and a simulated finger on a phone-size screen. All passed.
+- Not checked: Safari, Firefox, a real phone or stylus. Pressure in the brush is untested on real hardware. Connecting real publishing isn't done.
+
+**Decisions**
+- Eraser paints white instead of making pixels transparent, because the canvas is always white and the bucket and export stay simpler.
+- The bucket treats colors close to the clicked one as the same area, so it fills soft line edges. A gap in a shape will leak, like real paint.
+- Undo doesn't survive a refresh. The drawing does.
+- On a phone, the tools take up most of the first screen and the "What is this?" button overlaps the canvas corner. Left for the team to decide, since that button and layout aren't only mine.
+
+---
+
+## 15. Updated the notes so finished work shows as finished (2026-11-01)
+
+**What I asked for**
+- The README and team notes still called the canvas a placeholder, so I wanted them to say what's actually done and what isn't, so nobody redoes finished work.
+
+**What changed**
+- `README.md`: Status now lists what's built and what isn't, and I added my name to the team credit.
+- `frontend/README.md`: describes the real files instead of a placeholder.
+- `CLAUDE.md`: team is now four people, Team roles and Status record the drawing work and Kevin owning Supabase and publishing.
+
+**What I checked**
+- Compared each "built" line with what ran in entry 14's checks. Nothing new was tested, since only notes changed.
+
+**Decisions**
+- From now on, anything I add also gets a line in the README's Status and an entry here, in the same change.
+
+---
+
+## 16. Same parts for everyone each day, Free play, and the gallery (2026-11-01)
+
+**What I asked for**
+- Make it an actual daily game, so people draw the same thing and can compare, and show what others drew after finishing (my inspiration idea from the group chat). Nothing that depends on Kevin's database.
+
+**What changed**
+- `frontend/daily.js`: picks each part from the date and the part's name, so everyone on the same date gets the same parts with no server. Detailed shares Basic's parts and adds its own.
+- `frontend/index.html`: the slot machine now lands on the daily parts. Its animation is unchanged. Added a Free play button for random parts, and "New set" reads "Start over" in a daily round, since spinning again gives the same parts. Updated "What is this?".
+- `frontend/gallery.js`: a gallery opened from the finish screen, with your drawing first. Until real drawings are connected it shows five doodles labeled as samples. Anyone connecting it sets `window.scrawdleGallery`, and the samples then disappear.
+- Free play rounds can't be published and don't open the gallery.
+
+**What I checked**
+- `node --test tests/drawing.test.js`: 13 passed, including that picks are repeatable and spread across the options.
+- In Chromium: 25 new checks passed, including two players matching on one date, the next day changing, Free play staying random, a refresh keeping the kind of round, an empty and a failed gallery, and a caption not being able to inject code. The 37 earlier checks still pass.
+- Not checked: real players, since nothing is published yet. Safari, Firefox, and real phones are still untested.
+
+**Decisions**
+- "Today" is the player's local date, so people in different time zones change over at different moments.
+- This replaces random prompts as the default, which the group chat described as how it works for now. The team hasn't agreed to this yet, so it's only on my branch until they've seen it.
+- Changing an options list in `prompts.json` can change that day's parts for anyone loading afterward, so edits shouldn't land mid-day once it's live.
+
+---
+
+## 17. Fixed seven bugs (2026-11-01)
+
+**What I asked for**
+- Find and fix real bugs in the drawing side. Each one was reproduced with a failing check before I fixed it.
+
+**What changed**
+- `frontend/drawing.js`:
+- A stroke the browser dropped with no pointerup left the board stuck. The board now ends the stroke when the pointer capture is lost.
+- Undo during a stroke put history out of order, so undo, redo and Clear now wait for the stroke to finish.
+- A damaged save threw an error on load. It's now removed and the start screen opens.
+- A blank drawing could be published and could open the gallery. Both are now blocked, and the finish screen says to draw something first.
+- Clear on a blank canvas added a pointless undo step.
+- Start over warned about losing a drawing even when everything had been undone. It now checks the canvas itself.
+- Refreshing right after a stroke lost that stroke, because the save waits 400 ms. The page now saves as it closes.
+- Also made a slower, older save unable to overwrite a newer state. That check already passed before the change, so it's a precaution, not a reproduced bug.
+
+**What I checked**
+- In Chromium, 2 of 9 bug checks passed before the fixes and 9 of 9 pass now. The 62 earlier browser checks and 13 logic tests still pass.
+- Not checked: Safari, Firefox, or a real phone. The save on closing relies on `transaction.commit()`, which I haven't tested in Safari or Firefox.
+
+---
+
+## 18. Replay (2026-11-01)
+
+**What I asked for**
+- Something impressive: watch a drawing redraw itself stroke by stroke.
+
+**What changed**
+- `frontend/drawing.js`: every stroke, fill and clear is recorded as you draw, and saved with the draft. A "Watch it redraw" button on the finish screen plays them back on a separate canvas using the same drawing code, in 2.5 to 10 seconds depending on length. Brushes with random texture now use a saved seed, so they come out the same each time.
+- `frontend/drawing.css`, `README.md`, `frontend/README.md`: styling for the replay and notes that it exists.
+
+**What I checked**
+- 14 of 14 replay checks pass in Chromium. The main one uses every tool and brush type plus undo, redo and clear, and the replay ends pixel-for-pixel on the drawing, including after a refresh. The 9 bug checks, 62 other browser checks and 13 logic tests still pass.
+- Not checked: Safari, Firefox, a real phone, or how it performs on a very long drawing.
+
+**Decisions**
+- Replay only works on your own drawing. Showing it in the gallery means publishing the strokes too, which depends on the database.
+- A save from before this feature has no strokes, so the button is hidden for it.
+
+---
+
+## 19. Replay speed (2026-11-01)
+
+**What I asked for**
+- Replay should be able to speed up, and it should start a bit sped up, because people may spend a long time on a drawing.
+
+**What changed**
+- `frontend/drawing.js`: replay now starts at 2x, and a button that only shows while it plays changes it to 4x or 1x, even partway through. The speed goes back to 2x when the finish screen reopens.
+- `README.md`: says how the speed works.
+
+**What I checked**
+- 17 of 17 speed checks pass in Chromium. The same test drawing took about 8 seconds at 1x, 4 at 2x and 2 at 4x, and it ended pixel-for-pixel on the drawing at every speed, including when the speed changed partway through. The 14 replay checks, 9 bug checks, 62 other browser checks and 13 logic tests still pass.
+- Not checked: Safari, Firefox, or a real phone.
+
+**Decisions**
+- Started at 2x. At 1x a replay already never runs past 10 seconds, so this makes the longest one about 5. A very short drawing can finish in about a second.
+
+---
+
+## 20. Replay speeds up by itself (2026-11-01)
+
+**What I asked for**
+- No speed button. Replay should speed up naturally and look graceful, so it gets you to the finished drawing, and it only plays if someone presses the button. This replaces the speed button from entry 19.
+
+**What changed**
+- `frontend/drawing.js`: removed the speed button. Replay now eases in, glides through the middle, and settles on the finished drawing, in about 2 to 4 seconds however long the drawing took.
+- `README.md`: says how replay is paced.
+
+**What I checked**
+- 17 of 17 pacing checks pass in Chromium. A long test drawing took about 4 seconds, was about 6% drawn at 15% of the time, 50% at the halfway point, and 94% at 85%. A small drawing takes about 2 seconds, and a single dot about 1. It ended pixel-for-pixel, including with every brush type. The 14 replay checks, 9 bug checks, 62 other browser checks and 13 logic tests still pass.
+- Not checked: Safari, Firefox, or a real phone.
+
+**Decisions**
+- A very long drawing gets the same 4 seconds as a medium one, so the replay doesn't drag. People who want to see it press the button; otherwise the finish screen just shows the drawing.
+
+---
+
+## 21. Brush width stays steady (2026-11-02)
+
+**What I asked for**
+- Fix the round brush getting thinner when you move the mouse quickly.
+
+**What changed**
+- `frontend/drawing.js`: with a mouse or finger, the round brush now keeps the selected size at any speed. With a stylus, pressure changes the width but it can't go past the selected size. Each new stroke is marked as using this rule, so drawings saved before this change still replay with their original widths.
+- `tests/brush-width.test.js`: new tests for the mouse, the stylus, and older saved drawings.
+
+**What I checked**
+- In Chromium, the same brush at size 24 settled about 14 canvas pixels apart between a slow and a fast stroke before the fix, and within 2 pixels after it. A drawing saved by the old code still replays pixel-for-pixel with the new code. 16 of 16 logic tests pass, as do the 14 replay, 17 replay pacing, 9 bug and 62 other browser checks.
+- Not checked: a physical stylus, Safari, Firefox, or a real phone. The stylus rule was only checked with logic tests.
+
+**Decisions**
+- A stroke still starts slightly thinner and grows to full width over its first few points, whatever the speed.
+## 22. Self-judged win condition (2026-11-02)
 
 **What I asked for**
 - (Trenten) I want Scrawdle to have a win condition that involves judging the player's drawing. For now, I asked for the player to judge their own drawing as accurate or inaccurate to the parts they rolled.
@@ -256,6 +415,30 @@ Artifact 4 is "For Someone Else," due Sunday, November 8. My team (me, Angie, Tr
 - Self-judging is a stand-in. A real win condition will probably need someone or something other than the player to judge (other players voting, or an automated check). Nothing is saved yet: the verdict only lives on the page.
 - The previous drawing still stays on the canvas after "New set". That's how it already worked, and I didn't change it here.
 - This entry is numbered 14 on `main`. The `zainab` branch also adds entries starting at 14, so the numbers will need fixing when that branch is merged.
+
+---
+
+## 23. Merged the zainab branch into main (2026-11-02)
+
+**What I asked for**
+- My teammates liked what was on the `zainab` branch and asked me to merge it into `main`. Trenten's win condition had reached `main` first, so it needed to keep working after the merge.
+
+**What changed**
+- Trenten's Accurate and Inaccurate buttons were written for the old placeholder canvas, which the drawing board replaced. I moved them onto the board: `frontend/drawing.js` now has `setLocked()`, which blocks new strokes, the paint bucket, Undo, Redo, Clear, and the undo shortcut once a drawing is judged. Starting a new round unlocks it.
+- Done still opens the finish screen after judging, so download, replay, and the gallery keep working. Its "Keep drawing" button says "Back" while the drawing is locked.
+- The "Not this time" verdict now names the button on screen, because daily rounds say "Start over" and only Free play says "New set".
+- `#stage` has more room at the bottom. On phone widths, the "What is this?" button covered Accurate, which Trenten's entry had flagged as unchecked. The row can now scroll clear of it.
+- The help dialog keeps both the judging step and the gallery and Free play steps. `README.md` and `CLAUDE.md` are updated.
+- Trenten's entry is now number 22, as he said it would need to be. Its text is unchanged.
+
+**What I checked**
+- 16 of 16 logic tests pass. In Chromium, on the merged page: 38 checks of judging, locking, starting over, Free play, download, replay, the gallery, and auto-save after a refresh, and the slot machine still lands with its animation on. The 110 earlier browser checks for bugs, replay, replay pacing, brush width, daily parts, and the drawing tools also pass.
+- At 1280x800, 1280x900, 390x844, and 320x740, I clicked both verdict buttons in the browser and nothing covered them. Those phone sizes are narrow Chromium windows. I didn't check real phones, Safari, or Firefox.
+
+**Decisions**
+- A verdict still lives only on the page, as in Trenten's entry, so a refresh brings back the drawing and the buttons.
+- Publishing stays out of this merge. The finish screen still says it isn't available yet, and the gallery still shows labeled samples.
+- Correction to entry 21: it says the brush settled "about 14" canvas pixels apart before the fix. The final measurement was 17.
 
 ---
 

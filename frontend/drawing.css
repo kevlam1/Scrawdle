@@ -1,0 +1,57 @@
+/* Drawing tools and finish screen, in the same doodle style as the rest of the game. */
+#board { width: 900px; height: auto; }
+#board[data-tool="bucket"] { cursor: cell; }
+#board.locked[data-tool] { cursor: default; }
+
+#tools {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  gap: .5rem 1rem;
+  width: 100%;
+  max-width: 900px;
+}
+.tool-group { display: flex; flex-wrap: wrap; align-items: center; gap: .3rem; }
+
+.tool {
+  padding: .25rem .6rem;
+  border: 3px solid var(--ink);
+  border-radius: 10px;
+  background: #fff;
+  box-shadow: 2px 2px 0 var(--ink);
+}
+.tool:hover:not(:disabled) { background: #eee; }
+.tool[aria-pressed="true"] { background: var(--accent3); font-weight: bold; transform: translate(1px, 1px); box-shadow: 1px 1px 0 var(--ink); }
+.tool:disabled { opacity: .45; cursor: default; box-shadow: none; }
+.tool:focus-visible, .swatch:focus-visible, .picker:focus-visible { outline: 3px solid var(--accent2); outline-offset: 2px; }
+.tool.done { background: var(--accent4); font-weight: bold; }
+.tool.done:hover:not(:disabled) { background: #57b463; }
+
+.swatch { width: 28px; height: 28px; padding: 0; border: 3px solid var(--ink); border-radius: 50%; }
+.swatch[aria-pressed="true"] { outline: 3px solid var(--accent2); outline-offset: 1px; }
+.picker { width: 34px; height: 30px; padding: 0; border: 3px solid var(--ink); border-radius: 8px; background: #fff; cursor: pointer; }
+
+.size { display: flex; align-items: center; gap: .35rem; font-size: .9rem; }
+.size input { width: 110px; accent-color: var(--ink); }
+.size input:disabled { opacity: .4; }
+select.tool { font: inherit; color: inherit; box-shadow: none; padding: .1rem .3rem; cursor: pointer; }
+
+.save-status { font-size: .8rem; min-width: 8.5rem; text-align: right; }
+
+#finish { width: min(52rem, 94vw); max-width: none; }
+#finish h2 { margin-bottom: .75rem; }
+#finish .replay { display: block; width: 100%; height: auto; max-height: 62vh; object-fit: contain; border: 3px solid var(--ink); border-radius: 10px; background: #fff; }
+#finish img { display: block; width: 100%; height: auto; max-height: 62vh; object-fit: contain; border: 3px solid var(--ink); border-radius: 10px; background: var(--paper); }
+.finish-actions { display: flex; flex-wrap: wrap; gap: .5rem; margin-top: 1rem; }
+.finish-note { margin: .6rem 0 0; font-size: .9rem; min-height: 1.3em; }
+
+#free-play { font-size: .95rem; }
+
+#gallery { width: min(60rem, 94vw); max-width: none; }
+.gallery-note { margin: 0 0 1rem; font-size: .9rem; min-height: 1.3em; }
+.gallery-grid { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(14rem, 1fr)); gap: 1rem; }
+.gallery-grid li { border: 3px solid var(--ink); border-radius: 10px; overflow: hidden; background: #fff; }
+.gallery-grid li.mine { border-color: var(--accent2); }
+.gallery-grid img { display: block; width: 100%; height: auto; }
+.gallery-grid p { margin: 0; padding: .3rem .5rem; font-size: .85rem; border-top: 2px solid var(--ink); }

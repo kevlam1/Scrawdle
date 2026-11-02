@@ -2,13 +2,32 @@
 
 A daily drawing game: a new prompt (or a few) each day, a browser canvas with drawing tools (pen, pencil, brush, eraser, paint bucket, lines), and a chance to see what other players drew once you finish your own. Built for artists and for anyone who wants a quick daily creative pastime.
 
-TCSS 490 Artifact 4, built by a team of four: [kevlam1](https://github.com/kevlam1), [arcangieo](https://github.com/arcangieo), [trentenmuw](https://github.com/trentenmuw), .
+TCSS 490 Artifact 4, built by a team of four: [kevlam1](https://github.com/kevlam1), [arcangieo](https://github.com/arcangieo), [trentenmuw](https://github.com/trentenmuw), [zainasuw](https://github.com/zainasuw).
 
-**Live at [scrawdle.vercel.app](https://scrawdle.vercel.app)** (currently shows only the placeholder canvas — see Status).
+**Live at [scrawdle.vercel.app](https://scrawdle.vercel.app)** (see Status for what is live).
 
 ## Status
 
-Still in planning — `frontend/` and `backend/` currently hold placeholder scaffolding only, not the real app. The live URL was 404'ing at `/` as of 2026-10-31 because the repo had no top-level `index.html`; a `vercel.json` was added to point Vercel at `frontend/`, not yet confirmed live after redeploy. See `CLAUDE.md` for the project plan and `log.md` for the build log.
+**Built**
+- Start screen with Basic and Detailed modes, and the slot machine that spins through parts from `frontend/prompts.json`.
+- Daily parts: everyone playing on the same date gets the same ones, with no server needed. Free play gives random parts any time.
+- Drawing tools: pen, pencil, line, eraser, paint bucket, and a brush with seven types (round, marker, calligraphy, crayon, watercolor, spray, dry bristle). Colors and a size for each tool.
+- Undo and redo.
+- Auto-save in the browser: a drawing and its prompts survive a refresh, and are cleared when the day changes.
+- Finish screen with a PNG download that includes the prompts and date.
+- Replay: watch your drawing redraw itself stroke by stroke from the finish screen. It speeds up smoothly and takes about 2 to 4 seconds, however long the drawing took. It ends on an exact match of the drawing.
+- Self-judged win: Accurate and Inaccurate buttons under the canvas show a verdict and lock the drawing until you start over. A refresh clears the verdict, because it isn't saved.
+- Gallery after you finish, showing clearly labeled sample doodles until real drawings are connected (see the top of `frontend/gallery.js`).
+
+**Not built yet**
+- Publishing, and real players' drawings in the gallery. The Publish button stays off until publishing is connected (see the top of `frontend/drawing.js`).
+- Reporting or hiding drawings, which a public gallery will need.
+- Replaying other players' drawings. Replay only works on your own for now.
+- The database. `backend/supabase/schema.sql` is a draft and hasn't been run against a real Supabase project.
+
+**Live site:** it deploys from `main`, so it only shows what has been merged. A `vercel.json` was added to fix a 404 at `/`, and nobody has confirmed the fix after a deploy.
+
+See `CLAUDE.md` for the project plan and `log.md` for the build log.
 
 ## Stack
 
@@ -18,9 +37,10 @@ Still in planning — `frontend/` and `backend/` currently hold placeholder scaf
 
 ## Running locally
 
-There's no build step and no backend connection yet, so there's just the one placeholder page:
+There's no build step and no backend connection yet:
 
 - Serve the frontend folder (opening `index.html` straight from disk won't work, because the page loads `prompts.json` with `fetch`): from the repo root, run `npx serve frontend` (or `python -m http.server 8000 --directory frontend`), then open the printed address.
-- You should see the Basic / Detailed start screen. Pick one to spin the slot machine, then draw on the canvas with a mouse or touch.
+- You should see the Basic / Detailed start screen. Pick one to spin the slot machine, then draw on the canvas with a mouse, finger, or stylus.
+- Tests for the paint bucket, undo, and daily parts: `node --test tests/drawing.test.js`
 
 There's nothing to install and no `.env` needed yet — `backend/supabase/schema.sql` hasn't been run against a real Supabase project, so there's no database to connect to. Once that exists, this section will need real setup steps (copying `.env.example` to `.env`, filling in Supabase keys).

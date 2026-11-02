@@ -164,7 +164,7 @@
       background: #fff;
     }
     #restart:hover { background: #eee; }
-    #stage { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 12px; padding: 1rem; }
+    #stage { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 12px; padding: 1rem 1rem 4.5rem; } /* room to scroll clear of "What is this?" */
     canvas { border: 3px solid var(--ink); background: #fff; touch-action: none; cursor: crosshair; max-width: 100%; height: auto; }
     canvas.locked { cursor: default; }
 
@@ -199,6 +199,7 @@
       .mode, .includes { transition: none; }
     }
   </style>
+  <link rel="stylesheet" href="drawing.css" />
 </head>
 <body>
   <button id="help-btn" type="button">What is this?</button>
@@ -209,12 +210,14 @@
     <p>Scrawdle is a drawing game. It hands you a random mix of animal parts, and your job is to draw the creature they make together.</p>
     <h3>How to play</h3>
     <ol>
-      <li>Pick <b>Basic</b> (head, arms, legs, tail, plus an optional extra) or <b>Detailed</b> (all of that, plus ears, eyes, mouth and an optional skin pattern).</li>
+      <li>Everyone gets the same parts each day. Pick <b>Basic</b> (head, arms, legs, tail, plus an optional extra) or <b>Detailed</b> (all of that, plus ears, eyes, mouth and an optional skin pattern).</li>
       <li>Watch the slot machine spin. Whatever it lands on is your set of parts.</li>
-      <li>Your parts stay in the top-left corner while you draw. Use your mouse or finger on the canvas.</li>
+      <li>Your parts stay in the top-left corner while you draw. Use your mouse, finger or stylus on the canvas, and pick a tool, color and size above it.</li>
+      <li>Your drawing saves in this browser as you go. Hit <b>Done</b> to see it finished and download it.</li>
       <li>Parts marked in green are <i>optional</i>: use them if you like, skip them if you don't.</li>
       <li>When you're done, judge your own drawing: <b>Accurate</b> if it matches your parts (you win!), <b>Inaccurate</b> if it doesn't.</li>
-      <li>Want a different creature? Hit <b>New set</b> to go back and spin again.</li>
+      <li>When you're done, see what other people drew for the same parts.</li>
+      <li>Want a different creature? <b>Free play</b> gives you random parts any time.</li>
     </ol>
   </dialog>
 
@@ -243,6 +246,7 @@
         </ul>
       </button>
     </div>
+    <button class="tool" id="free-play" type="button">Free play: random parts</button>
     <p id="setup-error" hidden></p>
   </main>
 
@@ -254,7 +258,8 @@
   <section id="game" hidden>
     <div id="prompt-bar"></div>
     <div id="stage">
-      <canvas id="board" width="900" height="600"></canvas>
+      <div id="tools"></div>
+      <canvas id="board" width="1800" height="1200" aria-label="Drawing canvas"></canvas>
       <div id="judge">
         <p class="question">Done? Does your drawing match the parts?</p>
         <button class="verdict-btn" id="judge-accurate" type="button">Accurate</button>
@@ -264,6 +269,9 @@
     </div>
   </section>
 
+  <script src="daily.js"></script>
+  <script src="drawing.js"></script>
+  <script src="gallery.js"></script>
   <script>
     /* ---------- Help dialog ---------- */
     const help = document.getElementById("help");
@@ -341,7 +349,26 @@
       return chip;
     }
 
-    async function start(mode) {
+    function buildPromptBar(parts, results, daily) {
+      barEl.replaceChildren();
+      const chips = parts.map((p, i) => makeChip(p, results[i]));
+      chips.forEach((c) => barEl.appendChild(c));
+      const restart = document.createElement("button");
+      restart.id = "restart";
+      restart.type = "button";
+      restart.textContent = daily ? "Start over" : "New set";
+      restart.addEventListener("click", newSet);
+      barEl.appendChild(restart);
+      return { chips, restart };
+    }
+
+    function newSet() {
+      if (!board.isEmpty && !confirm("Start over? Your current drawing will be lost.")) return;
+      board.discard();
+      showSetup();
+    }
+
+    async function start(mode, daily = true) {
       errorEl.hidden = true;
       try {
         await loadPrompts();
@@ -352,18 +379,12 @@
       }
 
       const parts = partsFor(mode);
-      const results = parts.map((p) => pickRandom(p.options));
+      const today = ScrawdleDrawing.dayKey();
+      const results = parts.map((p) => (daily ? p.options[ScrawdleDaily.dailyIndex(today, p.key, p.options.length)] : pickRandom(p.options)));
 
       // Build the final prompt bar (hidden until the reels shrink into it).
-      barEl.replaceChildren();
-      const chips = parts.map((p, i) => makeChip(p, results[i]));
-      chips.forEach((c) => barEl.appendChild(c));
-      const restart = document.createElement("button");
-      restart.id = "restart";
-      restart.type = "button";
-      restart.textContent = "New set";
-      restart.addEventListener("click", showSetup);
-      barEl.appendChild(restart);
+      const { chips, restart } = buildPromptBar(parts, results, daily);
+      board.start(mode, parts.map((p, i) => ({ label: p.label, value: results[i], optional: Boolean(p.optional) })), daily);
 
       resetJudgement();
       setupEl.hidden = true;
@@ -418,63 +439,39 @@
 
     document.getElementById("mode-basic").addEventListener("click", () => start("basic"));
     document.getElementById("mode-detailed").addEventListener("click", () => start("detailed"));
+    document.getElementById("free-play").addEventListener("click", () => start("basic", false));
 
-    /* ---------- Drawing canvas (unchanged placeholder behavior) ---------- */
-    const canvas = document.getElementById("board");
-    const ctx = canvas.getContext("2d");
-    ctx.fillStyle = "#fff";
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-    ctx.lineWidth = 3;
-    ctx.lineCap = "round";
-
-    let drawing = false;
-
-    function pos(e) {
-      const rect = canvas.getBoundingClientRect();
-      return {
-        x: (e.clientX - rect.left) * (canvas.width / rect.width),
-        y: (e.clientY - rect.top) * (canvas.height / rect.height)
-      };
-    }
-
-    canvas.addEventListener("pointerdown", (e) => {
-      if (judged) return;
-      drawing = true;
-      const { x, y } = pos(e);
-      ctx.beginPath();
-      ctx.moveTo(x, y);
+    /* ---------- Drawing board (see drawing.js) ---------- */
+    const board = ScrawdleDrawing.createBoard({
+      canvas: document.getElementById("board"),
+      toolbar: document.getElementById("tools"),
     });
+    ScrawdleDrawing.createFinishScreen(board, ScrawdleGallery.createGallery(board));
 
-    canvas.addEventListener("pointermove", (e) => {
-      if (!drawing) return;
-      const { x, y } = pos(e);
-      ctx.lineTo(x, y);
-      ctx.stroke();
+    // Pick up today's unfinished drawing after a refresh.
+    board.restore().then((round) => {
+      if (!round) return;
+      buildPromptBar(round.prompts, round.prompts.map((p) => p.value), round.daily);
+      setupEl.hidden = true;
+      gameEl.hidden = false;
     });
-
-    canvas.addEventListener("pointerup", () => { drawing = false; });
-    canvas.addEventListener("pointerleave", () => { drawing = false; });
 
     /* ---------- Self-judgement (the player decides if they won) ---------- */
     const judgeEl = document.getElementById("judge");
     const verdictEl = document.getElementById("verdict");
-    let judged = false;
 
     function judge(accurate) {
-      judged = true;
-      drawing = false;
-      canvas.classList.add("locked");
+      board.setLocked(true);
       judgeEl.hidden = true;
       verdictEl.className = accurate ? "win" : "lose";
       verdictEl.textContent = accurate
         ? "You win! Your creature matches the parts."
-        : "Not this time. Hit New set to try another creature.";
+        : `Not this time. Hit ${document.getElementById("restart").textContent} to try again.`;
       verdictEl.hidden = false;
     }
 
     function resetJudgement() {
-      judged = false;
-      canvas.classList.remove("locked");
+      board.setLocked(false);
       judgeEl.hidden = false;
       verdictEl.hidden = true;
     }
