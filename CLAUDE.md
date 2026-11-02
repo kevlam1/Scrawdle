@@ -1,9 +1,9 @@
 # CLAUDE.md: Scrawdle (TCSS 490 Artifact 4, "For Someone Else")
 
-Read this file first. It is shared by three people's Claude sessions (GitHub: `kevlam1`, `arcangieo`, `trentenmuw`), so your agents do not talk to each other — this file is how they stay on the same plan. Kevin's personal workflow preferences live in `../CLAUDE.md` (not part of this repo, not binding on teammates).
+Read this file first. It is shared by four people's Claude sessions (GitHub: `kevlam1`, `arcangieo`, `trentenmuw`, `zainasuw`), so your agents do not talk to each other — this file is how they stay on the same plan. Kevin's personal workflow preferences live in `../CLAUDE.md` (not part of this repo, not binding on teammates).
 
 ## What this is
-- Artifact 4 of TCSS 490: a team of three building something for people outside the team. Due **Sunday, November 8, 2026 at 11:59 PM** on Canvas. Portfolio status check at end of Week 4 (Sunday, November 1).
+- Artifact 4 of TCSS 490: a team of four building something for people outside the team. Due **Sunday, November 8, 2026 at 11:59 PM** on Canvas. Portfolio status check at end of Week 4 (Sunday, November 1).
 - Idea, from the team's own pitch (`../Unit 4/Artifact 4_ Scrawdle.pdf`): a daily drawing game like Wordle or NYT's minigames.
   - Browser-based. New prompts appear once a day at a fixed time, 5-10 prompts per day, drawn from categories (exact prompt format still undecided — see Open questions in the source PDF: either a few related choices per round, e.g. [Cat ears][Bear ears][Human ears], or one fixed prompt per round).
   - Tools: pen, pencil, brush, eraser, paint bucket, lines.
@@ -14,7 +14,7 @@ Read this file first. It is shared by three people's Claude sessions (GitHub: `k
 - Who it's for: the team's own framing is artists first, and the general public as a casual daily pastime — broader than the assignment's example shapes (a club, a relative's business, an open-source PR). That's a deliberate scope call by the team, not mine to second-guess, but it means "hand it over" at the end will mean putting it in front of real outside users/testers rather than one named person — worth the team confirming that's the plan.
 
 ## Team roles
-**Not assigned yet.** Nobody owns a part of the codebase yet. Before building past a shared skeleton, the three of you should agree (in person or on Discord) who owns:
+**Partly assigned, per the group chat on 2026-11-01:** Kevin owns Supabase and publishing. Zainab has built the drawing side (`frontend/drawing.js`: tools, undo, auto-save, finish screen). Everything else is still open. Before building past a shared skeleton, the three of you should agree (in person or on Discord) who owns:
 - The drawing canvas and tools (pen/pencil/brush/eraser/bucket/lines, undo, export)
 - The daily prompt system and backend/database (today's prompts, storing today's drawings, the daily sanitize/reset)
 - Hosting, deploy, and the "see other players' drawings" gallery view
@@ -57,10 +57,11 @@ Replace this with whatever the three of you actually agree on.
 
 ## Status
 - 2026-10-29: `frontend/` and `backend/` scaffolded as placeholders, at Kevin's request, matching the proposed stack above. `frontend/index.html` is a bare canvas you can draw a single line on with a mouse or touch — no prompts, no tools, no backend connection. `backend/supabase/schema.sql` is a draft schema (`daily_prompts`, `drawings`) and a commented-out `pg_cron` daily-wipe job — not run against any real database, since no Supabase project exists yet. `.env.example` and `.gitignore` added for the Supabase keys the frontend will eventually need. None of this is final; it exists so there's something to build on top of or replace once roles and the stack are actually confirmed by all three of us.
-- `log.md` exists (see "The log protocol" above). Team roles and branch workflow are still open, as noted above.
+- `log.md` exists (see "The log protocol" above). Branch workflow is still open, as noted above.
+- 2026-11-01: drawing tools, brush types, undo, auto-save, and the finish screen are built on the `zainab` branch. See `log.md` entry 14 and the README's Status section. The canvas is no longer a placeholder once that branch is merged.
 
 ## Open questions
-- Team roles: unassigned.
+- Team roles: partly assigned (see Team roles above).
 - Database: Kevin picked Supabase (see Stack above); needs Angie and Trenten's sign-off since it's a team decision made solo. Whether any drawing/canvas library is used is still open too.
 - Exact prompt format: a few related choices per round vs. one fixed prompt per round (see idea doc, "Undecided: Prompts").
 - Branch/merge convention: proposed above, not yet agreed.

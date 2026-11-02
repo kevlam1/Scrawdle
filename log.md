@@ -266,6 +266,24 @@ Artifact 4 is "For Someone Else," due Sunday, November 8. My team (me, Angie, Tr
 
 ---
 
+## 15. Updated the notes so finished work shows as finished (2026-11-01)
+
+**What I asked for**
+- The README and team notes still called the canvas a placeholder, so I wanted them to say what's actually done and what isn't, so nobody redoes finished work.
+
+**What changed**
+- `README.md`: Status now lists what's built and what isn't, and I added my name to the team credit.
+- `frontend/README.md`: describes the real files instead of a placeholder.
+- `CLAUDE.md`: team is now four people, Team roles and Status record the drawing work and Kevin owning Supabase and publishing.
+
+**What I checked**
+- Compared each "built" line with what ran in entry 14's checks. Nothing new was tested, since only notes changed.
+
+**Decisions**
+- From now on, anything I add also gets a line in the README's Status and an entry here, in the same change.
+
+---
+
 ## Where AI misread me, or I had to correct course
 
 - Claude's first version of the start page put "What is this?" in the top right, where it collided with the "New set" button on the game screen. I caught it by running the page; Claude hadn't opened it in a browser.
