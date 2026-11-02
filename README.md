@@ -9,18 +9,18 @@ TCSS 490 Artifact 4, built by a team of four: [kevlam1](https://github.com/kevla
 ## Status
 
 **Built**
-- Start screen with Basic and Detailed modes, and the slot machine that spins through parts from `frontend/prompts.json`.
+- Home screen with Basic, Detailed, and Free play, and a reveal screen that spins through parts from `frontend/prompts.json`.
 - Daily parts: everyone playing on the same date gets the same ones, with no server needed. Free play gives random parts any time.
-- Drawing tools: pen, pencil, line, eraser, paint bucket, and a brush with seven types (round, marker, calligraphy, crayon, watercolor, spray, dry bristle). Colors and a size for each tool. The tools have illustrated icons.
+- Drawing tools: pen, pencil, line, eraser, paint bucket, and a brush with seven types (round, marker, calligraphy, crayon, watercolor, spray, dry bristle). 12 colors plus a custom color, and a size for each tool. The tools have illustrated icons, and the Brushes panel previews each brush.
 - Undo and redo.
-- Auto-save in the browser: a drawing and its prompts survive a refresh, and are cleared when the day changes.
+- Auto-save in the browser: today's drawing and a Free play drawing save separately and survive a refresh. Today's is cleared when the day changes, and Free play stays.
 - Finish screen with a PNG download that includes the prompts and date.
 - Replay: watch your drawing redraw itself stroke by stroke from the finish screen. It speeds up smoothly and takes about 2 to 4 seconds, however long the drawing took. It ends on an exact match of the drawing.
 - Self-judged win: Accurate and Inaccurate buttons under the canvas show a verdict and lock the drawing until you start over. A refresh clears the verdict, because it isn't saved.
-- Gallery after you finish, showing clearly labeled sample doodles until real drawings are connected (see the top of `frontend/gallery.js`).
+- A gallery of clearly labeled sample drawings, from the home and finish screens, until real drawings are connected (see the top of `frontend/gallery.js`).
 
 **Not built yet**
-- Publishing, and real players' drawings in the gallery. The Publish button stays off until publishing is connected (see the top of `frontend/drawing.js`).
+- Publishing, and real players' drawings in the gallery. The Publish button stays hidden until publishing is connected (see the top of `frontend/drawing.js`).
 - Reporting or hiding drawings, which a public gallery will need.
 - Replaying other players' drawings. Replay only works on your own for now.
 - The database. `backend/supabase/schema.sql` is a draft and hasn't been run against a real Supabase project.

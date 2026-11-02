@@ -4,292 +4,137 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Scrawdle</title>
-  <style>
-    :root {
-      --ink: #2b2540;
-      --paper: #fffaf0;
-      --accent: #ff6b6b;
-      --accent2: #4d96ff;
-      --accent3: #ffd93d;
-      --accent4: #6bcB77;
-    }
-    * { box-sizing: border-box; }
-    body {
-      margin: 0;
-      min-height: 100vh;
-      font-family: "Comic Sans MS", "Chalkboard SE", "Trebuchet MS", sans-serif;
-      color: var(--ink);
-      background: var(--paper);
-    }
-    [hidden] { display: none !important; }
-    button { font: inherit; color: inherit; cursor: pointer; }
-
-    /* ---------- Setup screen ---------- */
-    #setup {
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      gap: 2rem;
-      padding: 2rem 1rem;
-    }
-    #setup h1 { font-size: clamp(2.5rem, 8vw, 4.5rem); margin: 0; letter-spacing: 2px; transform: rotate(-2deg); }
-    #setup .tagline { margin: -1rem 0 0; font-size: 1.15rem; }
-    .modes { display: flex; flex-wrap: wrap; gap: 1.5rem; justify-content: center; align-items: flex-start; }
-    .mode {
-      width: 280px;
-      min-height: 150px;
-      padding: 1.25rem 1.25rem 1rem;
-      border: 4px solid var(--ink);
-      border-radius: 18px;
-      background: #fff;
-      box-shadow: 6px 6px 0 var(--ink);
-      text-align: center;
-      transition: transform .15s, box-shadow .15s, background .15s;
-    }
-    .mode:hover, .mode:focus-visible { transform: translate(-3px, -3px) rotate(-1deg); box-shadow: 9px 9px 0 var(--ink); outline: none; }
-    #mode-basic:hover, #mode-basic:focus-visible { background: #e3f0ff; }
-    #mode-detailed:hover, #mode-detailed:focus-visible { background: #ffe9e9; }
-    .mode .name { display: block; font-size: 2rem; font-weight: bold; }
-    .mode .includes {
-      margin: .75rem 0 0;
-      padding: 0;
-      list-style: none;
-      text-align: left;
-      font-size: .95rem;
-      max-height: 0;
-      opacity: 0;
-      overflow: hidden;
-      transition: max-height .3s, opacity .3s;
-    }
-    .mode:hover .includes, .mode:focus-visible .includes { max-height: 20rem; opacity: 1; }
-    .includes li::before { content: "\270E  "; }
-    .includes li.optional { font-style: italic; }
-    .includes li.plus { font-weight: bold; list-style: none; margin-top: .3rem; }
-    .includes li.plus::before { content: ""; }
-    @media (hover: none) {
-      .mode .includes { max-height: 20rem; opacity: 1; }
-    }
-    #setup-error { color: #b00020; max-width: 30rem; text-align: center; }
-
-    #help-btn {
-      position: fixed;
-      bottom: 12px;
-      left: 12px;
-      z-index: 20;
-      padding: .45rem .9rem;
-      border: 3px solid var(--ink);
-      border-radius: 999px;
-      background: var(--accent3);
-      box-shadow: 3px 3px 0 var(--ink);
-    }
-    #help-btn:hover { transform: translate(-1px, -1px); }
-
-    dialog {
-      max-width: 34rem;
-      border: 4px solid var(--ink);
-      border-radius: 18px;
-      padding: 1.5rem 1.75rem;
-      background: #fff;
-      color: var(--ink);
-      box-shadow: 8px 8px 0 var(--ink);
-    }
-    dialog::backdrop { background: rgba(43, 37, 64, .55); }
-    dialog h2 { margin-top: 0; }
-    dialog ol { padding-left: 1.2rem; }
-    dialog .close { float: right; border: 0; background: none; font-size: 1.5rem; line-height: 1; }
-
-    /* ---------- Slot machine overlay ---------- */
-    #slot {
-      position: fixed;
-      inset: 0;
-      z-index: 10;
-      background: rgba(43, 37, 64, .88);
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      gap: 1.5rem;
-      padding: 1rem;
-    }
-    #slot h2 { color: #fff; margin: 0; font-size: 1.6rem; }
-    #reels { display: flex; flex-wrap: wrap; gap: 1rem; justify-content: center; max-width: 60rem; }
-    .reel {
-      width: 150px;
-      border: 4px solid var(--ink);
-      border-radius: 14px;
-      background: #fff;
-      box-shadow: 4px 4px 0 #000;
-      overflow: hidden;
-      text-align: center;
-      transform-origin: top left;
-    }
-    .reel .label { display: block; padding: .3rem; font-size: .8rem; font-weight: bold; background: var(--accent2); color: #fff; }
-    .reel.optional .label { background: var(--accent4); }
-    .reel .window { height: 4.2rem; display: flex; align-items: center; justify-content: center; padding: 0 .4rem; overflow: hidden; }
-    .reel .word { font-size: 1.05rem; font-weight: bold; animation: drop .12s ease-out; }
-    .reel.landed { animation: bounce .35s; }
-    @keyframes drop { from { transform: translateY(-120%); opacity: 0; } to { transform: none; opacity: 1; } }
-    @keyframes bounce { 0%,100% { transform: scale(1); } 50% { transform: scale(1.12); } }
-
-    /* ---------- Game screen ---------- */
-    #game { min-height: 100vh; display: flex; flex-direction: column; }
-    #prompt-bar {
-      display: flex;
-      flex-wrap: wrap;
-      align-items: center;
-      gap: .5rem;
-      padding: .6rem .75rem;
-      border-bottom: 4px solid var(--ink);
-      background: #fff;
-    }
-    .chip {
-      display: inline-flex;
-      align-items: stretch;
-      border: 3px solid var(--ink);
-      border-radius: 10px;
-      overflow: hidden;
-      box-shadow: 2px 2px 0 var(--ink);
-      font-size: .9rem;
-    }
-    .chip .k { padding: .2rem .5rem; background: var(--accent2); color: #fff; font-weight: bold; }
-    .chip .v { padding: .2rem .6rem; background: var(--accent3); font-weight: bold; }
-    .chip.optional .k { background: var(--accent4); }
-    #restart {
-      margin-left: auto;
-      padding: .25rem .7rem;
-      border: 3px solid var(--ink);
-      border-radius: 10px;
-      background: #fff;
-    }
-    #restart:hover { background: #eee; }
-    #stage { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 12px; padding: 1rem 1rem 4.5rem; } /* room to scroll clear of "What is this?" */
-    canvas { border: 3px solid var(--ink); background: #fff; touch-action: none; cursor: crosshair; max-width: 100%; height: auto; }
-    canvas.locked { cursor: default; }
-
-    /* ---------- Self-judgement ---------- */
-    #judge { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: .75rem; }
-    #judge .question { margin: 0; font-weight: bold; }
-    .verdict-btn {
-      padding: .4rem 1rem;
-      border: 3px solid var(--ink);
-      border-radius: 10px;
-      box-shadow: 3px 3px 0 var(--ink);
-      font-weight: bold;
-    }
-    .verdict-btn:hover { transform: translate(-1px, -1px); }
-    #judge-accurate { background: var(--accent4); }
-    #judge-inaccurate { background: var(--accent); color: #fff; }
-    #verdict {
-      margin: 0;
-      padding: .5rem 1.25rem;
-      border: 3px solid var(--ink);
-      border-radius: 12px;
-      box-shadow: 4px 4px 0 var(--ink);
-      font-size: 1.2rem;
-      font-weight: bold;
-      transform: rotate(-1deg);
-    }
-    #verdict.win { background: var(--accent4); }
-    #verdict.lose { background: #ffe9e9; }
-
-    @media (prefers-reduced-motion: reduce) {
-      .reel .word, .reel.landed { animation: none; }
-      .mode, .includes { transition: none; }
-    }
-  </style>
+  <link rel="preload" href="fonts/patrick-hand.woff2" as="font" type="font/woff2" crossorigin />
+  <link rel="preload" href="fonts/gochi-hand.woff2" as="font" type="font/woff2" crossorigin />
   <link rel="stylesheet" href="drawing.css" />
+  <link rel="stylesheet" href="studio.css" />
+  <link rel="stylesheet" href="flow.css" />
 </head>
 <body>
-  <button id="help-btn" type="button">What is this?</button>
+  <template id="wordmark">
+    <span class="wordmark" role="img" aria-label="Scrawdle">
+      <span class="letters" aria-hidden="true"><i>S</i><i>c</i><i>r</i><i>a</i><i>w</i><i>d</i><i>l</i><i>e</i></span>
+    </span>
+  </template>
 
   <dialog id="help">
     <button class="close" type="button" aria-label="Close">&times;</button>
-    <h2>What is Scrawdle?</h2>
-    <p>Scrawdle is a drawing game. It hands you a random mix of animal parts, and your job is to draw the creature they make together.</p>
-    <h3>How to play</h3>
+    <h2>How to play</h2>
+    <p>Scrawdle hands you a random mix of animal parts, and your job is to draw the creature they make together.</p>
     <ol>
-      <li>Everyone gets the same parts each day. Pick <b>Basic</b> (head, arms, legs, tail, plus an optional extra) or <b>Detailed</b> (all of that, plus ears, eyes, mouth and an optional skin pattern).</li>
+      <li>Everyone gets the same parts each day. Pick Basic (head, arms, legs, tail, plus an optional extra) or Detailed (all of that, plus ears, eyes and mouth, with an optional skin pattern and accessory).</li>
       <li>Watch the slot machine spin. Whatever it lands on is your set of parts.</li>
-      <li>Your parts stay in the top-left corner while you draw. Use your mouse, finger or stylus on the canvas, and pick a tool, color and size above it.</li>
-      <li>Your drawing saves in this browser as you go. Hit <b>Done</b> to see it finished and download it.</li>
-      <li>Parts marked in green are <i>optional</i>: use them if you like, skip them if you don't.</li>
-      <li>When you're done, judge your own drawing: <b>Accurate</b> if it matches your parts (you win!), <b>Inaccurate</b> if it doesn't.</li>
-      <li>When you're done, see what other people drew for the same parts.</li>
-      <li>Want a different creature? <b>Free play</b> gives you random parts any time.</li>
+      <li>Your parts stay above the canvas while you draw. Parts marked optional are yours to use or skip.</li>
+      <li>Draw with your mouse, finger or stylus. Your drawing saves in this browser as you go.</li>
+      <li>When you're done, judge your own drawing: Accurate if it matches your parts (you win!), Inaccurate if it doesn't.</li>
+      <li>Press Done drawing to download it or watch it replay.</li>
     </ol>
+    <p>Want a different creature? Free play gives you random parts any time.</p>
   </dialog>
 
   <main id="setup">
-    <h1>Scrawdle</h1>
-    <p class="tagline">Spin the parts. Draw the creature.</p>
-    <div class="modes">
-      <button class="mode" id="mode-basic" type="button">
-        <span class="name">Basic</span>
-        <ul class="includes">
-          <li>Head</li>
-          <li>Arms / Front Limbs</li>
-          <li>Legs / Back Limbs</li>
-          <li>Tail</li>
-          <li class="optional">Wings / Back / Skin / Extra (optional)</li>
-        </ul>
-      </button>
-      <button class="mode" id="mode-detailed" type="button">
-        <span class="name">Detailed</span>
-        <ul class="includes">
-          <li class="plus">All of Basic, PLUS:</li>
-          <li>Ears</li>
-          <li>Eyes</li>
-          <li>Mouth / Snout</li>
-          <li class="optional">Skin / Pattern (optional)</li>
-        </ul>
-      </button>
+    <header class="app-header"><span class="wm-slot"></span><button class="help-open quiet" type="button">How to play</button></header>
+    <div class="home-body">
+      <p class="eyebrow" id="home-date"></p>
+      <h1>Ready to draw?</h1>
+      <div id="continue-list"></div>
+      <div class="home-actions">
+        <section class="home-choice">
+          <h2>Basic</h2>
+          <p>Head, arms, legs and tail, plus an optional extra.</p>
+          <button class="btn primary" id="mode-basic" type="button">Draw Basic</button>
+        </section>
+        <section class="home-choice">
+          <h2>Detailed</h2>
+          <p>All of Basic, plus ears, eyes and mouth, with an optional skin pattern and accessory.</p>
+          <button class="btn primary" id="mode-detailed" type="button">Draw Detailed</button>
+        </section>
+        <section class="home-choice">
+          <h2>Free play</h2>
+          <p>Random parts whenever you want.</p>
+          <button class="btn" id="free-play" type="button">Start free play</button>
+        </section>
+      </div>
+      <button class="quiet" id="sample-gallery" type="button">Explore sample drawings</button>
+      <p class="home-storage">Your drafts save in this browser.</p>
+      <p id="setup-error" role="alert" hidden></p>
     </div>
-    <button class="tool" id="free-play" type="button">Free play: random parts</button>
-    <p id="setup-error" hidden></p>
   </main>
 
   <div id="slot" hidden>
-    <h2>Spinning...</h2>
-    <div id="reels"></div>
+    <header class="slot-top">
+      <span class="wm-slot"></span>
+      <button class="help-open round-btn" type="button" aria-label="Help">?</button>
+    </header>
+    <div class="slot-body">
+      <p class="slot-label eyebrow"></p>
+      <h1 class="reveal-heading">Your parts</h1>
+      <div id="reels" aria-hidden="true"></div>
+      <h2 id="slot-sentence" role="status" hidden></h2>
+      <div class="slot-actions">
+        <button class="quiet" id="slot-skip" type="button">Skip animation</button>
+        <button class="btn" id="slot-new" type="button" hidden>New set</button>
+        <button class="btn primary big" id="slot-start" type="button" hidden>Start drawing</button>
+      </div>
+    </div>
   </div>
 
   <section id="game" hidden>
-    <div id="prompt-bar"></div>
+    <header class="game-top">
+      <button class="quiet" id="back-home" type="button">
+        <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M10 6l-6 6 6 6M4 12h16" /></svg>
+        Back to home
+      </button>
+      <span class="wm-slot"></span>
+      <button class="quiet" id="restart" type="button"></button>
+      <div class="top-prompt">
+        <div id="prompt-bar">
+          <small id="prompt-label"></small>
+          <strong id="prompt-text"></strong>
+        </div>
+        <button class="help-open round-btn" id="help-btn" type="button" aria-label="Help">?</button>
+      </div>
+    </header>
     <div id="stage">
-      <div id="tools"></div>
       <canvas id="board" width="1800" height="1200" aria-label="Drawing canvas"></canvas>
+    </div>
+    <div id="judge-area">
       <div id="judge">
         <p class="question">Done? Does your drawing match the parts?</p>
-        <button class="verdict-btn" id="judge-accurate" type="button">Accurate</button>
-        <button class="verdict-btn" id="judge-inaccurate" type="button">Inaccurate</button>
+        <button class="btn" id="judge-accurate" type="button">Accurate</button>
+        <button class="btn" id="judge-inaccurate" type="button">Inaccurate</button>
       </div>
       <p id="verdict" role="status" hidden></p>
     </div>
+    <aside id="brush-settings" aria-label="Drawing settings"></aside>
+    <div id="tools"></div>
   </section>
 
   <script src="daily.js"></script>
   <script src="drawing.js"></script>
   <script src="gallery.js"></script>
   <script>
-    /* ---------- Help dialog ---------- */
-    const help = document.getElementById("help");
-    document.getElementById("help-btn").addEventListener("click", () => help.showModal());
+    const $ = (id) => document.getElementById(id);
+    const setupEl = $("setup");
+    const slotEl = $("slot");
+    const reelsEl = $("reels");
+    const gameEl = $("game");
+    const errorEl = $("setup-error");
+    const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const OPEN_KEY = "scrawdle-open"; // which drawing this tab is on, so a refresh returns to it
+
+    /* ---------- Wordmark and help ---------- */
+    for (const slot of document.querySelectorAll(".wm-slot")) slot.append($("wordmark").content.cloneNode(true));
+    const help = $("help");
+    for (const b of document.querySelectorAll(".help-open")) b.addEventListener("click", () => help.showModal());
     help.querySelector(".close").addEventListener("click", () => help.close());
     help.addEventListener("click", (e) => { if (e.target === help) help.close(); });
+    // The finished PNG is lettered on a canvas, so these fonts must be ready before anyone gets there.
+    document.fonts.load('32px "Patrick Hand"');
+    document.fonts.load('36px "Gochi Hand"');
 
     /* ---------- Prompt data ---------- */
-    const setupEl = document.getElementById("setup");
-    const slotEl = document.getElementById("slot");
-    const reelsEl = document.getElementById("reels");
-    const gameEl = document.getElementById("game");
-    const barEl = document.getElementById("prompt-bar");
-    const errorEl = document.getElementById("setup-error");
-    const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-
     let promptData = null;
-
     async function loadPrompts() {
       if (promptData) return promptData;
       const res = await fetch("prompts.json");
@@ -298,6 +143,7 @@
       return promptData;
     }
 
+    // Detailed is everything in Basic plus its own parts. "includes" is documentation, not a part.
     function partsFor(mode) {
       const parts = Object.entries(promptData.basic);
       if (mode === "detailed") {
@@ -309,63 +155,105 @@
     }
 
     const pickRandom = (arr) => arr[Math.floor(Math.random() * arr.length)];
-    const wait = (ms) => new Promise((r) => setTimeout(r, ms));
 
     /* ---------- Slot machine ---------- */
-    function spinReel(reel, part, result, duration) {
-      return new Promise((resolve) => {
-        const wordEl = reel.querySelector(".word");
-        let elapsed = 0;
-        let delay = 60;
-        const tick = () => {
-          elapsed += delay;
-          wordEl.style.animation = "none";
-          void wordEl.offsetWidth;
-          wordEl.style.animation = "";
-          if (elapsed >= duration) {
-            wordEl.textContent = result;
-            reel.classList.add("landed");
-            resolve();
-            return;
-          }
-          wordEl.textContent = pickRandom(part.options);
-          delay *= 1.12;
-          setTimeout(tick, delay);
-        };
-        tick();
+    const TURNS = 18;
+    let endSpin = () => {};
+
+    function buildReels(parts, results) {
+      reelsEl.replaceChildren();
+      return parts.map((part, i) => {
+        const others = part.options.filter((o) => o !== results[i]);
+        const rows = [];
+        for (let n = 0; n < TURNS; n++) rows.push(others[(n * 5 + i) % others.length]);
+        rows.push(results[i]);
+        const strip = document.createElement("div");
+        strip.className = "strip";
+        for (const text of rows) {
+          const row = document.createElement("span");
+          row.textContent = text;
+          strip.append(row);
+        }
+        const reel = document.createElement("div");
+        reel.className = "reel";
+        reel.append(strip);
+        const label = document.createElement("span");
+        label.className = "reel-label";
+        label.textContent = part.label + (part.optional ? " (optional)" : "");
+        const wrap = document.createElement("div");
+        wrap.className = "reel-part" + (part.optional ? " optional" : "");
+        wrap.append(label, reel);
+        reelsEl.append(wrap);
+        return { reel, strip };
       });
     }
 
-    function makeChip(part, result) {
-      const chip = document.createElement("span");
-      chip.className = "chip" + (part.optional ? " optional" : "");
-      const k = document.createElement("span");
-      k.className = "k";
-      k.textContent = part.label;
-      const v = document.createElement("span");
-      v.className = "v";
-      v.textContent = result;
-      chip.append(k, v);
-      return chip;
+    function land(reels, parts, results, daily) {
+      $("slot-sentence").textContent = parts.map((p, i) => `${p.label}: ${results[i]}`).join(", ");
+      for (const r of reels) {
+        r.reel.classList.remove("spin");
+        r.strip.getAnimations().forEach((a) => a.cancel());
+        r.strip.style.transform = `translateY(${-TURNS * r.strip.firstChild.offsetHeight}px)`;
+        r.strip.children[TURNS].classList.add("chosen");
+      }
+      $("slot-sentence").hidden = false;
+      $("slot-skip").hidden = true;
+      $("slot-new").hidden = daily;
+      $("slot-start").hidden = false;
+      $("slot-start").focus({ preventScroll: true });
     }
 
-    function buildPromptBar(parts, results, daily) {
-      barEl.replaceChildren();
-      const chips = parts.map((p, i) => makeChip(p, results[i]));
-      chips.forEach((c) => barEl.appendChild(c));
-      const restart = document.createElement("button");
-      restart.id = "restart";
-      restart.type = "button";
-      restart.textContent = daily ? "Start over" : "New set";
-      restart.addEventListener("click", newSet);
-      barEl.appendChild(restart);
-      return { chips, restart };
+    function spin(parts, results, mode, daily) {
+      slotEl.querySelector(".slot-label").textContent = !daily ? "Free play" : mode === "detailed" ? "Today's Detailed parts" : "Today's Basic parts";
+      slotEl.hidden = false;
+      gameEl.inert = true;
+      $("slot-sentence").hidden = true;
+      $("slot-new").hidden = true;
+      $("slot-start").hidden = true;
+      $("slot-skip").hidden = false;
+      const reels = buildReels(parts, results);
+      if (reduceMotion) { land(reels, parts, results, daily); return; }
+      const rowHeight = reels[0].strip.firstChild.offsetHeight;
+      const anims = reels.map((r, i) => {
+        r.reel.classList.add("spin");
+        const a = r.strip.animate(
+          [{ transform: "translateY(0)" }, { transform: `translateY(${-TURNS * rowHeight}px)` }],
+          { duration: 1100 + i * 300, easing: "cubic-bezier(.16,.8,.22,1.03)", fill: "forwards" });
+        a.onfinish = () => r.reel.classList.remove("spin");
+        return a;
+      });
+      let ended = false;
+      endSpin = () => {
+        if (ended) return;
+        ended = true;
+        anims.forEach((a) => a.finish());
+        land(reels, parts, results, daily);
+      };
+      anims[anims.length - 1].finished.then(endSpin).catch(() => {});
+    }
+    $("slot-skip").addEventListener("click", () => endSpin());
+    $("slot-start").addEventListener("click", () => { slotEl.hidden = true; gameEl.inert = false; $("back-home").focus({ preventScroll: true }); });
+
+    /* ---------- Screens ---------- */
+    function showParts(prompts) {
+      $("prompt-text").replaceChildren(...prompts.map((p) => {
+        const part = document.createElement("span");
+        part.className = "part" + (p.optional ? " optional" : "");
+        const label = document.createElement("small");
+        label.textContent = p.label + (p.optional ? " (optional)" : "");
+        part.append(label, p.value);
+        return part;
+      }));
     }
 
-    function newSet() {
-      if (!board.isEmpty && !confirm("Start over? Your current drawing will be lost.")) return;
-      board.discard();
-      showSetup();
+    function showGame() {
+      const round = board.round;
+      $("prompt-label").textContent = !round.daily ? "Free play" : round.mode === "detailed" ? "Detailed" : "Basic";
+      showParts(round.prompts);
+      $("restart").textContent = round.daily ? "Start over" : "New set";
+      sessionStorage.setItem(OPEN_KEY, round.daily ? "today" : "free");
+      setupEl.hidden = true;
+      gameEl.hidden = false;
     }
 
     async function start(mode, daily = true) {
@@ -373,92 +261,110 @@
       try {
         await loadPrompts();
       } catch (err) {
-        errorEl.textContent = "Couldn't load prompts.json (" + err.message + "). If you opened this file straight from your disk, serve the frontend folder instead, e.g. `npx serve frontend`.";
+        errorEl.textContent = "The parts couldn’t load. Check your connection, then try again.";
         errorEl.hidden = false;
         return;
       }
-
+      await board.flush();
       const parts = partsFor(mode);
       const today = ScrawdleDrawing.dayKey();
       const results = parts.map((p) => (daily ? p.options[ScrawdleDaily.dailyIndex(today, p.key, p.options.length)] : pickRandom(p.options)));
-
-      // Build the final prompt bar (hidden until the reels shrink into it).
-      const { chips, restart } = buildPromptBar(parts, results, daily);
-      board.start(mode, parts.map((p, i) => ({ label: p.label, value: results[i], optional: Boolean(p.optional) })), daily);
-
+      await board.start(mode, parts.map((p, i) => ({ label: p.label, value: results[i], optional: Boolean(p.optional) })), daily);
       resetJudgement();
-      setupEl.hidden = true;
-      gameEl.hidden = false;
-
-      if (reduceMotion) return;
-
-      // Build the reels.
-      reelsEl.replaceChildren();
-      const reels = parts.map((p) => {
-        const reel = document.createElement("div");
-        reel.className = "reel" + (p.optional ? " optional" : "");
-        reel.innerHTML = '<span class="label"></span><div class="window"><span class="word"></span></div>';
-        reel.querySelector(".label").textContent = p.label + (p.optional ? " (optional)" : "");
-        reelsEl.appendChild(reel);
-        return reel;
-      });
-      slotEl.style.transition = "none";
-      slotEl.style.background = "";
-      slotEl.hidden = false;
-      chips.forEach((c) => { c.style.visibility = "hidden"; });
-      restart.style.visibility = "hidden";
-
-      await Promise.all(reels.map((reel, i) => spinReel(reel, parts[i], results[i], 1200 + i * 450)));
-      await wait(900);
-
-      // Shrink each reel into its chip in the top-left bar.
-      slotEl.querySelector("h2").style.visibility = "hidden";
-      slotEl.style.transition = "background .7s";
-      slotEl.style.background = "rgba(43, 37, 64, 0)";
-      const anims = reels.map((reel, i) => {
-        const from = reel.getBoundingClientRect();
-        const to = chips[i].getBoundingClientRect();
-        reel.style.position = "relative";
-        return reel.animate([
-          { transform: "none", opacity: 1 },
-          { transform: `translate(${to.left - from.left}px, ${to.top - from.top}px) scale(${to.width / from.width}, ${to.height / from.height})`, opacity: 0.2 }
-        ], { duration: 700, easing: "ease-in-out", fill: "forwards" }).finished;
-      });
-      await Promise.all(anims);
-
-      chips.forEach((c) => { c.style.visibility = ""; });
-      restart.style.visibility = "";
-      slotEl.hidden = true;
-      slotEl.querySelector("h2").style.visibility = "";
+      showGame();
+      spin(parts, results, mode, daily);
     }
 
-    function showSetup() {
+    // Today has one save, so picking the other mode replaces it. Picking the same one goes back to it.
+    function startDaily(mode) {
+      const today = saved.today;
+      if (today && today.marked) {
+        if (today.mode === mode) return openSaved("today");
+        if (!confirm("Start over with this mode? Your drawing for today will be replaced.")) return;
+      }
+      start(mode);
+    }
+
+    // Free play has one save, so a new set replaces whatever is on it.
+    function startFreePlay(hasDrawing) {
+      if (hasDrawing && !confirm("Replace your Free play drawing with a new set of parts?")) return;
+      start("basic", false);
+    }
+
+    let saved = {};
+    let thumbUrls = [];
+
+    function continueCard(draft) {
+      const url = URL.createObjectURL(draft.image);
+      thumbUrls.push(url);
+      const card = document.createElement("button");
+      card.type = "button";
+      card.className = "continue";
+      card.dataset.slot = draft.slot;
+      const thumb = document.createElement("img");
+      thumb.src = url;
+      thumb.alt = "";
+      const text = document.createElement("span");
+      const title = document.createElement("b");
+      title.textContent = "Continue drawing";
+      const prompt = document.createElement("small");
+      prompt.textContent = (draft.slot === "free" ? "Free play: " : "") + draft.prompts.map((p) => p.value).join(", ");
+      text.append(title, prompt);
+      card.append(thumb, text);
+      card.addEventListener("click", () => openSaved(draft.slot));
+      return card;
+    }
+
+    async function showHome() {
       gameEl.hidden = true;
+      gameEl.inert = false;
+      slotEl.hidden = true;
+      sessionStorage.removeItem(OPEN_KEY);
+      saved = await board.drafts();
+      thumbUrls.forEach((u) => URL.revokeObjectURL(u));
+      thumbUrls = [];
+      const cards = [saved.today, saved.free].filter((d) => d && d.marked);
+      $("continue-list").replaceChildren(...cards.map(continueCard));
+      setupEl.classList.toggle("has-saved", cards.length > 0);
       setupEl.hidden = false;
+      $("home-date").textContent = new Date().toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric" });
     }
 
-    document.getElementById("mode-basic").addEventListener("click", () => start("basic"));
-    document.getElementById("mode-detailed").addEventListener("click", () => start("detailed"));
-    document.getElementById("free-play").addEventListener("click", () => start("basic", false));
+    async function openSaved(slot) {
+      const round = board.round;
+      // Still the drawing on the canvas, so undo history and its verdict come along too.
+      if (round && (round.daily ? "today" : "free") === slot) { showGame(); return; }
+      await board.flush();
+      if (await board.restore(slot)) { resetJudgement(); showGame(); }
+      else showHome();
+    }
+
+    async function restartRound() {
+      const round = board.round;
+      if (!round.daily) return startFreePlay(!board.isEmpty);
+      if (!board.isEmpty && !confirm("Start over? Your current drawing will be lost.")) return;
+      await board.discard();
+      showHome();
+    }
+
+    $("mode-basic").addEventListener("click", () => startDaily("basic"));
+    $("mode-detailed").addEventListener("click", () => startDaily("detailed"));
+    $("free-play").addEventListener("click", () => startFreePlay(Boolean(saved.free && saved.free.marked)));
+    $("restart").addEventListener("click", restartRound);
+    $("slot-new").addEventListener("click", () => { slotEl.hidden = true; start("basic", false); });
+    $("back-home").addEventListener("click", async () => { await board.flush(); showHome(); });
 
     /* ---------- Drawing board (see drawing.js) ---------- */
-    const board = ScrawdleDrawing.createBoard({
-      canvas: document.getElementById("board"),
-      toolbar: document.getElementById("tools"),
-    });
-    ScrawdleDrawing.createFinishScreen(board, ScrawdleGallery.createGallery(board));
-
-    // Pick up today's unfinished drawing after a refresh.
-    board.restore().then((round) => {
-      if (!round) return;
-      buildPromptBar(round.prompts, round.prompts.map((p) => p.value), round.daily);
-      setupEl.hidden = true;
-      gameEl.hidden = false;
+    const board = ScrawdleDrawing.createBoard({ canvas: $("board"), toolbar: $("tools"), settings: $("brush-settings") });
+    const gallery = ScrawdleGallery.createGallery(board);
+    $("sample-gallery").addEventListener("click", () => gallery.showSamples());
+    ScrawdleDrawing.createFinishScreen(board, gallery, {
+      onHome: async () => { await board.flush(); showHome(); },
     });
 
     /* ---------- Self-judgement (the player decides if they won) ---------- */
-    const judgeEl = document.getElementById("judge");
-    const verdictEl = document.getElementById("verdict");
+    const judgeEl = $("judge");
+    const verdictEl = $("verdict");
 
     function judge(accurate) {
       board.setLocked(true);
@@ -466,7 +372,7 @@
       verdictEl.className = accurate ? "win" : "lose";
       verdictEl.textContent = accurate
         ? "You win! Your creature matches the parts."
-        : `Not this time. Hit ${document.getElementById("restart").textContent} to try again.`;
+        : `Not this time. Hit ${$("restart").textContent} to try again.`;
       verdictEl.hidden = false;
     }
 
@@ -476,8 +382,16 @@
       verdictEl.hidden = true;
     }
 
-    document.getElementById("judge-accurate").addEventListener("click", () => judge(true));
-    document.getElementById("judge-inaccurate").addEventListener("click", () => judge(false));
+    $("judge-accurate").addEventListener("click", () => judge(true));
+    $("judge-inaccurate").addEventListener("click", () => judge(false));
+
+    // A refresh returns to the drawing this tab was on. A new visit starts at home.
+    (async () => {
+      const open = sessionStorage.getItem(OPEN_KEY);
+      const found = await board.drafts();
+      if (open && found[open] && await board.restore(open)) showGame();
+      else showHome();
+    })();
   </script>
 </body>
 </html>
