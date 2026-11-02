@@ -1,0 +1,64 @@
+{
+  "basic": {
+    "head": {
+      "label": "Head",
+      "optional": false,
+      "options": ["Cat", "Dog", "Owl", "Frog", "Elephant", "Giraffe", "Fox", "Rabbit", "Bear", "Penguin", "Octopus", "Crocodile", "Horse", "Pig", "Lion", "Duck", "Shark", "Snail", "Bee", "Hedgehog", "Panda", "Parrot"]
+    },
+    "front_limbs": {
+      "label": "Arms / Front Limbs",
+      "optional": false,
+      "options": ["Gorilla arms", "Crab claws", "T-rex arms", "Cat paws", "Bat arms", "Mantis forelegs", "Mole digging claws", "Kangaroo arms", "Lobster claws", "Penguin flippers", "Squirrel hands", "Octopus tentacles", "Horse hooves", "Sloth arms", "Otter paws", "Scorpion pincers", "Frog hands", "Raccoon hands"]
+    },
+    "back_limbs": {
+      "label": "Legs / Back Limbs",
+      "optional": false,
+      "options": ["Frog legs", "Kangaroo legs", "Horse legs", "Bird legs", "Spider legs", "Grasshopper legs", "Duck feet", "Elephant legs", "Chicken legs", "Dog legs", "Cat legs", "Flamingo legs", "Lizard legs", "Rabbit legs", "Ostrich legs", "Seal flippers", "Beetle legs", "Giraffe legs"]
+    },
+    "tail": {
+      "label": "Tail",
+      "optional": false,
+      "options": ["Fox tail", "Peacock tail", "Lizard tail", "Mermaid tail", "Beaver tail", "Scorpion tail", "Monkey tail", "Cat tail", "Squirrel tail", "Fish tail", "Dragon tail", "Rat tail", "Pig curly tail", "Lion tail", "Rattlesnake rattle", "Whale tail", "Horse tail", "Axolotl tail", "Raccoon tail", "Dinosaur tail"]
+    },
+    "extra": {
+      "label": "Wings / Back / Skin / Extra",
+      "optional": true,
+      "options": ["Butterfly wings", "Dragonfly wings", "Bat wings", "Bird wings", "Fish fins", "Shark fin", "Turtle shell", "Hedgehog spines", "Snail shell", "Porcupine quills", "Beetle shell", "Armadillo shell", "Angel wings", "Dragon wings", "Fairy wings", "Stegosaurus plates", "Camel hump", "Crab shell", "Hermit crab shell", "Ladybug shell", "Pufferfish spikes", "Stingray body"]
+    }
+  },
+  "detailed": {
+    "includes": "basic",
+    "ears": {
+      "label": "Ears",
+      "optional": false,
+      "options": ["Cat ears", "Bear ears", "Rabbit ears", "Elephant ears", "Bat ears", "Fox ears", "Dog floppy ears", "Mouse ears", "Donkey ears", "Fennec fox ears", "Elf ears", "Pig ears", "Owl ear tufts", "Lynx ear tufts", "Human ears", "Deer ears", "Wolf ears", "Koala ears"]
+    },
+    "eyes": {
+      "label": "Eyes",
+      "optional": false,
+      "options": ["Owl eyes", "Frog eyes", "Cat eyes", "Chameleon eyes", "Fly compound eyes", "Spider many eyes", "Snail eye stalks", "Crab eye stalks", "Dog eyes", "Fish eyes", "Goat rectangular pupils", "Bat eyes", "Human eyes", "Octopus eyes", "Lemur eyes", "Cyclops eye", "Sleepy eyes", "Googly eyes"]
+    },
+    "mouth": {
+      "label": "Mouth / Snout",
+      "optional": false,
+      "options": ["Duck bill", "Pig snout", "Crocodile snout", "Elephant trunk", "Toucan beak", "Eagle beak", "Shark teeth", "Cat whiskers and mouth", "Dog snout", "Anteater snout", "Platypus bill", "Pelican bill", "Parrot beak", "Bunny buck teeth", "Frog wide mouth", "Walrus tusks", "Narwhal horn", "Hummingbird beak", "Fanged mouth", "Beaver teeth"]
+    },
+    "skin": {
+      "label": "Skin / Pattern",
+      "optional": true,
+      "options": ["Scales", "Feathers", "Armadillo plates", "Slime", "Bioluminescent spots", "Stripes", "Leopard spots", "Fur", "Tiger stripes", "Zebra stripes", "Giraffe patches", "Cow spots", "Snake diamonds", "Fish scales", "Fluffy wool", "Polka dots", "Rainbow gradient", "Crystal skin", "Mossy skin", "Rock texture", "Galaxy pattern"]
+    },
+    "accessory": {
+      "label": "Accessory",
+      "optional": true,
+      "options": [
+        "Top hat", "Crown", "Helmet", "Halo", "Wizard hat", "Party hat", "Chef hat", "Cowboy hat",
+        "Glasses", "Sunglasses", "Mask", "Monocle", "Ring", "Necklace", "Earrings", "Bow tie",
+        "Scarf", "Cape", "Tutu", "Sweater", "Boots", "Sneakers", "Slippers",
+        "Sword", "Umbrella", "Briefcase", "Lantern", "Magic wand", "Guitar", "Balloon", "Fishing rod",
+        "Backpack", "Tiny passenger", "Big bow", "Saddle", "Jetpack",
+        "Winter theme", "Pirate theme", "Goth theme", "Space theme", "Cowboy theme", "Wizard theme", "Beach theme", "Superhero theme"
+      ]
+    }
+  }
+}

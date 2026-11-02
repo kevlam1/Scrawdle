@@ -2,7 +2,7 @@
 
 A daily drawing game: a new prompt (or a few) each day, a browser canvas with drawing tools (pen, pencil, brush, eraser, paint bucket, lines), and a chance to see what other players drew once you finish your own. Built for artists and for anyone who wants a quick daily creative pastime.
 
-TCSS 490 Artifact 4, built by a team of three: [kevlam1](https://github.com/kevlam1), [arcangieo](https://github.com/arcangieo), [trentenmuw](https://github.com/trentenmuw).
+TCSS 490 Artifact 4, built by a team of four: [kevlam1](https://github.com/kevlam1), [arcangieo](https://github.com/arcangieo), [trentenmuw](https://github.com/trentenmuw), .
 
 **Live at [scrawdle.vercel.app](https://scrawdle.vercel.app)** (currently shows only the placeholder canvas — see Status).
 
@@ -20,7 +20,7 @@ Still in planning — `frontend/` and `backend/` currently hold placeholder scaf
 
 There's no build step and no backend connection yet, so there's just the one placeholder page:
 
-- Open `frontend/index.html` directly in a browser (double-click it, or drag it into a browser window). You should see a canvas you can draw a single line on with a mouse or touch.
-- Or serve it so it behaves more like the real site will once there's a backend: from the repo root, `npx serve frontend` (or `python -m http.server 8000 --directory frontend`), then open the printed address.
+- Serve the frontend folder (opening `index.html` straight from disk won't work, because the page loads `prompts.json` with `fetch`): from the repo root, run `npx serve frontend` (or `python -m http.server 8000 --directory frontend`), then open the printed address.
+- You should see the Basic / Detailed start screen. Pick one to spin the slot machine, then draw on the canvas with a mouse or touch.
 
 There's nothing to install and no `.env` needed yet — `backend/supabase/schema.sql` hasn't been run against a real Supabase project, so there's no database to connect to. Once that exists, this section will need real setup steps (copying `.env.example` to `.env`, filling in Supabase keys).

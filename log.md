@@ -187,8 +187,62 @@ Artifact 4 is "For Someone Else," due Sunday, November 8. My team (me, Angie, Tr
 
 ---
 
+## 11. Temporary prompt "database" as a JSON file (2026-11-01)
+
+**What I asked for**
+- Asked Claude whether a JSON file would be easier than putting prompts in Supabase, then asked it to generate `prompts.json` as a temporary database with two categories: `basic` (head, front limbs, back limbs, tail, optional extra like wings/shell/spines) and `detailed` (all of basic plus ears, eyes, mouth/snout, optional skin/pattern, optional accessory), each filled with a list of animals/things to pull from.
+
+**What changed**
+- `frontend/prompts.json`: new file. `basic` has 5 parts and `detailed` has 5 more, with `"includes": "basic"` so the basic parts aren't copied. Each part has a `label`, an `optional` flag, and an `options` list (18-44 entries each). It lives in `frontend/` because Vercel only serves that folder, so the page can `fetch` it; `backend/` isn't served.
+- Nothing reads it yet. `frontend/index.html` is unchanged, and the draft `daily_prompts` table in `backend/supabase/schema.sql` is now unused for prompts.
+
+**What I checked**
+- Loaded the file with Node: valid JSON, and the option counts per part match what I expected. Did not test it in the browser, since nothing fetches it yet.
+
+**Decisions**
+- Prompts stay in a static JSON file for now. Supabase is still needed later for storing drawings, not for prompts. Option lists are Claude's first draft and can be edited freely.
+- Claude's first two attempts to write the file were denied because I didn't click "Apply" on the permission prompt, not because of a problem with the file.
+
+---
+
+## 12. Start screen, slot machine, and prompt bar (2026-11-01)
+
+**What I asked for**
+- A first page with two boxes, "Basic" and "Detailed", that list what each includes on hover; a "What is this?" button explaining the game and how to play; and, after picking a mode, a slot-machine animation that rolls a random set from `prompts.json` and then shrinks into labeled boxes at the top left, above the existing drawing canvas.
+
+**What changed**
+- `frontend/index.html` rewritten as a single file (inline CSS and JS, no new dependency). Start screen with two mode cards; `<dialog>` for "What is this?"; a full-screen slot overlay with one reel per part that stops one after another; the reels then animate into chips ("Head: Cat") in a bar above the canvas; a "New set" button returns to the start screen. Optional parts are tinted green. Respects `prefers-reduced-motion` (skips the animation). On touch screens, where there's no hover, the include lists are always shown.
+- Kept the placeholder canvas behavior (one pen), but gave it a white fill and made it scale with the screen width.
+- `README.md`: "Running locally" now says the page must be served, since it loads `prompts.json` with `fetch` and opening the file from disk will fail. This corrects entry 9, which said opening the file directly works.
+
+**What I checked**
+- Syntax-checked the page's script with `node --check`: OK. Did not open it in a browser, so the layout, hover behavior and the shrink animation are untested by Claude. Needs a visual check from someone running it.
+
+**Decisions**
+- Optional parts always roll (no way to turn them off yet). "What is this?" only describes what exists today: no daily prompts, gallery or export, since those aren't built.
+- The slot is a JS-driven word shuffle rather than a true scrolling reel, to keep the code small.
+
+---
+
+## 13. Moved "What is this?" and enlarged the canvas (2026-11-01)
+
+**What I asked for**
+- The "What is this?" button overlapped the "New set" button at the top right, so I asked to move it to the bottom left, and to make the drawing box a bit bigger for now.
+
+**What changed**
+- `frontend/index.html`: "What is this?" is now fixed at the bottom left; removed the extra right padding on the prompt bar that was only there to make room for it. Canvas went from 600x400 to 900x600 (still shrinks to fit narrower screens).
+
+**What I checked**
+- Nothing in a browser. These are small CSS/size edits, not run by Claude.
+
+**Decisions**
+- Canvas size is a stopgap until the real layout and tools are decided.
+
+---
+
 ## Where AI misread me, or I had to correct course
 
+- Claude's first version of the start page put "What is this?" in the top right, where it collided with the "New set" button on the game screen. I caught it by running the page; Claude hadn't opened it in a browser.
 - In session 2, I said "while I'm on main branch," but there was no `main` branch yet. Claude didn't assume what I meant — it asked whether to commit to `Angie` instead, create `main` from `Angie`, or stop, and I picked creating `main`.
 - In session 4, I said the two PDFs "should be within the root file." Claude had already searched the repo root and my home folder and found nothing; once I pointed at "the root file," it searched the whole `TCSS 490` folder and found both PDFs in `Unit 4/`, not the repo root.
 
