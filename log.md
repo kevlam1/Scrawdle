@@ -240,6 +240,25 @@ Artifact 4 is "For Someone Else," due Sunday, November 8. My team (me, Angie, Tr
 
 ---
 
+## 14. Self-judged win condition (2026-11-02)
+
+**What I asked for**
+- (Trenten) I want Scrawdle to have a win condition that involves judging the player's drawing. For now, I asked for the player to judge their own drawing as accurate or inaccurate to the parts they rolled.
+
+**What changed**
+- `frontend/index.html`: under the canvas, a "Done? Does your drawing match the parts?" row with **Accurate** and **Inaccurate** buttons. Picking one hides the buttons, shows a verdict ("You win!" in green, or "Not this time" in pink), and locks the canvas so the drawing can't change after it's judged. "New set" brings the buttons back and unlocks the canvas.
+- The "What is this?" help dialog has a new step explaining the judging.
+
+**What I checked**
+- Served `frontend/` locally and drove it in a browser with Claude: rolled a Basic set, drew a stroke, clicked Accurate (win verdict shown, further strokes blocked), clicked New set and rolled again (buttons back, drawing works again), then clicked Inaccurate (lose verdict shown). Didn't check phone widths, where the judge row may sit close to the "What is this?" button.
+
+**Decisions**
+- Self-judging is a stand-in. A real win condition will probably need someone or something other than the player to judge (other players voting, or an automated check). Nothing is saved yet: the verdict only lives on the page.
+- The previous drawing still stays on the canvas after "New set". That's how it already worked, and I didn't change it here.
+- This entry is numbered 14 on `main`. The `zainab` branch also adds entries starting at 14, so the numbers will need fixing when that branch is merged.
+
+---
+
 ## Where AI misread me, or I had to correct course
 
 - Claude's first version of the start page put "What is this?" in the top right, where it collided with the "New set" button on the game screen. I caught it by running the page; Claude hadn't opened it in a browser.

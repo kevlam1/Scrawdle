@@ -166,6 +166,33 @@
     #restart:hover { background: #eee; }
     #stage { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 12px; padding: 1rem; }
     canvas { border: 3px solid var(--ink); background: #fff; touch-action: none; cursor: crosshair; max-width: 100%; height: auto; }
+    canvas.locked { cursor: default; }
+
+    /* ---------- Self-judgement ---------- */
+    #judge { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: .75rem; }
+    #judge .question { margin: 0; font-weight: bold; }
+    .verdict-btn {
+      padding: .4rem 1rem;
+      border: 3px solid var(--ink);
+      border-radius: 10px;
+      box-shadow: 3px 3px 0 var(--ink);
+      font-weight: bold;
+    }
+    .verdict-btn:hover { transform: translate(-1px, -1px); }
+    #judge-accurate { background: var(--accent4); }
+    #judge-inaccurate { background: var(--accent); color: #fff; }
+    #verdict {
+      margin: 0;
+      padding: .5rem 1.25rem;
+      border: 3px solid var(--ink);
+      border-radius: 12px;
+      box-shadow: 4px 4px 0 var(--ink);
+      font-size: 1.2rem;
+      font-weight: bold;
+      transform: rotate(-1deg);
+    }
+    #verdict.win { background: var(--accent4); }
+    #verdict.lose { background: #ffe9e9; }
 
     @media (prefers-reduced-motion: reduce) {
       .reel .word, .reel.landed { animation: none; }
@@ -186,6 +213,7 @@
       <li>Watch the slot machine spin. Whatever it lands on is your set of parts.</li>
       <li>Your parts stay in the top-left corner while you draw. Use your mouse or finger on the canvas.</li>
       <li>Parts marked in green are <i>optional</i>: use them if you like, skip them if you don't.</li>
+      <li>When you're done, judge your own drawing: <b>Accurate</b> if it matches your parts (you win!), <b>Inaccurate</b> if it doesn't.</li>
       <li>Want a different creature? Hit <b>New set</b> to go back and spin again.</li>
     </ol>
   </dialog>
@@ -227,6 +255,12 @@
     <div id="prompt-bar"></div>
     <div id="stage">
       <canvas id="board" width="900" height="600"></canvas>
+      <div id="judge">
+        <p class="question">Done? Does your drawing match the parts?</p>
+        <button class="verdict-btn" id="judge-accurate" type="button">Accurate</button>
+        <button class="verdict-btn" id="judge-inaccurate" type="button">Inaccurate</button>
+      </div>
+      <p id="verdict" role="status" hidden></p>
     </div>
   </section>
 
@@ -331,6 +365,7 @@
       restart.addEventListener("click", showSetup);
       barEl.appendChild(restart);
 
+      resetJudgement();
       setupEl.hidden = true;
       gameEl.hidden = false;
 
@@ -403,6 +438,7 @@
     }
 
     canvas.addEventListener("pointerdown", (e) => {
+      if (judged) return;
       drawing = true;
       const { x, y } = pos(e);
       ctx.beginPath();
@@ -418,6 +454,33 @@
 
     canvas.addEventListener("pointerup", () => { drawing = false; });
     canvas.addEventListener("pointerleave", () => { drawing = false; });
+
+    /* ---------- Self-judgement (the player decides if they won) ---------- */
+    const judgeEl = document.getElementById("judge");
+    const verdictEl = document.getElementById("verdict");
+    let judged = false;
+
+    function judge(accurate) {
+      judged = true;
+      drawing = false;
+      canvas.classList.add("locked");
+      judgeEl.hidden = true;
+      verdictEl.className = accurate ? "win" : "lose";
+      verdictEl.textContent = accurate
+        ? "You win! Your creature matches the parts."
+        : "Not this time. Hit New set to try another creature.";
+      verdictEl.hidden = false;
+    }
+
+    function resetJudgement() {
+      judged = false;
+      canvas.classList.remove("locked");
+      judgeEl.hidden = false;
+      verdictEl.hidden = true;
+    }
+
+    document.getElementById("judge-accurate").addEventListener("click", () => judge(true));
+    document.getElementById("judge-inaccurate").addEventListener("click", () => judge(false));
   </script>
 </body>
 </html>
