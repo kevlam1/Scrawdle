@@ -442,6 +442,24 @@ Artifact 4 is "For Someone Else," due Sunday, November 8. My team (me, Angie, Tr
 
 ---
 
+## 24. Illustrated tool icons (2026-11-02)
+
+**What I asked for**
+- I wanted the tool icons from my design work in the team's game, without bringing over the rest of the redesign.
+
+**What changed**
+- `frontend/assets/tools/`: six illustrations, one each for pen, pencil, brush, line, eraser, and bucket. I split them out of my 884 KB icon sheet because some tools crossed into the next tool's slot. Together they're 68 KB.
+- `frontend/drawing.js` and `frontend/drawing.css`: the six tool buttons show their illustration above their name, and Undo, Redo, and Clear have small line icons beside theirs. What the buttons do hasn't changed.
+
+**What I checked**
+- 16 of 16 logic tests pass. In Chromium at 1280x800, 1280x900, 1024x768, 390x844, and 320x740: all six icons load, every button keeps its word, nothing runs off the screen, and no files are missing. Clicking each picture selects that tool, and Undo, Redo, the brush type dropdown, and locking after a verdict still work.
+- The earlier browser checks from entries 22 and 23 pass again. I didn't check real phones, Safari, or Firefox.
+
+**Decisions**
+- Only the icons moved. The rest of my redesign and online publishing aren't in the team's game.
+
+---
+
 ## Where AI misread me, or I had to correct course
 
 - Claude's first version of the start page put "What is this?" in the top right, where it collided with the "New set" button on the game screen. I caught it by running the page; Claude hadn't opened it in a browser.

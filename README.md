@@ -11,7 +11,7 @@ TCSS 490 Artifact 4, built by a team of four: [kevlam1](https://github.com/kevla
 **Built**
 - Start screen with Basic and Detailed modes, and the slot machine that spins through parts from `frontend/prompts.json`.
 - Daily parts: everyone playing on the same date gets the same ones, with no server needed. Free play gives random parts any time.
-- Drawing tools: pen, pencil, line, eraser, paint bucket, and a brush with seven types (round, marker, calligraphy, crayon, watercolor, spray, dry bristle). Colors and a size for each tool.
+- Drawing tools: pen, pencil, line, eraser, paint bucket, and a brush with seven types (round, marker, calligraphy, crayon, watercolor, spray, dry bristle). Colors and a size for each tool. The tools have illustrated icons.
 - Undo and redo.
 - Auto-save in the browser: a drawing and its prompts survive a refresh, and are cleared when the day changes.
 - Finish screen with a PNG download that includes the prompts and date.
