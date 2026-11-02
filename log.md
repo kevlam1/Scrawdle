@@ -366,6 +366,24 @@ Artifact 4 is "For Someone Else," due Sunday, November 8. My team (me, Angie, Tr
 
 ---
 
+## 20. Replay speeds up by itself (2026-11-01)
+
+**What I asked for**
+- No speed button. Replay should speed up naturally and look graceful, so it gets you to the finished drawing, and it only plays if someone presses the button. This replaces the speed button from entry 19.
+
+**What changed**
+- `frontend/drawing.js`: removed the speed button. Replay now eases in, glides through the middle, and settles on the finished drawing, in about 2 to 4 seconds however long the drawing took.
+- `README.md`: says how replay is paced.
+
+**What I checked**
+- 17 of 17 pacing checks pass in Chromium. A long test drawing took about 4 seconds, was about 6% drawn at 15% of the time, 50% at the halfway point, and 94% at 85%. A small drawing takes about 2 seconds, and a single dot about 1. It ended pixel-for-pixel, including with every brush type. The 14 replay checks, 9 bug checks, 62 other browser checks and 13 logic tests still pass.
+- Not checked: Safari, Firefox, or a real phone.
+
+**Decisions**
+- A very long drawing gets the same 4 seconds as a medium one, so the replay doesn't drag. People who want to see it press the button; otherwise the finish screen just shows the drawing.
+
+---
+
 ## Where AI misread me, or I had to correct course
 
 - Claude's first version of the start page put "What is this?" in the top right, where it collided with the "New set" button on the game screen. I caught it by running the page; Claude hadn't opened it in a browser.

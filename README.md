@@ -15,7 +15,7 @@ TCSS 490 Artifact 4, built by a team of four: [kevlam1](https://github.com/kevla
 - Undo and redo.
 - Auto-save in the browser: a drawing and its prompts survive a refresh, and are cleared when the day changes.
 - Finish screen with a PNG download that includes the prompts and date.
-- Replay: watch your drawing redraw itself stroke by stroke from the finish screen. It starts at 2x speed, and a button changes it to 4x or 1x. It ends on an exact match of the drawing.
+- Replay: watch your drawing redraw itself stroke by stroke from the finish screen. It speeds up smoothly and takes about 2 to 4 seconds, however long the drawing took. It ends on an exact match of the drawing.
 - Gallery after you finish, showing clearly labeled sample doodles until real drawings are connected (see the top of `frontend/gallery.js`).
 
 **Not built yet**
