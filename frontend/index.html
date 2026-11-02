@@ -183,12 +183,13 @@
     <p>Scrawdle is a drawing game. It hands you a random mix of animal parts, and your job is to draw the creature they make together.</p>
     <h3>How to play</h3>
     <ol>
-      <li>Pick <b>Basic</b> (head, arms, legs, tail, plus an optional extra) or <b>Detailed</b> (all of that, plus ears, eyes, mouth and an optional skin pattern).</li>
+      <li>Everyone gets the same parts each day. Pick <b>Basic</b> (head, arms, legs, tail, plus an optional extra) or <b>Detailed</b> (all of that, plus ears, eyes, mouth and an optional skin pattern).</li>
       <li>Watch the slot machine spin. Whatever it lands on is your set of parts.</li>
       <li>Your parts stay in the top-left corner while you draw. Use your mouse, finger or stylus on the canvas, and pick a tool, color and size above it.</li>
       <li>Your drawing saves in this browser as you go. Hit <b>Done</b> to see it finished and download it.</li>
       <li>Parts marked in green are <i>optional</i>: use them if you like, skip them if you don't.</li>
-      <li>Want a different creature? Hit <b>New set</b> to go back and spin again.</li>
+      <li>When you're done, see what other people drew for the same parts.</li>
+      <li>Want a different creature? <b>Free play</b> gives you random parts any time.</li>
     </ol>
   </dialog>
 
@@ -217,6 +218,7 @@
         </ul>
       </button>
     </div>
+    <button class="tool" id="free-play" type="button">Free play: random parts</button>
     <p id="setup-error" hidden></p>
   </main>
 
@@ -233,7 +235,9 @@
     </div>
   </section>
 
+  <script src="daily.js"></script>
   <script src="drawing.js"></script>
+  <script src="gallery.js"></script>
   <script>
     /* ---------- Help dialog ---------- */
     const help = document.getElementById("help");
@@ -311,26 +315,26 @@
       return chip;
     }
 
-    function buildPromptBar(parts, results) {
+    function buildPromptBar(parts, results, daily) {
       barEl.replaceChildren();
       const chips = parts.map((p, i) => makeChip(p, results[i]));
       chips.forEach((c) => barEl.appendChild(c));
       const restart = document.createElement("button");
       restart.id = "restart";
       restart.type = "button";
-      restart.textContent = "New set";
+      restart.textContent = daily ? "Start over" : "New set";
       restart.addEventListener("click", newSet);
       barEl.appendChild(restart);
       return { chips, restart };
     }
 
     function newSet() {
-      if (!board.isEmpty && !confirm("Start a new set? Your current drawing will be lost.")) return;
+      if (!board.isEmpty && !confirm("Start over? Your current drawing will be lost.")) return;
       board.discard();
       showSetup();
     }
 
-    async function start(mode) {
+    async function start(mode, daily = true) {
       errorEl.hidden = true;
       try {
         await loadPrompts();
@@ -341,11 +345,12 @@
       }
 
       const parts = partsFor(mode);
-      const results = parts.map((p) => pickRandom(p.options));
+      const today = ScrawdleDrawing.dayKey();
+      const results = parts.map((p) => (daily ? p.options[ScrawdleDaily.dailyIndex(today, p.key, p.options.length)] : pickRandom(p.options)));
 
       // Build the final prompt bar (hidden until the reels shrink into it).
-      const { chips, restart } = buildPromptBar(parts, results);
-      board.start(mode, parts.map((p, i) => ({ label: p.label, value: results[i], optional: Boolean(p.optional) })));
+      const { chips, restart } = buildPromptBar(parts, results, daily);
+      board.start(mode, parts.map((p, i) => ({ label: p.label, value: results[i], optional: Boolean(p.optional) })), daily);
 
       setupEl.hidden = true;
       gameEl.hidden = false;
@@ -399,18 +404,19 @@
 
     document.getElementById("mode-basic").addEventListener("click", () => start("basic"));
     document.getElementById("mode-detailed").addEventListener("click", () => start("detailed"));
+    document.getElementById("free-play").addEventListener("click", () => start("basic", false));
 
     /* ---------- Drawing board (see drawing.js) ---------- */
     const board = ScrawdleDrawing.createBoard({
       canvas: document.getElementById("board"),
       toolbar: document.getElementById("tools"),
     });
-    ScrawdleDrawing.createFinishScreen(board);
+    ScrawdleDrawing.createFinishScreen(board, ScrawdleGallery.createGallery(board));
 
     // Pick up today's unfinished drawing after a refresh.
     board.restore().then((round) => {
       if (!round) return;
-      buildPromptBar(round.prompts, round.prompts.map((p) => p.value));
+      buildPromptBar(round.prompts, round.prompts.map((p) => p.value), round.daily);
       setupEl.hidden = true;
       gameEl.hidden = false;
     });

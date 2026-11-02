@@ -59,6 +59,7 @@ Replace this with whatever the three of you actually agree on.
 - 2026-10-29: `frontend/` and `backend/` scaffolded as placeholders, at Kevin's request, matching the proposed stack above. `frontend/index.html` is a bare canvas you can draw a single line on with a mouse or touch — no prompts, no tools, no backend connection. `backend/supabase/schema.sql` is a draft schema (`daily_prompts`, `drawings`) and a commented-out `pg_cron` daily-wipe job — not run against any real database, since no Supabase project exists yet. `.env.example` and `.gitignore` added for the Supabase keys the frontend will eventually need. None of this is final; it exists so there's something to build on top of or replace once roles and the stack are actually confirmed by all three of us.
 - `log.md` exists (see "The log protocol" above). Branch workflow is still open, as noted above.
 - 2026-11-01: drawing tools, brush types, undo, auto-save, and the finish screen are built on the `zainab` branch. See `log.md` entry 14 and the README's Status section. The canvas is no longer a placeholder once that branch is merged.
+- 2026-11-01: daily parts (`frontend/daily.js`), Free play, and the post-finish gallery with labeled sample doodles (`frontend/gallery.js`) are also on the `zainab` branch. See `log.md` entry 16. Angie: this changes how the slot machine's result is picked, so please review it.
 
 ## Open questions
 - Team roles: partly assigned (see Team roles above).

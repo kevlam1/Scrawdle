@@ -284,6 +284,29 @@ Artifact 4 is "For Someone Else," due Sunday, November 8. My team (me, Angie, Tr
 
 ---
 
+## 16. Same parts for everyone each day, Free play, and the gallery (2026-11-01)
+
+**What I asked for**
+- Make it an actual daily game, so people draw the same thing and can compare, and show what others drew after finishing (my inspiration idea from the group chat). Nothing that depends on Kevin's database.
+
+**What changed**
+- `frontend/daily.js`: picks each part from the date and the part's name, so everyone on the same date gets the same parts with no server. Detailed shares Basic's parts and adds its own.
+- `frontend/index.html`: the slot machine now lands on the daily parts. Its animation is unchanged. Added a Free play button for random parts, and "New set" reads "Start over" in a daily round, since spinning again gives the same parts. Updated "What is this?".
+- `frontend/gallery.js`: a gallery opened from the finish screen, with your drawing first. Until real drawings are connected it shows five doodles labeled as samples. Anyone connecting it sets `window.scrawdleGallery`, and the samples then disappear.
+- Free play rounds can't be published and don't open the gallery.
+
+**What I checked**
+- `node --test tests/drawing.test.js`: 13 passed, including that picks are repeatable and spread across the options.
+- In Chromium: 25 new checks passed, including two players matching on one date, the next day changing, Free play staying random, a refresh keeping the kind of round, an empty and a failed gallery, and a caption not being able to inject code. The 37 earlier checks still pass.
+- Not checked: real players, since nothing is published yet. Safari, Firefox, and real phones are still untested.
+
+**Decisions**
+- "Today" is the player's local date, so people in different time zones change over at different moments.
+- This replaces random prompts as the default, which the group chat described as how it works for now. The team hasn't agreed to this yet, so it's only on my branch until they've seen it.
+- Changing an options list in `prompts.json` can change that day's parts for anyone loading afterward, so edits shouldn't land mid-day once it's live.
+
+---
+
 ## Where AI misread me, or I had to correct course
 
 - Claude's first version of the start page put "What is this?" in the top right, where it collided with the "New set" button on the game screen. I caught it by running the page; Claude hadn't opened it in a browser.

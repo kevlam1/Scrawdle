@@ -595,9 +595,9 @@
     }
 
     /* --- rounds --- */
-    function start(mode, prompts) {
+    function start(mode, prompts, daily = true) {
       clearTimeout(saveTimer);
-      round = { mode, prompts, day: dayKey() };
+      round = { mode, prompts, daily, day: dayKey() };
       blank();
       history.clear();
       hasDrawing = false;
@@ -616,7 +616,7 @@
       const bitmap = await createImageBitmap(draft.blob);
       ctx.drawImage(bitmap, 0, 0, W, H);
       bitmap.close();
-      round = { mode: draft.mode, prompts: draft.prompts, day: draft.day };
+      round = { mode: draft.mode, prompts: draft.prompts, daily: draft.daily !== false, day: draft.day };
       history.clear();
       hasDrawing = Boolean(draft.hasDrawing);
       refreshToolbar();
@@ -678,7 +678,7 @@
   }
 
   /* ---------- Finish screen ---------- */
-  function createFinishScreen(board) {
+  function createFinishScreen(board, gallery) {
     const dialog = document.createElement("dialog");
     dialog.id = "finish";
     dialog.innerHTML = `
@@ -688,6 +688,7 @@
       <div class="finish-actions">
         <button type="button" class="tool done" data-act="download">Download</button>
         <button type="button" class="tool" data-act="publish">Publish</button>
+        <button type="button" class="tool" data-act="gallery">See today's drawings</button>
         <button type="button" class="tool" data-act="keep">Keep drawing</button>
       </div>
       <p class="finish-note" role="status"></p>`;
@@ -695,6 +696,12 @@
     const img = dialog.querySelector("img");
     const note = dialog.querySelector(".finish-note");
     const publishBtn = dialog.querySelector('[data-act="publish"]');
+    const galleryBtn = dialog.querySelector('[data-act="gallery"]');
+    galleryBtn.addEventListener("click", () => {
+      const shown = url;
+      dialog.close();
+      gallery.show(shown);
+    });
     let url = null;
 
     const release = () => { if (url) URL.revokeObjectURL(url); url = null; };
@@ -727,9 +734,12 @@
         release();
         url = URL.createObjectURL(blob);
         img.src = url;
-        const ready = typeof window.scrawdlePublish === "function";
+        const daily = board.round.daily;
+        const ready = daily && typeof window.scrawdlePublish === "function";
         publishBtn.disabled = !ready;
-        note.textContent = ready ? "" : "Publishing isn't available yet, but you can download your drawing.";
+        galleryBtn.hidden = !daily;
+        note.textContent = !daily ? "Free play drawings aren't published, but you can download yours."
+          : ready ? "" : "Publishing isn't available yet, but you can download your drawing.";
         dialog.showModal();
       }, "image/png");
     };

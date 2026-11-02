@@ -2,6 +2,7 @@
 const test = require("node:test");
 const assert = require("node:assert/strict");
 const { floodFill, History, dayKey } = require("../frontend/drawing.js");
+const { dailyIndex } = require("../frontend/daily.js");
 
 function image(w, h, rgba = [255, 255, 255, 255]) {
   const px = new Uint8ClampedArray(w * h * 4);
@@ -104,4 +105,28 @@ test("history stays inside its memory budget and keeps the newest", () => {
 test("dayKey uses the local date", () => {
   assert.equal(dayKey(new Date(2026, 10, 2, 23, 59)), "2026-11-02");
   assert.equal(dayKey(new Date(2026, 0, 5)), "2026-01-05");
+});
+
+test("everyone gets the same part on the same day", () => {
+  assert.equal(dailyIndex("2026-11-02", "head", 22), dailyIndex("2026-11-02", "head", 22));
+});
+
+test("daily picks stay in range, and vary by day and by part", () => {
+  const days = new Set();
+  const parts = new Set();
+  for (let d = 1; d <= 28; d++) {
+    const i = dailyIndex(`2026-11-${String(d).padStart(2, "0")}`, "head", 22);
+    assert.ok(i >= 0 && i < 22);
+    days.add(i);
+  }
+  for (const key of ["head", "tail", "ears", "eyes", "mouth", "legs", "arms"]) parts.add(dailyIndex("2026-11-02", key, 22));
+  assert.ok(days.size >= 10, `only ${days.size} different picks in 28 days`);
+  assert.ok(parts.size >= 3, `only ${parts.size} different picks across parts`);
+});
+
+test("daily picks are spread across the options", () => {
+  const counts = new Array(20).fill(0);
+  for (let y = 2026; y < 2031; y++) for (let m = 1; m <= 12; m++) for (let d = 1; d <= 28; d++) counts[dailyIndex(`${y}-${m}-${d}`, "tail", 20)]++;
+  const expected = (5 * 12 * 28) / 20;
+  assert.ok(Math.max(...counts) < expected * 2 && Math.min(...counts) > expected / 2, counts.join(","));
 });
