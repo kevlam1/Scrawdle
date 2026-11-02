@@ -36,6 +36,12 @@
   // where it crosses itself. Later strokes still layer over earlier ones.
   const LAYERED = { marker: { alpha: 0.72, blend: "multiply" }, watercolor: { alpha: 0.5, blur: 0.14 } };
 
+  // Versioned so pre-existing replay records retain their original width behavior.
+  function brushWidthFactor(mode, pressure, speed = 0) {
+    if (mode === "bounded") return pressure === null ? 1 : 0.25 + 0.75 * Math.max(0, Math.min(1, pressure));
+    return pressure !== null ? 0.25 + pressure * 1.1 : Math.max(0.55, 1 - speed * 0.08);
+  }
+
   /* ---------- Paint bucket ---------- */
   // Scanline fill on RGBA pixels. Colors within `tolerance` of the clicked one count as the same
   // area, then the fill grows one pixel so it tucks under the soft edges of lines.
@@ -463,13 +469,13 @@
         grow(p.x, p.y, s.width);
         grow(s.last.x, s.last.y, s.width);
       },
-      round(p) { // width follows stylus pressure, or speed for a mouse or finger
+      round(p) { // width follows stylus pressure, within the selected size
         const s = stroke;
         const dist = Math.hypot(p.x - s.last.x, p.y - s.last.y);
         const dt = Math.max(p.t - s.last.t, 4);
         // Average the speed over recent points so one uneven event can't pinch the line.
         s.speed = s.speed * 0.85 + (dist / dt) * 0.15;
-        const factor = p.pressure !== null ? 0.25 + p.pressure * 1.1 : Math.max(0.55, 1 - s.speed * 0.08);
+        const factor = brushWidthFactor(s.widthMode, p.pressure, s.speed);
         const target = s.radius + ((s.width / 2) * factor - s.radius) * 0.25;
         const steps = Math.max(1, Math.ceil(dist / Math.max(1, s.radius / 3)));
         for (let i = 1; i <= steps; i++) {
@@ -490,7 +496,7 @@
       canvas.setPointerCapture(e.pointerId);
       const op = {
         type: "stroke", tool, kind: tool === "brush" ? brushKind : null, color: paintColor(),
-        width: sizes[tool] * SCALE, seed: Math.floor(Math.random() * 4294967296), points: [p],
+        width: sizes[tool] * SCALE, widthMode: "bounded", seed: Math.floor(Math.random() * 4294967296), points: [p],
       };
       openStroke(op);
       stroke.id = e.pointerId;
@@ -505,7 +511,7 @@
       const { tool: strokeTool, kind, width } = op;
       ctx.fillStyle = ctx.strokeStyle = op.color;
       ctx.lineCap = ctx.lineJoin = "round";
-      stroke = { tool: strokeTool, kind, color: op.color, width, random: seededRandom(op.seed), base: ctx.getImageData(0, 0, W, H), start: p, last: p, mid: p, radius: strokeTool === "brush" ? width * 0.4 : width / 2, speed: 0, travel: 0, moved: false, box: { minX: p.x, maxX: p.x, minY: p.y, maxY: p.y } };
+      stroke = { widthMode: op.widthMode, tool: strokeTool, kind, color: op.color, width, random: seededRandom(op.seed), base: ctx.getImageData(0, 0, W, H), start: p, last: p, mid: p, radius: strokeTool === "brush" ? width * 0.4 : width / 2, speed: 0, travel: 0, moved: false, box: { minX: p.x, maxX: p.x, minY: p.y, maxY: p.y } };
       grow(p.x, p.y, width * 1.5 + 3);
       if (LAYERED[kind]) {
         const layer = document.createElement("canvas");
@@ -912,7 +918,7 @@
     };
   }
 
-  const api = { floodFill, History, dayKey };
+  const api = { floodFill, History, dayKey, brushWidthFactor };
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   else root.ScrawdleDrawing = { ...api, createBoard, createFinishScreen, HISTORY_BYTES };
 })(typeof window !== "undefined" ? window : globalThis);

@@ -384,6 +384,24 @@ Artifact 4 is "For Someone Else," due Sunday, November 8. My team (me, Angie, Tr
 
 ---
 
+## 21. Brush width stays steady (2026-11-02)
+
+**What I asked for**
+- Fix the round brush getting thinner when you move the mouse quickly.
+
+**What changed**
+- `frontend/drawing.js`: with a mouse or finger, the round brush now keeps the selected size at any speed. With a stylus, pressure changes the width but it can't go past the selected size. Each new stroke is marked as using this rule, so drawings saved before this change still replay with their original widths.
+- `tests/brush-width.test.js`: new tests for the mouse, the stylus, and older saved drawings.
+
+**What I checked**
+- In Chromium, the same brush at size 24 settled about 14 canvas pixels apart between a slow and a fast stroke before the fix, and within 2 pixels after it. A drawing saved by the old code still replays pixel-for-pixel with the new code. 16 of 16 logic tests pass, as do the 14 replay, 17 replay pacing, 9 bug and 62 other browser checks.
+- Not checked: a physical stylus, Safari, Firefox, or a real phone. The stylus rule was only checked with logic tests.
+
+**Decisions**
+- A stroke still starts slightly thinner and grows to full width over its first few points, whatever the speed.
+
+---
+
 ## Where AI misread me, or I had to correct course
 
 - Claude's first version of the start page put "What is this?" in the top right, where it collided with the "New set" button on the game screen. I caught it by running the page; Claude hadn't opened it in a browser.
