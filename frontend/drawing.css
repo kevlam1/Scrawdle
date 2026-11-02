@@ -1,6 +1,7 @@
 /* Drawing tools and finish screen, in the same doodle style as the rest of the game. */
 #board { width: 900px; height: auto; }
 #board[data-tool="bucket"] { cursor: cell; }
+#board.locked[data-tool] { cursor: default; }
 
 #tools {
   display: flex;

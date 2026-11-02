@@ -184,6 +184,7 @@
     let ops = [];
     let opsAt = 0;
     let canReplay = true;
+    let locked = false; // a judged drawing can't change
     let onDone = () => {};
 
     const rgba = (hex) => [parseInt(hex.slice(1, 3), 16), parseInt(hex.slice(3, 5), 16), parseInt(hex.slice(5, 7), 16), 255];
@@ -241,8 +242,9 @@
       sizeInput.disabled = sizes[tool] === null;
       brushLabel.hidden = tool !== "brush";
       if (sizes[tool] !== null) sizeInput.value = sizes[tool];
-      undoBtn.disabled = !history.canUndo;
-      redoBtn.disabled = !history.canRedo;
+      undoBtn.disabled = locked || !history.canUndo;
+      redoBtn.disabled = locked || !history.canRedo;
+      clearBtn.disabled = locked;
       canvas.dataset.tool = tool;
     }
     function setTool(id) { tool = id; refreshToolbar(); }
@@ -271,17 +273,17 @@
       return out;
     }
     function undo() {
-      if (stroke) return; // finish the stroke first, or history would fall out of order
+      if (locked || stroke) return; // finish the stroke first, or history would fall out of order
       const e = history.undo();
       if (e) { opsAt--; ctx.putImageData(e.before, e.x, e.y); changed(); }
     }
     function redo() {
-      if (stroke) return;
+      if (locked || stroke) return;
       const e = history.redo();
       if (e) { opsAt++; ctx.putImageData(e.after, e.x, e.y); changed(); }
     }
     function clearAll() {
-      if (stroke || isBlank()) return;
+      if (locked || stroke || isBlank()) return;
       const before = ctx.getImageData(0, 0, W, H);
       blank();
       record({ x: 0, y: 0, w: W, h: H }, before, { type: "clear" });
@@ -489,7 +491,7 @@
     };
 
     function begin(e) {
-      if (!e.isPrimary || e.button !== 0 || stroke) return;
+      if (locked || !e.isPrimary || e.button !== 0 || stroke) return;
       e.preventDefault();
       const p = point(e);
       if (tool === "bucket") return fill(p);
@@ -813,10 +815,17 @@
       return out;
     }
 
+    function setLocked(value) {
+      locked = value;
+      canvas.classList.toggle("locked", locked);
+      refreshToolbar();
+    }
+
     refreshToolbar();
     return {
       start, restore, discard, undo, redo, exportCanvas, canvasBlob, replay,
-      save,
+      save, setLocked,
+      get locked() { return locked; },
       get canReplay() { return canReplay && opsAt > 0; },
       get round() { return round; },
       get isEmpty() { return isBlank(); },
@@ -876,8 +885,10 @@
 
     const release = () => { if (url) URL.revokeObjectURL(url); url = null; };
     const close = () => { dialog.close(); release(); };
-    dialog.querySelector(".close").addEventListener("click", close);
-    dialog.querySelector('[data-act="keep"]').addEventListener("click", close);
+    const closeBtn = dialog.querySelector(".close");
+    const keepBtn = dialog.querySelector('[data-act="keep"]');
+    closeBtn.addEventListener("click", close);
+    keepBtn.addEventListener("click", close);
 
     dialog.querySelector('[data-act="download"]').addEventListener("click", () => {
       const a = document.createElement("a");
@@ -910,6 +921,8 @@
         publishBtn.disabled = !ready;
         galleryBtn.hidden = !daily || empty;
         replayBtn.hidden = empty || !board.canReplay;
+        keepBtn.textContent = board.locked ? "Back" : "Keep drawing";
+        closeBtn.setAttribute("aria-label", keepBtn.textContent);
         note.textContent = empty ? "Draw something first."
           : !daily ? "Free play drawings aren't published, but you can download yours."
           : ready ? "" : "Publishing isn't available yet, but you can download your drawing.";

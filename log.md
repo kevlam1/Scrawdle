@@ -399,6 +399,46 @@ Artifact 4 is "For Someone Else," due Sunday, November 8. My team (me, Angie, Tr
 
 **Decisions**
 - A stroke still starts slightly thinner and grows to full width over its first few points, whatever the speed.
+## 22. Self-judged win condition (2026-11-02)
+
+**What I asked for**
+- (Trenten) I want Scrawdle to have a win condition that involves judging the player's drawing. For now, I asked for the player to judge their own drawing as accurate or inaccurate to the parts they rolled.
+
+**What changed**
+- `frontend/index.html`: under the canvas, a "Done? Does your drawing match the parts?" row with **Accurate** and **Inaccurate** buttons. Picking one hides the buttons, shows a verdict ("You win!" in green, or "Not this time" in pink), and locks the canvas so the drawing can't change after it's judged. "New set" brings the buttons back and unlocks the canvas.
+- The "What is this?" help dialog has a new step explaining the judging.
+
+**What I checked**
+- Served `frontend/` locally and drove it in a browser with Claude: rolled a Basic set, drew a stroke, clicked Accurate (win verdict shown, further strokes blocked), clicked New set and rolled again (buttons back, drawing works again), then clicked Inaccurate (lose verdict shown). Didn't check phone widths, where the judge row may sit close to the "What is this?" button.
+
+**Decisions**
+- Self-judging is a stand-in. A real win condition will probably need someone or something other than the player to judge (other players voting, or an automated check). Nothing is saved yet: the verdict only lives on the page.
+- The previous drawing still stays on the canvas after "New set". That's how it already worked, and I didn't change it here.
+- This entry is numbered 14 on `main`. The `zainab` branch also adds entries starting at 14, so the numbers will need fixing when that branch is merged.
+
+---
+
+## 23. Merged the zainab branch into main (2026-11-02)
+
+**What I asked for**
+- My teammates liked what was on the `zainab` branch and asked me to merge it into `main`. Trenten's win condition had reached `main` first, so it needed to keep working after the merge.
+
+**What changed**
+- Trenten's Accurate and Inaccurate buttons were written for the old placeholder canvas, which the drawing board replaced. I moved them onto the board: `frontend/drawing.js` now has `setLocked()`, which blocks new strokes, the paint bucket, Undo, Redo, Clear, and the undo shortcut once a drawing is judged. Starting a new round unlocks it.
+- Done still opens the finish screen after judging, so download, replay, and the gallery keep working. Its "Keep drawing" button says "Back" while the drawing is locked.
+- The "Not this time" verdict now names the button on screen, because daily rounds say "Start over" and only Free play says "New set".
+- `#stage` has more room at the bottom. On phone widths, the "What is this?" button covered Accurate, which Trenten's entry had flagged as unchecked. The row can now scroll clear of it.
+- The help dialog keeps both the judging step and the gallery and Free play steps. `README.md` and `CLAUDE.md` are updated.
+- Trenten's entry is now number 22, as he said it would need to be. Its text is unchanged.
+
+**What I checked**
+- 16 of 16 logic tests pass. In Chromium, on the merged page: 38 checks of judging, locking, starting over, Free play, download, replay, the gallery, and auto-save after a refresh, and the slot machine still lands with its animation on. The 110 earlier browser checks for bugs, replay, replay pacing, brush width, daily parts, and the drawing tools also pass.
+- At 1280x800, 1280x900, 390x844, and 320x740, I clicked both verdict buttons in the browser and nothing covered them. Those phone sizes are narrow Chromium windows. I didn't check real phones, Safari, or Firefox.
+
+**Decisions**
+- A verdict still lives only on the page, as in Trenten's entry, so a refresh brings back the drawing and the buttons.
+- Publishing stays out of this merge. The finish screen still says it isn't available yet, and the gallery still shows labeled samples.
+- Correction to entry 21: it says the brush settled "about 14" canvas pixels apart before the fix. The final measurement was 17.
 
 ---
 
