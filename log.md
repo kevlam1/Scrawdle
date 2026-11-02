@@ -240,6 +240,32 @@ Artifact 4 is "For Someone Else," due Sunday, November 8. My team (me, Angie, Tr
 
 ---
 
+## 14. Drawing tools, undo, auto-save, and the finish screen (2026-11-01)
+
+**What I asked for**
+- Joined the team and took the drawing side, since nobody had started it and everyone is back Tuesday: tools, paint bucket, undo, auto-save, and a finish screen with export. Kevin keeps Supabase and publishing, and Angie's start screen and slot machine stay as they are.
+
+**What changed**
+- `frontend/drawing.js` and `frontend/drawing.css`: new files, kept out of `index.html` to avoid colliding with other work. Pen, pencil, brush, line, eraser, and paint bucket, with colors and a size per tool. Undo and redo (buttons and Ctrl/Cmd+Z) with a 96 MB limit. The drawing and its prompts auto-save in the browser (IndexedDB), come back after a refresh, and are dropped when the day changes. Done opens a finish screen with a PNG download that includes the prompts and date.
+- `frontend/index.html`: replaced the placeholder canvas with the board, moved the prompt bar into its own function so a saved round can rebuild it, added the toolbar spot, and updated "What is this?". "New set" now clears the drawing and asks first if there's anything drawn. Before, the old drawing stayed on the canvas.
+- Canvas is now stored at 1800x1200 and shown at up to 900x600, so lines stay sharp and every drawing is the same size.
+- The brush has seven types that draw differently: round, marker (see-through, doesn't darken where it crosses itself), calligraphy (a slanted nib), crayon (waxy grain), watercolor (soft see-through edge), spray, and dry bristle (hairs that run out of paint).
+- Publish button is off until someone sets `window.scrawdlePublish`. Kevin: the comment at the top of `drawing.js` shows what it receives.
+- `tests/drawing.test.js`: tests for the bucket and undo history, using Node's built-in test runner, so no new dependency.
+
+**What I checked**
+- `node --test tests/drawing.test.js`: 10 passed.
+- Ran the page in Chromium through scripted checks: each tool, exact undo and redo, bucket staying inside a shape, refresh, wrong-day drafts, download, a stand-in publish function including a failed publish, the slot machine, each brush type, and a simulated finger on a phone-size screen. All passed.
+- Not checked: Safari, Firefox, a real phone or stylus. Pressure in the brush is untested on real hardware. Connecting real publishing isn't done.
+
+**Decisions**
+- Eraser paints white instead of making pixels transparent, because the canvas is always white and the bucket and export stay simpler.
+- The bucket treats colors close to the clicked one as the same area, so it fills soft line edges. A gap in a shape will leak, like real paint.
+- Undo doesn't survive a refresh. The drawing does.
+- On a phone, the tools take up most of the first screen and the "What is this?" button overlaps the canvas corner. Left for the team to decide, since that button and layout aren't only mine.
+
+---
+
 ## Where AI misread me, or I had to correct course
 
 - Claude's first version of the start page put "What is this?" in the top right, where it collided with the "New set" button on the game screen. I caught it by running the page; Claude hadn't opened it in a browser.

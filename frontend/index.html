@@ -172,6 +172,7 @@
       .mode, .includes { transition: none; }
     }
   </style>
+  <link rel="stylesheet" href="drawing.css" />
 </head>
 <body>
   <button id="help-btn" type="button">What is this?</button>
@@ -184,7 +185,8 @@
     <ol>
       <li>Pick <b>Basic</b> (head, arms, legs, tail, plus an optional extra) or <b>Detailed</b> (all of that, plus ears, eyes, mouth and an optional skin pattern).</li>
       <li>Watch the slot machine spin. Whatever it lands on is your set of parts.</li>
-      <li>Your parts stay in the top-left corner while you draw. Use your mouse or finger on the canvas.</li>
+      <li>Your parts stay in the top-left corner while you draw. Use your mouse, finger or stylus on the canvas, and pick a tool, color and size above it.</li>
+      <li>Your drawing saves in this browser as you go. Hit <b>Done</b> to see it finished and download it.</li>
       <li>Parts marked in green are <i>optional</i>: use them if you like, skip them if you don't.</li>
       <li>Want a different creature? Hit <b>New set</b> to go back and spin again.</li>
     </ol>
@@ -226,10 +228,12 @@
   <section id="game" hidden>
     <div id="prompt-bar"></div>
     <div id="stage">
-      <canvas id="board" width="900" height="600"></canvas>
+      <div id="tools"></div>
+      <canvas id="board" width="1800" height="1200" aria-label="Drawing canvas"></canvas>
     </div>
   </section>
 
+  <script src="drawing.js"></script>
   <script>
     /* ---------- Help dialog ---------- */
     const help = document.getElementById("help");
@@ -307,6 +311,25 @@
       return chip;
     }
 
+    function buildPromptBar(parts, results) {
+      barEl.replaceChildren();
+      const chips = parts.map((p, i) => makeChip(p, results[i]));
+      chips.forEach((c) => barEl.appendChild(c));
+      const restart = document.createElement("button");
+      restart.id = "restart";
+      restart.type = "button";
+      restart.textContent = "New set";
+      restart.addEventListener("click", newSet);
+      barEl.appendChild(restart);
+      return { chips, restart };
+    }
+
+    function newSet() {
+      if (!board.isEmpty && !confirm("Start a new set? Your current drawing will be lost.")) return;
+      board.discard();
+      showSetup();
+    }
+
     async function start(mode) {
       errorEl.hidden = true;
       try {
@@ -321,15 +344,8 @@
       const results = parts.map((p) => pickRandom(p.options));
 
       // Build the final prompt bar (hidden until the reels shrink into it).
-      barEl.replaceChildren();
-      const chips = parts.map((p, i) => makeChip(p, results[i]));
-      chips.forEach((c) => barEl.appendChild(c));
-      const restart = document.createElement("button");
-      restart.id = "restart";
-      restart.type = "button";
-      restart.textContent = "New set";
-      restart.addEventListener("click", showSetup);
-      barEl.appendChild(restart);
+      const { chips, restart } = buildPromptBar(parts, results);
+      board.start(mode, parts.map((p, i) => ({ label: p.label, value: results[i], optional: Boolean(p.optional) })));
 
       setupEl.hidden = true;
       gameEl.hidden = false;
@@ -384,40 +400,20 @@
     document.getElementById("mode-basic").addEventListener("click", () => start("basic"));
     document.getElementById("mode-detailed").addEventListener("click", () => start("detailed"));
 
-    /* ---------- Drawing canvas (unchanged placeholder behavior) ---------- */
-    const canvas = document.getElementById("board");
-    const ctx = canvas.getContext("2d");
-    ctx.fillStyle = "#fff";
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-    ctx.lineWidth = 3;
-    ctx.lineCap = "round";
-
-    let drawing = false;
-
-    function pos(e) {
-      const rect = canvas.getBoundingClientRect();
-      return {
-        x: (e.clientX - rect.left) * (canvas.width / rect.width),
-        y: (e.clientY - rect.top) * (canvas.height / rect.height)
-      };
-    }
-
-    canvas.addEventListener("pointerdown", (e) => {
-      drawing = true;
-      const { x, y } = pos(e);
-      ctx.beginPath();
-      ctx.moveTo(x, y);
+    /* ---------- Drawing board (see drawing.js) ---------- */
+    const board = ScrawdleDrawing.createBoard({
+      canvas: document.getElementById("board"),
+      toolbar: document.getElementById("tools"),
     });
+    ScrawdleDrawing.createFinishScreen(board);
 
-    canvas.addEventListener("pointermove", (e) => {
-      if (!drawing) return;
-      const { x, y } = pos(e);
-      ctx.lineTo(x, y);
-      ctx.stroke();
+    // Pick up today's unfinished drawing after a refresh.
+    board.restore().then((round) => {
+      if (!round) return;
+      buildPromptBar(round.prompts, round.prompts.map((p) => p.value));
+      setupEl.hidden = true;
+      gameEl.hidden = false;
     });
-
-    canvas.addEventListener("pointerup", () => { drawing = false; });
-    canvas.addEventListener("pointerleave", () => { drawing = false; });
   </script>
 </body>
 </html>
