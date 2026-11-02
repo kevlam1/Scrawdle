@@ -15,11 +15,13 @@ TCSS 490 Artifact 4, built by a team of four: [kevlam1](https://github.com/kevla
 - Undo and redo.
 - Auto-save in the browser: a drawing and its prompts survive a refresh, and are cleared when the day changes.
 - Finish screen with a PNG download that includes the prompts and date.
+- Replay: watch your drawing redraw itself stroke by stroke from the finish screen. It ends on an exact match of the drawing.
 - Gallery after you finish, showing clearly labeled sample doodles until real drawings are connected (see the top of `frontend/gallery.js`).
 
 **Not built yet**
 - Publishing, and real players' drawings in the gallery. The Publish button stays off until publishing is connected (see the top of `frontend/drawing.js`).
 - Reporting or hiding drawings, which a public gallery will need.
+- Replaying other players' drawings. Replay only works on your own for now.
 - The database. `backend/supabase/schema.sql` is a draft and hasn't been run against a real Supabase project.
 
 **Live site:** it deploys from `main`, so it only shows what has been merged. A `vercel.json` was added to fix a 404 at `/`, and nobody has confirmed the fix after a deploy.

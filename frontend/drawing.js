@@ -159,7 +159,7 @@
 
   /* ---------- The board ---------- */
   function createBoard({ canvas, toolbar }) {
-    const ctx = canvas.getContext("2d", { willReadFrequently: true });
+    let ctx = canvas.getContext("2d", { willReadFrequently: true });
     const W = canvas.width;
     const H = canvas.height;
     const history = new History(HISTORY_BYTES);
@@ -174,6 +174,10 @@
     let saveGeneration = 0; // a slower, older save must never overwrite a newer state
     let unsaved = false;
     let openDb = null; // kept open so a last save can start while the page is closing
+    // Everything drawn, in order, so it can be replayed. opsAt moves with undo and redo.
+    let ops = [];
+    let opsAt = 0;
+    let canReplay = true;
     let onDone = () => {};
 
     const rgba = (hex) => [parseInt(hex.slice(1, 3), 16), parseInt(hex.slice(3, 5), 16), parseInt(hex.slice(5, 7), 16), 255];
@@ -181,6 +185,12 @@
     const blank = () => { ctx.fillStyle = "#fff"; ctx.fillRect(0, 0, W, H); };
     blank();
     const isBlank = () => new Uint32Array(ctx.getImageData(0, 0, W, H).data.buffer).every((px) => px === 0xffffffff);
+    const seededRandom = (seed) => () => {
+      seed = (seed + 0x6d2b79f5) | 0;
+      let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
+      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
 
     /* --- toolbar --- */
     const el = (tag, props, ...kids) => {
@@ -238,9 +248,12 @@
     }
 
     /* --- history --- */
-    function record(rect, before) {
+    function record(rect, before, op) {
       if (!rect || rect.w <= 0 || rect.h <= 0) return;
       history.push({ x: rect.x, y: rect.y, before, after: ctx.getImageData(rect.x, rect.y, rect.w, rect.h) });
+      ops.length = opsAt;
+      ops.push(op);
+      opsAt = ops.length;
       changed();
     }
     function crop(source, rect) {
@@ -254,18 +267,18 @@
     function undo() {
       if (stroke) return; // finish the stroke first, or history would fall out of order
       const e = history.undo();
-      if (e) { ctx.putImageData(e.before, e.x, e.y); changed(); }
+      if (e) { opsAt--; ctx.putImageData(e.before, e.x, e.y); changed(); }
     }
     function redo() {
       if (stroke) return;
       const e = history.redo();
-      if (e) { ctx.putImageData(e.after, e.x, e.y); changed(); }
+      if (e) { opsAt++; ctx.putImageData(e.after, e.x, e.y); changed(); }
     }
     function clearAll() {
       if (stroke || isBlank()) return;
       const before = ctx.getImageData(0, 0, W, H);
       blank();
-      record({ x: 0, y: 0, w: W, h: H }, before);
+      record({ x: 0, y: 0, w: W, h: H }, before, { type: "clear" });
     }
     function changed() {
       refreshToolbar();
@@ -344,9 +357,9 @@
           const y = s.last.y + ((p.y - s.last.y) * i) / steps;
           const grains = Math.ceil(spread * 1.1) + 1;
           for (let g = 0; g < grains; g++) {
-            const a = Math.random() * Math.PI * 2;
-            const r = Math.random() * spread;
-            ctx.globalAlpha = 0.2 + Math.random() * 0.45;
+            const a = s.random() * Math.PI * 2;
+            const r = s.random() * spread;
+            ctx.globalAlpha = 0.2 + s.random() * 0.45;
             ctx.fillRect(x + Math.cos(a) * r, y + Math.sin(a) * r, 1.6, 1.6);
           }
         }
@@ -370,7 +383,7 @@
         s.mid = mid;
         grow(p.x, p.y, s.width * 1.5);
         grow(s.last.x, s.last.y, s.width * 1.5);
-        showLayer();
+        if (!s.quiet) showLayer(); // a replay shows the layer once per frame instead
       },
       calligraphy(p) { // a slanted nib: thick one way, thin the other
         const s = stroke;
@@ -414,10 +427,10 @@
         const dist = Math.hypot(p.x - s.last.x, p.y - s.last.y);
         const dots = Math.ceil(10 + r * 0.8 + dist * 2);
         for (let i = 0; i < dots; i++) {
-          const a = Math.random() * Math.PI * 2;
-          const d = r * Math.pow(Math.random(), 1.6);
-          const t = Math.random();
-          ctx.globalAlpha = 0.35 + Math.random() * 0.5;
+          const a = s.random() * Math.PI * 2;
+          const d = r * Math.pow(s.random(), 1.6);
+          const t = s.random();
+          ctx.globalAlpha = 0.35 + s.random() * 0.5;
           ctx.fillRect(s.last.x + (p.x - s.last.x) * t + Math.cos(a) * d, s.last.y + (p.y - s.last.y) * t + Math.sin(a) * d, 2, 2);
         }
         ctx.globalAlpha = 1;
@@ -475,10 +488,24 @@
       const p = point(e);
       if (tool === "bucket") return fill(p);
       canvas.setPointerCapture(e.pointerId);
-      const width = sizes[tool] * SCALE;
-      ctx.fillStyle = ctx.strokeStyle = paintColor();
-      const kind = tool === "brush" ? brushKind : null;
-      stroke = { id: e.pointerId, tool, kind, color: paintColor(), width, base: ctx.getImageData(0, 0, W, H), start: p, last: p, mid: p, radius: tool === "brush" ? width * 0.4 : width / 2, speed: 0, travel: 0, moved: false, box: { minX: p.x, maxX: p.x, minY: p.y, maxY: p.y } };
+      const op = {
+        type: "stroke", tool, kind: tool === "brush" ? brushKind : null, color: paintColor(),
+        width: sizes[tool] * SCALE, seed: Math.floor(Math.random() * 4294967296), points: [p],
+      };
+      openStroke(op);
+      stroke.id = e.pointerId;
+      stroke.op = op;
+      if (op.kind === "spray") {
+        stroke.timer = setInterval(() => { if (stroke && stroke.kind === "spray") addPoint(stroke.last); }, 50);
+      }
+    }
+    // Starts a stroke from its recorded settings. Live drawing and replay both use this.
+    function openStroke(op) {
+      const p = op.points[0];
+      const { tool: strokeTool, kind, width } = op;
+      ctx.fillStyle = ctx.strokeStyle = op.color;
+      ctx.lineCap = ctx.lineJoin = "round";
+      stroke = { tool: strokeTool, kind, color: op.color, width, random: seededRandom(op.seed), base: ctx.getImageData(0, 0, W, H), start: p, last: p, mid: p, radius: strokeTool === "brush" ? width * 0.4 : width / 2, speed: 0, travel: 0, moved: false, box: { minX: p.x, maxX: p.x, minY: p.y, maxY: p.y } };
       grow(p.x, p.y, width * 1.5 + 3);
       if (LAYERED[kind]) {
         const layer = document.createElement("canvas");
@@ -495,20 +522,22 @@
       } else if (kind === "bristle") {
         const count = Math.max(6, Math.round(width / 2));
         stroke.hairs = Array.from({ length: count }, () => ({
-          at: (Math.random() - 0.5) * width,
-          width: 0.8 + Math.random() * 2.2,
-          alpha: 0.45 + Math.random() * 0.55,
-          reach: 300 + Math.random() * 1500,
+          at: (stroke.random() - 0.5) * width,
+          width: 0.8 + stroke.random() * 2.2,
+          alpha: 0.45 + stroke.random() * 0.55,
+          reach: 300 + stroke.random() * 1500,
         }));
         draw.bristle({ ...p, x: p.x + 0.8 });
       } else if (kind === "calligraphy") draw.calligraphy(p);
       else if (kind === "crayon") draw.crayon(p);
-      else if (kind === "spray") {
-        draw.spray(p);
-        stroke.timer = setInterval(() => { if (stroke && stroke.kind === "spray") draw.spray(stroke.last); }, 50);
-      } else if (tool === "brush") dab(p.x, p.y, stroke.radius);
-      else if (tool === "pencil") draw.pencil(p);
-      else if (tool !== "line") dab(p.x, p.y, width / 2);
+      else if (kind === "spray") draw.spray(p);
+      else if (strokeTool === "brush") dab(p.x, p.y, stroke.radius);
+      else if (strokeTool === "pencil") draw.pencil(p);
+      else if (strokeTool !== "line") dab(p.x, p.y, width / 2);
+    }
+    function addPoint(p) {
+      stroke.op.points.push(p);
+      extend(p);
     }
     function extend(p) {
       const s = stroke;
@@ -530,10 +559,16 @@
     function move(e) {
       if (!stroke || e.pointerId !== stroke.id) return;
       const events = e.getCoalescedEvents ? e.getCoalescedEvents() : [];
-      for (const ev of events.length ? events : [e]) extend(point(ev));
+      for (const ev of events.length ? events : [e]) addPoint(point(ev));
     }
     function end(e) {
       if (!stroke || e.pointerId !== stroke.id) return;
+      const op = stroke.op;
+      const s = closeStroke();
+      const rect = boxRect(s.box);
+      record(rect, crop(s.base, rect), op);
+    }
+    function closeStroke() {
       const s = stroke;
       if (s.moved && (s.tool === "pen" || s.tool === "eraser")) {
         ctx.lineWidth = s.width;
@@ -554,17 +589,72 @@
       }
       clearInterval(s.timer);
       stroke = null;
-      const rect = boxRect(s.box);
-      record(rect, crop(s.base, rect));
+      return s;
     }
-    function fill(p) {
+    function fillAt(x, y, fillColor) {
       const image = ctx.getImageData(0, 0, W, H);
       const before = ctx.getImageData(0, 0, W, H);
-      const rect = floodFill(image.data, W, H, p.x, p.y, rgba(color), 40);
-      if (!rect) return;
-      ctx.putImageData(image, 0, 0);
-      record(rect, crop(before, rect));
+      const rect = floodFill(image.data, W, H, x, y, rgba(fillColor), 40);
+      if (rect) ctx.putImageData(image, 0, 0);
+      return { rect, before };
     }
+    function fill(p) {
+      const { rect, before } = fillAt(p.x, p.y, color);
+      if (rect) record(rect, crop(before, rect), { type: "fill", x: p.x, y: p.y, color });
+    }
+
+    /* --- replay: redraws the recorded strokes on another canvas, with the same code --- */
+    function replay(target, { onEnd, instant = false } = {}) {
+      target.width = W;
+      target.height = H;
+      const replayCtx = target.getContext("2d", { willReadFrequently: true });
+      const steps = ops.slice(0, opsAt);
+      const units = steps.reduce((sum, op) => sum + (op.points ? op.points.length + 1 : 1), 0) || 1;
+      const duration = Math.min(10000, Math.max(2500, units * 16));
+      let opIndex = 0;
+      let pointIndex = 0;
+      let replayStroke = null;
+      let frame = 0;
+      let last = performance.now();
+      // The drawing code uses `ctx` and `stroke`, so lend it the replay's for a moment.
+      const inReplay = (fn) => {
+        const realCtx = ctx;
+        const realStroke = stroke;
+        ctx = replayCtx;
+        stroke = replayStroke;
+        try { fn(); } finally {
+          replayStroke = stroke;
+          ctx = realCtx;
+          stroke = realStroke;
+        }
+      };
+      inReplay(blank);
+      const advance = (budget) => {
+        while (budget > 0 && opIndex < steps.length) {
+          const op = steps[opIndex];
+          budget--;
+          if (op.type === "clear") { blank(); opIndex++; }
+          else if (op.type === "fill") { fillAt(op.x, op.y, op.color); opIndex++; }
+          else if (!stroke) { openStroke(op); stroke.quiet = true; pointIndex = 1; }
+          else if (pointIndex < op.points.length) extend(op.points[pointIndex++]);
+          else { closeStroke(); opIndex++; }
+        }
+        if (stroke && stroke.layer) showLayer();
+      };
+      const tick = (now) => {
+        const budget = Math.max(1, Math.ceil((units * (now - last)) / duration));
+        last = now;
+        inReplay(() => advance(budget));
+        if (opIndex < steps.length) frame = requestAnimationFrame(tick);
+        else if (onEnd) onEnd();
+      };
+      if (instant) {
+        inReplay(() => advance(Infinity));
+        if (onEnd) onEnd();
+      } else frame = requestAnimationFrame(tick);
+      return () => cancelAnimationFrame(frame);
+    }
+
     canvas.addEventListener("pointerdown", begin);
     canvas.addEventListener("pointermove", move);
     canvas.addEventListener("pointerup", end);
@@ -591,13 +681,14 @@
     function canvasBlob() {
       return new Promise((resolve) => canvas.toBlob(resolve, "image/png"));
     }
+    const draftOf = (image) => ({ ...round, ...image, ops: ops.slice(0, opsAt), canReplay, savedAt: Date.now() });
     async function save() {
       if (!round) return;
       const generation = saveGeneration;
       try {
         const blob = await canvasBlob();
         if (generation !== saveGeneration || !round) return;
-        await draftStore.put({ ...round, blob, savedAt: Date.now() });
+        await draftStore.put(draftOf({ blob }));
         if (generation !== saveGeneration) return;
         unsaved = false;
         setStatus("Saved in this browser");
@@ -612,7 +703,7 @@
       saveGeneration++;
       try {
         const tx = openDb.transaction("drafts", "readwrite");
-        tx.objectStore("drafts").put({ ...round, dataUrl: canvas.toDataURL("image/png"), savedAt: Date.now() }, "current");
+        tx.objectStore("drafts").put(draftOf({ dataUrl: canvas.toDataURL("image/png") }), "current");
         if (tx.commit) tx.commit(); // don't let the page closing abort it
         unsaved = false;
       } catch (err) { /* the 400 ms save may already have it */ }
@@ -629,6 +720,9 @@
       round = { mode, prompts, daily, day: dayKey() };
       blank();
       history.clear();
+      ops = [];
+      opsAt = 0;
+      canReplay = true;
       refreshToolbar();
       return save();
     }
@@ -650,6 +744,9 @@
         await draftStore.remove().catch(() => {});
         return null;
       }
+      ops = Array.isArray(draft.ops) ? draft.ops : [];
+      opsAt = ops.length;
+      canReplay = Array.isArray(draft.ops) && draft.canReplay !== false;
       round = { mode: draft.mode, prompts: draft.prompts, daily: draft.daily !== false, day: draft.day };
       history.clear();
       refreshToolbar();
@@ -663,6 +760,9 @@
       round = null;
       blank();
       history.clear();
+      ops = [];
+      opsAt = 0;
+      canReplay = true;
       setStatus("");
       refreshToolbar();
       return draftStore.remove().catch(() => {});
@@ -703,8 +803,9 @@
 
     refreshToolbar();
     return {
-      start, restore, discard, undo, redo, exportCanvas, canvasBlob,
+      start, restore, discard, undo, redo, exportCanvas, canvasBlob, replay,
       save,
+      get canReplay() { return canReplay && opsAt > 0; },
       get round() { return round; },
       get isEmpty() { return isBlank(); },
       set onDone(fn) { onDone = fn; },
@@ -719,7 +820,9 @@
       <button class="close" type="button" aria-label="Keep drawing">&times;</button>
       <h2>Nice work!</h2>
       <img alt="Your finished drawing with its prompts and date">
+      <canvas class="replay" hidden aria-label="Your drawing being redrawn"></canvas>
       <div class="finish-actions">
+        <button type="button" class="tool" data-act="replay">Watch it redraw</button>
         <button type="button" class="tool done" data-act="download">Download</button>
         <button type="button" class="tool" data-act="publish">Publish</button>
         <button type="button" class="tool" data-act="gallery">See today's drawings</button>
@@ -731,6 +834,27 @@
     const note = dialog.querySelector(".finish-note");
     const publishBtn = dialog.querySelector('[data-act="publish"]');
     const galleryBtn = dialog.querySelector('[data-act="gallery"]');
+    const replayBtn = dialog.querySelector('[data-act="replay"]');
+    const replayCanvas = dialog.querySelector(".replay");
+    let stopReplay = () => {};
+    replayBtn.addEventListener("click", () => {
+      stopReplay();
+      img.hidden = true;
+      replayCanvas.hidden = false;
+      replayBtn.disabled = true;
+      stopReplay = board.replay(replayCanvas, {
+        instant: window.matchMedia("(prefers-reduced-motion: reduce)").matches,
+        onEnd: () => { replayBtn.disabled = false; replayBtn.textContent = "Watch again"; dialog.dataset.replayed = "true"; },
+      });
+    });
+    dialog.addEventListener("close", () => {
+      stopReplay();
+      img.hidden = false;
+      replayCanvas.hidden = true;
+      replayBtn.disabled = false;
+      replayBtn.textContent = "Watch it redraw";
+      delete dialog.dataset.replayed;
+    });
     galleryBtn.addEventListener("click", () => {
       const shown = url;
       dialog.close();
@@ -773,6 +897,7 @@
         const ready = daily && !empty && typeof window.scrawdlePublish === "function";
         publishBtn.disabled = !ready;
         galleryBtn.hidden = !daily || empty;
+        replayBtn.hidden = empty || !board.canReplay;
         note.textContent = empty ? "Draw something first."
           : !daily ? "Free play drawings aren't published, but you can download yours."
           : ready ? "" : "Publishing isn't available yet, but you can download your drawing.";

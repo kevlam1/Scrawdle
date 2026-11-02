@@ -329,6 +329,25 @@ Artifact 4 is "For Someone Else," due Sunday, November 8. My team (me, Angie, Tr
 
 ---
 
+## 18. Replay (2026-11-01)
+
+**What I asked for**
+- Something impressive: watch a drawing redraw itself stroke by stroke.
+
+**What changed**
+- `frontend/drawing.js`: every stroke, fill and clear is recorded as you draw, and saved with the draft. A "Watch it redraw" button on the finish screen plays them back on a separate canvas using the same drawing code, in 2.5 to 10 seconds depending on length. Brushes with random texture now use a saved seed, so they come out the same each time.
+- `frontend/drawing.css`, `README.md`, `frontend/README.md`: styling for the replay and notes that it exists.
+
+**What I checked**
+- 14 of 14 replay checks pass in Chromium. The main one uses every tool and brush type plus undo, redo and clear, and the replay ends pixel-for-pixel on the drawing, including after a refresh. The 9 bug checks, 62 other browser checks and 13 logic tests still pass.
+- Not checked: Safari, Firefox, a real phone, or how it performs on a very long drawing.
+
+**Decisions**
+- Replay only works on your own drawing. Showing it in the gallery means publishing the strokes too, which depends on the database.
+- A save from before this feature has no strokes, so the button is hidden for it.
+
+---
+
 ## Where AI misread me, or I had to correct course
 
 - Claude's first version of the start page put "What is this?" in the top right, where it collided with the "New set" button on the game screen. I caught it by running the page; Claude hadn't opened it in a browser.
