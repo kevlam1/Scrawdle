@@ -169,15 +169,18 @@
     let filterWorks = "filter" in ctx;
     let color = COLORS[0];
     let round = null; // { mode, prompts, day }
-    let hasDrawing = false;
     let stroke = null;
     let saveTimer = null;
+    let saveGeneration = 0; // a slower, older save must never overwrite a newer state
+    let unsaved = false;
+    let openDb = null; // kept open so a last save can start while the page is closing
     let onDone = () => {};
 
     const rgba = (hex) => [parseInt(hex.slice(1, 3), 16), parseInt(hex.slice(3, 5), 16), parseInt(hex.slice(5, 7), 16), 255];
     const paintColor = () => (tool === "eraser" ? "#ffffff" : color);
     const blank = () => { ctx.fillStyle = "#fff"; ctx.fillRect(0, 0, W, H); };
     blank();
+    const isBlank = () => new Uint32Array(ctx.getImageData(0, 0, W, H).data.buffer).every((px) => px === 0xffffffff);
 
     /* --- toolbar --- */
     const el = (tag, props, ...kids) => {
@@ -249,20 +252,22 @@
       return out;
     }
     function undo() {
+      if (stroke) return; // finish the stroke first, or history would fall out of order
       const e = history.undo();
       if (e) { ctx.putImageData(e.before, e.x, e.y); changed(); }
     }
     function redo() {
+      if (stroke) return;
       const e = history.redo();
       if (e) { ctx.putImageData(e.after, e.x, e.y); changed(); }
     }
     function clearAll() {
+      if (stroke || isBlank()) return;
       const before = ctx.getImageData(0, 0, W, H);
       blank();
       record({ x: 0, y: 0, w: W, h: H }, before);
     }
     function changed() {
-      hasDrawing = true;
       refreshToolbar();
       scheduleSave();
     }
@@ -564,6 +569,7 @@
     canvas.addEventListener("pointermove", move);
     canvas.addEventListener("pointerup", end);
     canvas.addEventListener("pointercancel", end);
+    canvas.addEventListener("lostpointercapture", end); // the browser can drop a stroke with no pointerup
     canvas.addEventListener("contextmenu", (e) => e.preventDefault());
 
     document.addEventListener("keydown", (e) => {
@@ -577,6 +583,8 @@
     function setStatus(text) { status.textContent = text; }
     function scheduleSave() {
       clearTimeout(saveTimer);
+      saveGeneration++;
+      unsaved = true;
       setStatus("Saving...");
       saveTimer = setTimeout(save, 400);
     }
@@ -585,22 +593,42 @@
     }
     async function save() {
       if (!round) return;
+      const generation = saveGeneration;
       try {
         const blob = await canvasBlob();
-        await draftStore.put({ ...round, blob, hasDrawing, savedAt: Date.now() });
+        if (generation !== saveGeneration || !round) return;
+        await draftStore.put({ ...round, blob, savedAt: Date.now() });
+        if (generation !== saveGeneration) return;
+        unsaved = false;
         setStatus("Saved in this browser");
       } catch (err) {
         setStatus("Couldn't save. Download your drawing to keep it.");
       }
     }
+    // The page may be closing, so nothing here can wait. Start the write and let it finish.
+    function saveNow() {
+      if (!unsaved || !round || !openDb) return;
+      clearTimeout(saveTimer);
+      saveGeneration++;
+      try {
+        const tx = openDb.transaction("drafts", "readwrite");
+        tx.objectStore("drafts").put({ ...round, dataUrl: canvas.toDataURL("image/png"), savedAt: Date.now() }, "current");
+        if (tx.commit) tx.commit(); // don't let the page closing abort it
+        unsaved = false;
+      } catch (err) { /* the 400 ms save may already have it */ }
+    }
+    draftStore.open().then((db) => { openDb = db; }).catch(() => {});
+    window.addEventListener("pagehide", saveNow);
+    document.addEventListener("visibilitychange", () => { if (document.visibilityState === "hidden") saveNow(); });
 
     /* --- rounds --- */
     function start(mode, prompts, daily = true) {
       clearTimeout(saveTimer);
+      saveGeneration++;
+      unsaved = false;
       round = { mode, prompts, daily, day: dayKey() };
       blank();
       history.clear();
-      hasDrawing = false;
       refreshToolbar();
       return save();
     }
@@ -613,22 +641,28 @@
         await draftStore.remove().catch(() => {});
         return null;
       }
-      const bitmap = await createImageBitmap(draft.blob);
-      ctx.drawImage(bitmap, 0, 0, W, H);
-      bitmap.close();
+      try {
+        const source = draft.blob || await (await fetch(draft.dataUrl)).blob();
+        const bitmap = await createImageBitmap(source);
+        ctx.drawImage(bitmap, 0, 0, W, H);
+        bitmap.close();
+      } catch (err) { // a damaged save shouldn't stop the game from opening
+        await draftStore.remove().catch(() => {});
+        return null;
+      }
       round = { mode: draft.mode, prompts: draft.prompts, daily: draft.daily !== false, day: draft.day };
       history.clear();
-      hasDrawing = Boolean(draft.hasDrawing);
       refreshToolbar();
       setStatus("Saved in this browser");
       return round;
     }
     function discard() {
       clearTimeout(saveTimer);
+      saveGeneration++;
+      unsaved = false;
       round = null;
       blank();
       history.clear();
-      hasDrawing = false;
       setStatus("");
       refreshToolbar();
       return draftStore.remove().catch(() => {});
@@ -672,7 +706,7 @@
       start, restore, discard, undo, redo, exportCanvas, canvasBlob,
       save,
       get round() { return round; },
-      get isEmpty() { return !hasDrawing; },
+      get isEmpty() { return isBlank(); },
       set onDone(fn) { onDone = fn; },
     };
   }
@@ -735,10 +769,12 @@
         url = URL.createObjectURL(blob);
         img.src = url;
         const daily = board.round.daily;
-        const ready = daily && typeof window.scrawdlePublish === "function";
+        const empty = board.isEmpty;
+        const ready = daily && !empty && typeof window.scrawdlePublish === "function";
         publishBtn.disabled = !ready;
-        galleryBtn.hidden = !daily;
-        note.textContent = !daily ? "Free play drawings aren't published, but you can download yours."
+        galleryBtn.hidden = !daily || empty;
+        note.textContent = empty ? "Draw something first."
+          : !daily ? "Free play drawings aren't published, but you can download yours."
           : ready ? "" : "Publishing isn't available yet, but you can download your drawing.";
         dialog.showModal();
       }, "image/png");

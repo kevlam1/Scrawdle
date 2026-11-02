@@ -307,6 +307,28 @@ Artifact 4 is "For Someone Else," due Sunday, November 8. My team (me, Angie, Tr
 
 ---
 
+## 17. Fixed seven bugs (2026-11-01)
+
+**What I asked for**
+- Find and fix real bugs in the drawing side. Each one was reproduced with a failing check before I fixed it.
+
+**What changed**
+- `frontend/drawing.js`:
+- A stroke the browser dropped with no pointerup left the board stuck. The board now ends the stroke when the pointer capture is lost.
+- Undo during a stroke put history out of order, so undo, redo and Clear now wait for the stroke to finish.
+- A damaged save threw an error on load. It's now removed and the start screen opens.
+- A blank drawing could be published and could open the gallery. Both are now blocked, and the finish screen says to draw something first.
+- Clear on a blank canvas added a pointless undo step.
+- Start over warned about losing a drawing even when everything had been undone. It now checks the canvas itself.
+- Refreshing right after a stroke lost that stroke, because the save waits 400 ms. The page now saves as it closes.
+- Also made a slower, older save unable to overwrite a newer state. That check already passed before the change, so it's a precaution, not a reproduced bug.
+
+**What I checked**
+- In Chromium, 2 of 9 bug checks passed before the fixes and 9 of 9 pass now. The 62 earlier browser checks and 13 logic tests still pass.
+- Not checked: Safari, Firefox, or a real phone. The save on closing relies on `transaction.commit()`, which I haven't tested in Safari or Firefox.
+
+---
+
 ## Where AI misread me, or I had to correct course
 
 - Claude's first version of the start page put "What is this?" in the top right, where it collided with the "New set" button on the game screen. I caught it by running the page; Claude hadn't opened it in a browser.
