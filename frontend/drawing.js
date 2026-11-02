@@ -604,7 +604,7 @@
     }
 
     /* --- replay: redraws the recorded strokes on another canvas, with the same code --- */
-    function replay(target, { onEnd, instant = false } = {}) {
+    function replay(target, { onEnd, instant = false, speed = () => 1 } = {}) {
       target.width = W;
       target.height = H;
       const replayCtx = target.getContext("2d", { willReadFrequently: true });
@@ -642,7 +642,7 @@
         if (stroke && stroke.layer) showLayer();
       };
       const tick = (now) => {
-        const budget = Math.max(1, Math.ceil((units * (now - last)) / duration));
+        const budget = Math.max(1, Math.ceil((units * (now - last) * speed()) / duration));
         last = now;
         inReplay(() => advance(budget));
         if (opIndex < steps.length) frame = requestAnimationFrame(tick);
@@ -823,6 +823,7 @@
       <canvas class="replay" hidden aria-label="Your drawing being redrawn"></canvas>
       <div class="finish-actions">
         <button type="button" class="tool" data-act="replay">Watch it redraw</button>
+        <button type="button" class="tool" data-act="speed" hidden>Speed: 2x</button>
         <button type="button" class="tool done" data-act="download">Download</button>
         <button type="button" class="tool" data-act="publish">Publish</button>
         <button type="button" class="tool" data-act="gallery">See today's drawings</button>
@@ -836,15 +837,24 @@
     const galleryBtn = dialog.querySelector('[data-act="gallery"]');
     const replayBtn = dialog.querySelector('[data-act="replay"]');
     const replayCanvas = dialog.querySelector(".replay");
+    const speedBtn = dialog.querySelector('[data-act="speed"]');
+    const SPEEDS = [1, 2, 4];
+    const START_SPEED = 1; // 2x, so a replay doesn't drag
+    let speedAt = START_SPEED;
+    const setSpeed = (i) => { speedAt = i; speedBtn.textContent = `Speed: ${SPEEDS[i]}x`; };
+    speedBtn.addEventListener("click", () => setSpeed((speedAt + 1) % SPEEDS.length));
     let stopReplay = () => {};
     replayBtn.addEventListener("click", () => {
       stopReplay();
       img.hidden = true;
       replayCanvas.hidden = false;
       replayBtn.disabled = true;
+      const instant = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      speedBtn.hidden = instant;
       stopReplay = board.replay(replayCanvas, {
-        instant: window.matchMedia("(prefers-reduced-motion: reduce)").matches,
-        onEnd: () => { replayBtn.disabled = false; replayBtn.textContent = "Watch again"; dialog.dataset.replayed = "true"; },
+        instant,
+        speed: () => SPEEDS[speedAt],
+        onEnd: () => { replayBtn.disabled = false; replayBtn.textContent = "Watch again"; speedBtn.hidden = true; dialog.dataset.replayed = "true"; },
       });
     });
     dialog.addEventListener("close", () => {
@@ -853,6 +863,8 @@
       replayCanvas.hidden = true;
       replayBtn.disabled = false;
       replayBtn.textContent = "Watch it redraw";
+      speedBtn.hidden = true;
+      setSpeed(START_SPEED);
       delete dialog.dataset.replayed;
     });
     galleryBtn.addEventListener("click", () => {

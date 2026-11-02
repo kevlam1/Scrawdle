@@ -348,6 +348,24 @@ Artifact 4 is "For Someone Else," due Sunday, November 8. My team (me, Angie, Tr
 
 ---
 
+## 19. Replay speed (2026-11-01)
+
+**What I asked for**
+- Replay should be able to speed up, and it should start a bit sped up, because people may spend a long time on a drawing.
+
+**What changed**
+- `frontend/drawing.js`: replay now starts at 2x, and a button that only shows while it plays changes it to 4x or 1x, even partway through. The speed goes back to 2x when the finish screen reopens.
+- `README.md`: says how the speed works.
+
+**What I checked**
+- 17 of 17 speed checks pass in Chromium. The same test drawing took about 8 seconds at 1x, 4 at 2x and 2 at 4x, and it ended pixel-for-pixel on the drawing at every speed, including when the speed changed partway through. The 14 replay checks, 9 bug checks, 62 other browser checks and 13 logic tests still pass.
+- Not checked: Safari, Firefox, or a real phone.
+
+**Decisions**
+- Started at 2x. At 1x a replay already never runs past 10 seconds, so this makes the longest one about 5. A very short drawing can finish in about a second.
+
+---
+
 ## Where AI misread me, or I had to correct course
 
 - Claude's first version of the start page put "What is this?" in the top right, where it collided with the "New set" button on the game screen. I caught it by running the page; Claude hadn't opened it in a browser.
