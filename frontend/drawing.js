@@ -14,6 +14,13 @@
   const SCALE = 2;
   const HISTORY_BYTES = 96 * 1024 * 1024;
   const COLORS = ["#2b2540", "#ffffff", "#ff6b6b", "#ff9f43", "#ffd93d", "#6bcb77", "#4d96ff", "#9b5de5", "#f78fb3", "#8d6e63"];
+  // Undo, Redo, and Clear. The drawing tools use the illustrations in assets/tools.
+  const ICONS = {
+    undo: '<path d="M11 7L5 13l6 6"/><path d="M5 13h13a7 7 0 0 1 0 14h-5"/>',
+    redo: '<path d="M21 7l6 6-6 6"/><path d="M27 13H14a7 7 0 0 0 0 14h5"/>',
+    clear: '<path d="M8 4h16v24H8z"/><path d="M12.5 12.5l7 7M19.5 12.5l-7 7"/>',
+  };
+
   const TOOLS = [
     { id: "pen", label: "Pen", size: 3 },
     { id: "pencil", label: "Pencil", size: 4 },
@@ -205,10 +212,16 @@
       n.append(...kids);
       return n;
     };
+    const actionIcon = (name) => {
+      const span = el("span", { className: "tool-icon", innerHTML: `<svg viewBox="0 0 32 32" width="18" height="18">${ICONS[name]}</svg>` });
+      span.setAttribute("aria-hidden", "true");
+      return span;
+    };
     const status = el("span", { className: "save-status", role: "status" });
     const toolButtons = {};
     for (const t of TOOLS) {
-      toolButtons[t.id] = el("button", { type: "button", className: "tool", textContent: t.label, onclick: () => setTool(t.id) });
+      const art = el("img", { className: "tool-art", src: `assets/tools/${t.id}.png`, alt: "", width: 40, height: 40, draggable: false });
+      toolButtons[t.id] = el("button", { type: "button", className: "tool art", onclick: () => setTool(t.id) }, art, t.label);
     }
     const swatches = COLORS.map((c) => {
       const b = el("button", { type: "button", className: "swatch", title: c, onclick: () => setColor(c) });
@@ -224,9 +237,9 @@
     const brushSelect = el("select", { id: "brush-kind", className: "tool", onchange: (e) => { brushKind = e.target.value; } },
       ...BRUSHES.map((b) => el("option", { value: b.id, textContent: b.label })));
     const brushLabel = el("label", { className: "size", htmlFor: "brush-kind" }, "Brush type ", brushSelect);
-    const undoBtn = el("button", { type: "button", className: "tool", textContent: "Undo", onclick: undo });
-    const redoBtn = el("button", { type: "button", className: "tool", textContent: "Redo", onclick: redo });
-    const clearBtn = el("button", { type: "button", className: "tool", textContent: "Clear", onclick: clearAll });
+    const undoBtn = el("button", { type: "button", className: "tool with-icon", onclick: undo }, actionIcon("undo"), "Undo");
+    const redoBtn = el("button", { type: "button", className: "tool with-icon", onclick: redo }, actionIcon("redo"), "Redo");
+    const clearBtn = el("button", { type: "button", className: "tool with-icon", onclick: clearAll }, actionIcon("clear"), "Clear");
     const doneBtn = el("button", { type: "button", className: "tool done", textContent: "Done", onclick: () => onDone() });
     toolbar.append(
       el("div", { className: "tool-group" }, ...Object.values(toolButtons)),
