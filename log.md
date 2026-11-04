@@ -511,11 +511,61 @@ Artifact 4 is "For Someone Else," due Sunday, November 8. My team (me, Angie, Tr
 
 ---
 
+## 27. Supabase set up for real, a timezone bug fixed, and the daily wipe written (2026-11-04) — Kevin
+
+**What I asked for**
+- Asked Claude to walk me through setting up Supabase, then ran it myself: created the project, ran `schema.sql`, made the `drawings` bucket, and filled in `supabase-config.js`. Publishing and the public gallery worked. Then I asked Claude to confirm the database wipes itself daily. It doesn't, so I said I want a real daily deletion so storage doesn't overflow, and that I'm on the free plan.
+
+**What changed**
+- `backend/supabase/schema.sql`: the two policies and the cron stub compared `day` to `current_date`, the database's UTC date, but the frontend's `dayKey()` is the player's local date. In Pacific time that breaks publishing and the gallery every evening. Now they allow one day either side. Fixed in the file before the setup walkthrough, but I haven't confirmed which version of the policies is live in my project.
+- `backend/supabase/functions/purge-old-drawings/index.ts` (new): an Edge Function that deletes old day folders from the `drawings` bucket through the Storage API and old rows from the table. Keeps today and yesterday by UTC date. Has a `?dryRun=1` mode. Protected by its own `CRON_SECRET` header because JWT checking has to be off for cron to call it.
+- `schema.sql`: the old "hide old rows" cron stub is replaced by a commented-out block that schedules the function daily at 10:00 UTC through `pg_cron` and `pg_net`, with the secrets in Vault. Placeholders only, nothing real.
+- `tests/purge.test.js` (new, 9 tests): the date maths and folder logic against a fake Supabase client.
+- `backend/README.md`: six setup steps for the wipe. `CLAUDE.md` and `README.md` say plainly that the wipe is written but not running.
+
+**What I checked**
+- Supabase's docs, read through a fetch agent: deleting storage objects with SQL leaves them orphaned and must go through the Storage API; `remove()` takes up to 1000 paths per call; Edge Functions are on the free plan (500,000 invocations a month); cron callers send a secret on the `apikey` header; and the secret-key environment variable is `SUPABASE_SECRET_KEYS` (with the legacy `SUPABASE_SERVICE_ROLE_KEY` still listed).
+- The 9 tests pass, and I broke the function nine different ways one at a time (wrong cutoff, no day-folder check, dry run deleting, ignored errors, skipped batches, missing folder, wrong rows) and every one was caught. The file was restored byte for byte afterward.
+- Not checked: anything on the live project. The function has not been deployed or run. The docs didn't show the current Edge Function starter code, so the `Deno.serve` and `npm:` import style, the `SUPABASE_SECRET_KEYS` parsing, the `delete().lt().select()` return, and whether the dashboard has a switch for JWT verification are all unverified until it runs. The docs also never said whether `pg_cron` is on the free plan.
+
+**Decisions**
+- Real deletion through an Edge Function rather than a hide flag, since the hide flag frees no space and I want the daily wipe in my pitch to be true.
+- A drawing lives about one to two days, not exactly 24 hours, because of the same UTC-versus-local-date gap that broke the policies.
+- A dedicated `CRON_SECRET` instead of storing the project's secret key in Vault, so a leak of the cron secret can only trigger a cleanup, not bypass the database.
+- Deployed through the dashboard editor, which the docs say has no version control, so the file in this repo is the source of truth.
+
+---
+
+## 28. The daily wipe deployed and scheduled (2026-11-04) — Kevin
+
+**What I asked for**
+- Followed Claude through deploying the cleanup function from entry 27, scheduling it, and testing it, sending screenshots at each step. Then told Claude the real delete test and the secret replacement were both done and asked for the docs to match.
+
+**What changed**
+- I deployed `purge-old-drawings` in the dashboard editor by pasting the repo file over the starter code, set `CRON_SECRET` in its secrets, and scheduled it through `pg_cron` for 10:00 UTC daily, with the project URL and secret stored in Vault.
+- First test through the schedule's own call returned 401 `UNAUTHORIZED_NO_AUTH_HEADER`. That came from Supabase's front door, not the function, because "Verify JWT with legacy secret" was on. I turned it off on the function's Settings tab (the page itself recommends off when the function has its own auth).
+- After that, the same call returned 200 with `"dryRun":true`, `"cutoff":"2026-11-03"`, no old days, and no files.
+- `CLAUDE.md`, `README.md`, `backend/README.md`, `frontend/README.md`, the header comment in `schema.sql`, and the comment in `supabase-config.js` now say the wipe is deployed. They also say a local copy of the game publishes to the real project, since the real URL and key are committed.
+
+**What I checked**
+- Seen in screenshots: the policies in the live database use the one-day UTC window (entry 27's fix is live), the 401 and then the 200 dry run, and the cron job being created (job id 2).
+- Reported by me, not seen by Claude: a real run deleted a test file and row I made under `2026-01-01`, and I replaced the `CRON_SECRET` and re-ran the dry run after the first one appeared in a screenshot. The docs say "reported by Kevin" for these.
+- That 200 settled what entry 27 listed as unverified: the `Deno.serve` style and the `npm:` import work, the secret key is read correctly, and the listing and row query work. `pg_cron` works on the free plan.
+- Not seen yet: a scheduled run at 10:00 UTC on its own. To do: check the function's Logs tab after the first one.
+
+**Decisions**
+- Left "Verify JWT" off and kept the `CRON_SECRET` header as the only guard. Rotating that secret if it leaks means changing it in two places (function secrets and Vault).
+- Left the publishable key and project URL committed in `supabase-config.js`, since the key is meant to be public. The cost is that anyone running the game locally publishes to the real gallery, which the README now says.
+
+---
+
 ## Where AI misread me, or I had to correct course
 
 - Claude's first version of the start page put "What is this?" in the top right, where it collided with the "New set" button on the game screen. I caught it by running the page; Claude hadn't opened it in a browser.
 - In session 2, I said "while I'm on main branch," but there was no `main` branch yet. Claude didn't assume what I meant — it asked whether to commit to `Angie` instead, create `main` from `Angie`, or stop, and I picked creating `main`.
 - In session 4, I said the two PDFs "should be within the root file." Claude had already searched the repo root and my home folder and found nothing; once I pointed at "the root file," it searched the whole `TCSS 490` folder and found both PDFs in `Unit 4/`, not the repo root.
+- **Wrong day comparison in the Supabase schema (Claude's slip, entry 26, found while writing the setup walkthrough on 2026-11-04):** `schema.sql` compared each drawing's `day` to `current_date`, which is the database's UTC date, but `dayKey()` in `drawing.js` is the player's local date. In Pacific time, after about 4 to 5 pm the two differ, so publishing would have been refused and the gallery would have come back empty every evening, and the hide job would have hidden drawings still counted as today's. Nothing had been run against a real project yet. Fixed by allowing a one-day window either side (`current_date - 1` to `current_date + 1`) and hiding only rows older than `current_date - 1`. I also broke the `$$` in the commented cron job with a JavaScript `String.replace` while fixing it, the exact pitfall in the shared notes, and caught it when I re-read the file.
+- **An invented date, and a scheduling block that was easy to run unfilled (Claude's slips, entries 27 and 28):** Claude wrote into `backend/README.md` that publishing was checked "on 2026-11-05", a date it had no evidence for, and caught it and changed it to say only what Kevin had reported. Separately, Claude gave Kevin the scheduling SQL as a commented block with several placeholders, and Kevin ran it once before filling them in, which created a scheduled job and two Vault secrets with junk values. It was harmless (the job could only call a URL that doesn't exist), and Claude gave him statements to remove them; whether he ran them was not confirmed in the session, though the next job id (2) suggests he did. The block should have been handed over with the project URL already filled in and one obvious placeholder, which is how Claude gave it the second time. Kevin also showed his `CRON_SECRET` in a screenshot and replaced it afterward (reported by him).
 
 ---
 

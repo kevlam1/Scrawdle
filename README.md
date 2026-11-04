@@ -20,7 +20,7 @@ TCSS 490 Artifact 4, built by a team of four: [kevlam1](https://github.com/kevla
 - A gallery of clearly labeled sample drawings, from the home and finish screens, until real drawings are connected (see the top of `frontend/gallery.js`).
 
 **Not built yet**
-- A real, running Supabase project. `backend/supabase/schema.sql` and `frontend/publish.js` are written but untested — `frontend/supabase-config.js` has empty placeholders, so the Publish button and real gallery stay hidden until Kevin creates the project and fills them in.
+- Confirmation that the daily wipe has run on its own. Publishing and the public gallery are connected to a real Supabase project, and the cleanup (`backend/supabase/functions/purge-old-drawings/index.ts`) is deployed and scheduled for 10:00 UTC daily (Kevin reported a real test run worked), but nobody has seen a scheduled run yet. Check the function's Logs tab after the first one. Setup notes are in `backend/README.md`.
 - Reporting or hiding drawings, which a public gallery will need. For now, moderation is a teammate manually editing the database by hand (see `backend/README.md`).
 - Replaying other players' drawings. Replay only works on your own for now.
 - Multiplayer lobbies and syncing player actions — a separate, bigger feature from the daily-drawing gallery, not started.
@@ -37,10 +37,10 @@ See `CLAUDE.md` for the project plan and `log.md` for the build log.
 
 ## Running locally
 
-There's no build step and no backend connection yet:
+There's no build step:
 
 - Serve the frontend folder (opening `index.html` straight from disk won't work, because the page loads `prompts.json` with `fetch`): from the repo root, run `npx serve frontend` (or `python -m http.server 8000 --directory frontend`), then open the printed address.
 - You should see the Basic / Detailed start screen. Pick one to spin the slot machine, then draw on the canvas with a mouse, finger, or stylus.
-- Tests for the paint bucket, undo, and daily parts: `node --test tests/drawing.test.js`
+- Tests: `node --test tests/drawing.test.js tests/brush-width.test.js tests/purge.test.js` (the last one covers the daily-wipe logic with a fake Supabase client).
 
-There's nothing to install. Publishing and the real gallery need `frontend/supabase-config.js` filled in with a real Supabase project's URL and anon key (there's no build step here, so config is a plain committed JS file, not a `.env` — see `backend/README.md` for why that's safe). Until that exists, there's no database to connect to and the game works the same as always, just without the Publish button or a real gallery.
+There's nothing to install. `frontend/supabase-config.js` holds the real project's URL and publishable key (a plain committed JS file, not a `.env`, because there's no build step; see `backend/README.md` for why that's safe). **That means a local copy publishes to the same real Supabase project as the live site**, so test drawings you publish while developing show up in the real gallery until the daily wipe removes them. To work without publishing, temporarily empty the two values in `supabase-config.js` (the Publish button and real gallery then stay hidden), and don't commit that change.

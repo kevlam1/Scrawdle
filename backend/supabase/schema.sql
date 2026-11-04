@@ -24,12 +24,13 @@ create index if not exists drawings_day_mode_idx on drawings (day, mode) where n
 
 alter table drawings enable row level security;
 
--- Anyone can read today's visible drawings for the gallery. Scoped to CURRENT_DATE so a
--- browser can't list past days even though the table isn't wiped by this policy alone.
+-- Anyone can read recent visible drawings for the gallery. The frontend's day is the player's
+-- LOCAL date but current_date is the database's UTC date, so these policies allow a one-day
+-- window either side instead of an exact match (an exact match breaks every evening in US time).
 create policy "public can read today's visible drawings"
   on drawings for select
   to anon
-  using (day = current_date and not hidden);
+  using (day between current_date - 1 and current_date + 1 and not hidden);
 
 -- Anyone can publish a drawing for today only. There's no login, so this can't be tied to a
 -- real user; anyone with the anon key (which is meant to be public, see CLAUDE.md) could insert
@@ -41,7 +42,7 @@ create policy "public can read today's visible drawings"
 create policy "public can publish a drawing for today"
   on drawings for insert
   to anon
-  with check (day = current_date and mode in ('basic', 'detailed'));
+  with check (day between current_date - 1 and current_date + 1 and mode in ('basic', 'detailed'));
 
 -- Storage: a public bucket for the PNGs. Run once, by hand, after the project exists
 -- (the Supabase dashboard's Storage tab can also create this bucket).
@@ -50,21 +51,41 @@ create policy "public can publish a drawing for today"
 
 -- Storage RLS: anon may upload into the "drawings" bucket, but not overwrite or delete.
 -- Uncomment once the bucket exists. Run in the SQL editor, not inside this file automatically.
--- create policy "public can upload drawings"
---   on storage.objects for insert
---   to anon
---   with check (bucket_id = 'drawings');
+create policy "public can upload drawings"
+   on storage.objects for insert
+   to anon
+   with check (bucket_id = 'drawings');
 
--- Daily sanitize: hide yesterday's drawings from the gallery. Requires the pg_cron extension,
--- which is available on Supabase's free tier with no billing account (see CLAUDE.md for the
--- source). Not yet enabled or scheduled against a real project.
--- NOTE: this only updates the table. It does NOT delete the underlying file from the
--- "drawings" storage bucket, which pg_cron (plain SQL) can't do on its own -- that needs a
--- scheduled Edge Function calling the Storage API, which isn't built yet. Until then, storage
--- keeps accumulating files even after the gallery stops showing them.
--- create extension if not exists pg_cron;
+-- Daily wipe. Plain SQL can't free storage: Supabase's docs say deleting storage objects with a
+-- SQL query "will result in the object being orphaned". So pg_cron just calls the Edge Function in
+-- functions/purge-old-drawings/index.ts once a day, and that function deletes the files (through
+-- the Storage API) and the old rows. It keeps today and yesterday by UTC date and removes
+-- anything older, so a drawing lives roughly one to two days (the window is one day wide because
+-- the game's "day" is the player's local date; see the policies above).
+--
+-- ALREADY RUN on Kevin's project (the block below is the record of what was run, with
+-- placeholders; running it again would fail on the duplicate secret names). Order of setup,
+-- if it ever has to be repeated (full steps in ../README.md):
+--   1. Deploy the function and set its CRON_SECRET secret, with JWT verification OFF.
+--   2. Test it by hand with ?dryRun=1, then for real.
+--   3. Enable the pg_cron and pg_net extensions (dashboard > Database > Extensions).
+--   4. Replace the two placeholders below with your real values and run this block ONCE in the
+--      SQL Editor. Never commit the real secret or paste it into this file.
+--
+-- select vault.create_secret('https://<project-ref>.supabase.co', 'project_url');
+-- select vault.create_secret('<the same value as the function''s CRON_SECRET>', 'purge_cron_secret');
 -- select cron.schedule(
---   'hide-old-drawings',
---   '0 0 * * *', -- daily at midnight UTC; exact reset time not decided
---   $$ update drawings set hidden = true where day < current_date; $$
+--   'purge-old-drawings',
+--   '0 10 * * *', -- 10:00 UTC daily (middle of the night in US time)
+--   $$
+--     select net.http_post(
+--       url := (select decrypted_secret from vault.decrypted_secrets where name = 'project_url')
+--              || '/functions/v1/purge-old-drawings',
+--       headers := jsonb_build_object(
+--         'Content-Type', 'application/json',
+--         'x-cron-secret', (select decrypted_secret from vault.decrypted_secrets where name = 'purge_cron_secret')
+--       ),
+--       body := '{}'::jsonb
+--     ) as request_id;
+--   $$
 -- );

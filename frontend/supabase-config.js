@@ -3,8 +3,9 @@
  * (see ../CLAUDE.md and ../backend/README.md). It is NOT the same as the service_role key,
  * which must never appear here or anywhere in this repo.
  *
- * Empty until the real Supabase project exists. publish.js checks for that and no-ops. */
+ * Filled in with the real project. If these two values are ever emptied, publish.js no-ops and
+ * the Publish button and real gallery stay hidden. */
 window.SCRAWDLE_SUPABASE = {
-  url: "",
-  anonKey: "",
+  url: "https://dxsbcawgvjtixkrlwduj.supabase.co",
+  anonKey: "sb_publishable_ssCeq3OtqHjooV5TY7mRmQ_mFHYQtre",
 };
