@@ -11,7 +11,7 @@ Artifact 4 is "For Someone Else," due Sunday, November 8. My team (me, Angie, Tr
 
 ---
 
-## 1. Cloning the repo (2026-10-28)
+## 1. Cloning the repo (2026-10-28) — Kevin
 
 **What I asked for**
 - Asked Claude Code to clone `kevlam1/Scrawdle` into my local `Scrawdle` folder.
@@ -27,7 +27,7 @@ Artifact 4 is "For Someone Else," due Sunday, November 8. My team (me, Angie, Tr
 
 ---
 
-## 2. Committing to a branch called "main" that didn't exist yet (2026-10-28)
+## 2. Committing to a branch called "main" that didn't exist yet (2026-10-28) — Kevin
 
 **What I asked for**
 - Told Claude, "while I'm on main branch, can you commit and push to main."
@@ -43,7 +43,7 @@ Artifact 4 is "For Someone Else," due Sunday, November 8. My team (me, Angie, Tr
 
 ---
 
-## 3. Checking main for new commits (2026-10-29)
+## 3. Checking main for new commits (2026-10-29) — Kevin
 
 **What I asked for**
 - Asked Claude to check if there was anything new on `main`.
@@ -59,7 +59,7 @@ Artifact 4 is "For Someone Else," due Sunday, November 8. My team (me, Angie, Tr
 
 ---
 
-## 4. Reading the Artifact 4 assignment and our own pitch, writing the first `CLAUDE.md` (2026-10-29)
+## 4. Reading the Artifact 4 assignment and our own pitch, writing the first `CLAUDE.md` (2026-10-29) — Kevin
 
 **What I asked for**
 - Asked Claude to look at how my other artifacts' `CLAUDE.md` files are set up (`midi-companion`, `readme-architect`) and read our own pitch doc and the Artifact 4 assignment PDF, then set up Scrawdle's `CLAUDE.md` — balanced for a team of three, not just my own preferences, since my personal `CLAUDE.md` in the parent folder isn't shared with Angie's or Trenten's sessions.
@@ -78,7 +78,7 @@ Artifact 4 is "For Someone Else," due Sunday, November 8. My team (me, Angie, Tr
 
 ---
 
-## 5. Database pick: leaning Supabase, and the log protocol (2026-10-29)
+## 5. Database pick: leaning Supabase, and the log protocol (2026-10-29) — Kevin
 
 **What I asked for**
 - Asked Claude to set up `log.md` the way I do it in Artifacts 2, 3, and 5, make sure `CLAUDE.md` knows to keep it updated on its own after real decisions (not just when asked), and asked which database fits our idea better.
@@ -97,7 +97,7 @@ Artifact 4 is "For Someone Else," due Sunday, November 8. My team (me, Angie, Tr
 
 ---
 
-## 6. Deciding on Supabase (2026-10-29)
+## 6. Deciding on Supabase (2026-10-29) — Kevin
 
 **What I asked for**
 - Told Claude Supabase sounds like the best option and to go with it.
@@ -113,7 +113,7 @@ Artifact 4 is "For Someone Else," due Sunday, November 8. My team (me, Angie, Tr
 
 ---
 
-## 7. Updated the README, and scaffolded frontend/backend placeholders (2026-10-29)
+## 7. Updated the README, and scaffolded frontend/backend placeholders (2026-10-29) — Kevin
 
 **What I asked for**
 - Asked Claude to update the README (not comprehensive), then to set up the backend and frontend, with a placeholder index for the frontend being fine.
@@ -133,7 +133,7 @@ Artifact 4 is "For Someone Else," due Sunday, November 8. My team (me, Angie, Tr
 
 ---
 
-## 8. Tried readme-architect, then wrote the README update by hand (2026-10-31)
+## 8. Tried readme-architect, then wrote the README update by hand (2026-10-31) — Kevin
 
 **What I asked for**
 - Asked Claude to run `readme-architect` (my Artifact 3 tool) against this repo, then to have it update the README. When generate mode couldn't produce a draft, I said to just write the update myself.
@@ -151,7 +151,7 @@ Artifact 4 is "For Someone Else," due Sunday, November 8. My team (me, Angie, Tr
 
 ---
 
-## 9. Added a "Running locally" section (2026-10-31)
+## 9. Added a "Running locally" section (2026-10-31) — Kevin
 
 **What I asked for**
 - Asked Claude to add a guide for running the project locally.
@@ -167,7 +167,7 @@ Artifact 4 is "For Someone Else," due Sunday, November 8. My team (me, Angie, Tr
 
 ---
 
-## 10. Live Vercel link added, and a 404 found and fixed (2026-10-31)
+## 10. Live Vercel link added, and a 404 found and fixed (2026-10-31) — Kevin
 
 **What I asked for**
 - Told Claude a Vercel app is live at scrawdle.vercel.app and asked it to update whatever needed updating.
@@ -187,7 +187,7 @@ Artifact 4 is "For Someone Else," due Sunday, November 8. My team (me, Angie, Tr
 
 ---
 
-## 11. Temporary prompt "database" as a JSON file (2026-11-01)
+## 11. Temporary prompt "database" as a JSON file (2026-11-01) — Angie
 
 **What I asked for**
 - Asked Claude whether a JSON file would be easier than putting prompts in Supabase, then asked it to generate `prompts.json` as a temporary database with two categories: `basic` (head, front limbs, back limbs, tail, optional extra like wings/shell/spines) and `detailed` (all of basic plus ears, eyes, mouth/snout, optional skin/pattern, optional accessory), each filled with a list of animals/things to pull from.
@@ -205,7 +205,7 @@ Artifact 4 is "For Someone Else," due Sunday, November 8. My team (me, Angie, Tr
 
 ---
 
-## 12. Start screen, slot machine, and prompt bar (2026-11-01)
+## 12. Start screen, slot machine, and prompt bar (2026-11-01) — Angie
 
 **What I asked for**
 - A first page with two boxes, "Basic" and "Detailed", that list what each includes on hover; a "What is this?" button explaining the game and how to play; and, after picking a mode, a slot-machine animation that rolls a random set from `prompts.json` and then shrinks into labeled boxes at the top left, above the existing drawing canvas.
@@ -224,7 +224,7 @@ Artifact 4 is "For Someone Else," due Sunday, November 8. My team (me, Angie, Tr
 
 ---
 
-## 13. Moved "What is this?" and enlarged the canvas (2026-11-01)
+## 13. Moved "What is this?" and enlarged the canvas (2026-11-01) — Angie
 
 **What I asked for**
 - The "What is this?" button overlapped the "New set" button at the top right, so I asked to move it to the bottom left, and to make the drawing box a bit bigger for now.
@@ -240,7 +240,7 @@ Artifact 4 is "For Someone Else," due Sunday, November 8. My team (me, Angie, Tr
 
 ---
 
-## 14. Drawing tools, undo, auto-save, and the finish screen (2026-11-01)
+## 14. Drawing tools, undo, auto-save, and the finish screen (2026-11-01) — Zainab
 
 **What I asked for**
 - Joined the team and took the drawing side, since nobody had started it and everyone is back Tuesday: tools, paint bucket, undo, auto-save, and a finish screen with export. Kevin keeps Supabase and publishing, and Angie's start screen and slot machine stay as they are.
@@ -266,7 +266,7 @@ Artifact 4 is "For Someone Else," due Sunday, November 8. My team (me, Angie, Tr
 
 ---
 
-## 15. Updated the notes so finished work shows as finished (2026-11-01)
+## 15. Updated the notes so finished work shows as finished (2026-11-01) — Zainab
 
 **What I asked for**
 - The README and team notes still called the canvas a placeholder, so I wanted them to say what's actually done and what isn't, so nobody redoes finished work.
@@ -284,7 +284,7 @@ Artifact 4 is "For Someone Else," due Sunday, November 8. My team (me, Angie, Tr
 
 ---
 
-## 16. Same parts for everyone each day, Free play, and the gallery (2026-11-01)
+## 16. Same parts for everyone each day, Free play, and the gallery (2026-11-01) — Zainab
 
 **What I asked for**
 - Make it an actual daily game, so people draw the same thing and can compare, and show what others drew after finishing (my inspiration idea from the group chat). Nothing that depends on Kevin's database.
@@ -307,7 +307,7 @@ Artifact 4 is "For Someone Else," due Sunday, November 8. My team (me, Angie, Tr
 
 ---
 
-## 17. Fixed seven bugs (2026-11-01)
+## 17. Fixed seven bugs (2026-11-01) — Zainab
 
 **What I asked for**
 - Find and fix real bugs in the drawing side. Each one was reproduced with a failing check before I fixed it.
@@ -329,7 +329,7 @@ Artifact 4 is "For Someone Else," due Sunday, November 8. My team (me, Angie, Tr
 
 ---
 
-## 18. Replay (2026-11-01)
+## 18. Replay (2026-11-01) — Zainab
 
 **What I asked for**
 - Something impressive: watch a drawing redraw itself stroke by stroke.
@@ -348,7 +348,7 @@ Artifact 4 is "For Someone Else," due Sunday, November 8. My team (me, Angie, Tr
 
 ---
 
-## 19. Replay speed (2026-11-01)
+## 19. Replay speed (2026-11-01) — Zainab
 
 **What I asked for**
 - Replay should be able to speed up, and it should start a bit sped up, because people may spend a long time on a drawing.
@@ -366,7 +366,7 @@ Artifact 4 is "For Someone Else," due Sunday, November 8. My team (me, Angie, Tr
 
 ---
 
-## 20. Replay speeds up by itself (2026-11-01)
+## 20. Replay speeds up by itself (2026-11-01) — Zainab
 
 **What I asked for**
 - No speed button. Replay should speed up naturally and look graceful, so it gets you to the finished drawing, and it only plays if someone presses the button. This replaces the speed button from entry 19.
@@ -384,7 +384,7 @@ Artifact 4 is "For Someone Else," due Sunday, November 8. My team (me, Angie, Tr
 
 ---
 
-## 21. Brush width stays steady (2026-11-02)
+## 21. Brush width stays steady (2026-11-02) — Zainab
 
 **What I asked for**
 - Fix the round brush getting thinner when you move the mouse quickly.
@@ -399,7 +399,10 @@ Artifact 4 is "For Someone Else," due Sunday, November 8. My team (me, Angie, Tr
 
 **Decisions**
 - A stroke still starts slightly thinner and grows to full width over its first few points, whatever the speed.
-## 22. Self-judged win condition (2026-11-02)
+
+---
+
+## 22. Self-judged win condition (2026-11-02) — Trenten
 
 **What I asked for**
 - (Trenten) I want Scrawdle to have a win condition that involves judging the player's drawing. For now, I asked for the player to judge their own drawing as accurate or inaccurate to the parts they rolled.
@@ -418,7 +421,7 @@ Artifact 4 is "For Someone Else," due Sunday, November 8. My team (me, Angie, Tr
 
 ---
 
-## 23. Merged the zainab branch into main (2026-11-02)
+## 23. Merged the zainab branch into main (2026-11-02) — Zainab
 
 **What I asked for**
 - My teammates liked what was on the `zainab` branch and asked me to merge it into `main`. Trenten's win condition had reached `main` first, so it needed to keep working after the merge.
@@ -442,7 +445,7 @@ Artifact 4 is "For Someone Else," due Sunday, November 8. My team (me, Angie, Tr
 
 ---
 
-## 24. Illustrated tool icons (2026-11-02)
+## 24. Illustrated tool icons (2026-11-02) — Zainab
 
 **What I asked for**
 - I wanted the tool icons from my design work in the team's game, without bringing over the rest of the redesign.
@@ -460,7 +463,7 @@ Artifact 4 is "For Someone Else," due Sunday, November 8. My team (me, Angie, Tr
 
 ---
 
-## 25. New look for the whole game (2026-11-02)
+## 25. New look for the whole game (2026-11-02) — Zainab
 
 **What I asked for**
 - My teammates said I could bring over the design I'd been working on. I wanted it in the team's game without losing anyone's work.
@@ -480,6 +483,31 @@ Artifact 4 is "For Someone Else," due Sunday, November 8. My team (me, Angie, Tr
 - Publishing isn't included, so its button and message stay hidden until it's connected.
 - One daily prompt instead of animal parts (a "Simple mode" from my design work) isn't included. The animal parts stay the game.
 - The verdict still isn't saved, so a refresh or switching drawings brings the buttons back.
+
+---
+
+## 26. Real Supabase schema and the publish/gallery glue code (2026-11-04) — Kevin
+
+**What I asked for**
+- Pulled Zainab's, Angie's, and Trenten's work, then gave Claude the team's updated plan doc (Firebase now crossed out, my week's list: database, multiplayer lobbies, syncing player actions). I said the only real purpose of storing images is to show them once a player finishes, that prompts should use the date as a seed since everyone gets the same ones, and asked whether keeping prompts out of Supabase would still let a teammate change them without my Supabase access.
+
+**What changed**
+- Found Zainab had already built the exact hooks I needed: `window.scrawdlePublish({ blob, mode, prompts, day })` and `window.scrawdleGallery({ day, mode, prompts })` in `drawing.js`/`gallery.js`, and `frontend/daily.js` already does the date-seeded pick client-side with no server involved.
+- `backend/supabase/schema.sql`: rewritten for real. A `drawings` table (day, mode, the exact prompts drawn, an image path, a `hidden` flag for manual moderation), Row Level Security (anyone can read today's visible drawings and publish one; nobody can edit or delete through the public key), and a commented-out daily job to hide old rows. Prompts are explicitly not stored here.
+- `frontend/supabase-config.js` (new, placeholder URL/key) and `frontend/publish.js` (new): implements both hooks against Supabase, with a `localStorage`-backed "already published this round" check so `err.alreadyPublished` is real even after a refresh, and does nothing at all until the config has real values.
+- `index.html`: added the `supabase-js` CDN script tag plus `supabase-config.js` and `publish.js` — a new dependency, flagged here and in `CLAUDE.md`'s shared rules.
+- `CLAUDE.md`: Stack section now documents the real scope (drawings only, not prompts), the anon-key-isn't-a-secret distinction, the moderation gap, and Firebase being crossed out as a team decision, not just mine. Team roles section filled in with everyone's actual week-of items from the plan doc.
+
+**What I checked**
+- Read `daily.js` and the publish/gallery call sites in `drawing.js` directly before designing anything, instead of assuming the shape of `prompts`/`day`/`mode`.
+- Verified with web searches, not memory: that Supabase's anon key is meant to be public when RLS is on, and the exact `supabase-js` CDN script tag and `createClient` usage, against the library's own README.
+- Could not confirm one thing: the exact property name on `getPublicUrl()`'s return value. Supabase's reference page's own examples destructure `data` but never show what's read off it afterward. Left `publicUrl` in the code since it's what every other Supabase example uses, but flagged it in the code, in `CLAUDE.md`, and here — it needs a real console check the first time this runs against a real project.
+- Nothing has been tested against a live Supabase project; none exists yet.
+
+**Decisions**
+- Prompts stay in `prompts.json`, not Supabase — confirmed this is more flexible for the team, not less, since Supabase only exists on my machine and a teammate can edit a committed file without my credentials.
+- Scoped this to "store and show finished drawings" only. Multiplayer lobbies and syncing player actions, also listed as mine in the plan doc, are a separate and bigger task I haven't started.
+- No login system, so publishing can't be tied to a real person. Accepted that as a known gap rather than building accounts under deadline pressure — documented it plainly in `backend/README.md` instead of hiding it.
 
 ---
 

@@ -20,10 +20,10 @@ TCSS 490 Artifact 4, built by a team of four: [kevlam1](https://github.com/kevla
 - A gallery of clearly labeled sample drawings, from the home and finish screens, until real drawings are connected (see the top of `frontend/gallery.js`).
 
 **Not built yet**
-- Publishing, and real players' drawings in the gallery. The Publish button stays hidden until publishing is connected (see the top of `frontend/drawing.js`).
-- Reporting or hiding drawings, which a public gallery will need.
+- A real, running Supabase project. `backend/supabase/schema.sql` and `frontend/publish.js` are written but untested — `frontend/supabase-config.js` has empty placeholders, so the Publish button and real gallery stay hidden until Kevin creates the project and fills them in.
+- Reporting or hiding drawings, which a public gallery will need. For now, moderation is a teammate manually editing the database by hand (see `backend/README.md`).
 - Replaying other players' drawings. Replay only works on your own for now.
-- The database. `backend/supabase/schema.sql` is a draft and hasn't been run against a real Supabase project.
+- Multiplayer lobbies and syncing player actions — a separate, bigger feature from the daily-drawing gallery, not started.
 
 **Live site:** it deploys from `main`, so it only shows what has been merged. A `vercel.json` was added to fix a 404 at `/`, and nobody has confirmed the fix after a deploy.
 
@@ -43,4 +43,4 @@ There's no build step and no backend connection yet:
 - You should see the Basic / Detailed start screen. Pick one to spin the slot machine, then draw on the canvas with a mouse, finger, or stylus.
 - Tests for the paint bucket, undo, and daily parts: `node --test tests/drawing.test.js`
 
-There's nothing to install and no `.env` needed yet — `backend/supabase/schema.sql` hasn't been run against a real Supabase project, so there's no database to connect to. Once that exists, this section will need real setup steps (copying `.env.example` to `.env`, filling in Supabase keys).
+There's nothing to install. Publishing and the real gallery need `frontend/supabase-config.js` filled in with a real Supabase project's URL and anon key (there's no build step here, so config is a plain committed JS file, not a `.env` — see `backend/README.md` for why that's safe). Until that exists, there's no database to connect to and the game works the same as always, just without the Publish button or a real gallery.

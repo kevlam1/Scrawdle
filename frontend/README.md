@@ -8,7 +8,9 @@
 - `fonts/`: Patrick Hand and Gochi Hand.
 - `assets/tools/`: the illustrated icons for the drawing tools.
 - `gallery.js` and `assets/sample-strawberries.webp`: the gallery, with labeled sample drawings until real drawings are connected.
+- `supabase-config.js`: the Supabase project URL and anon key. Empty placeholders until a real Supabase project exists; safe to commit once filled in (the anon key is meant to be public, see `../CLAUDE.md`).
+- `publish.js`: wires `window.scrawdlePublish` and `window.scrawdleGallery` to Supabase. Does nothing until `supabase-config.js` has real values, so the Publish button and gallery stay hidden exactly as before.
 
-There's no backend connection yet. To connect publishing and real drawings, see the comments at the top of `drawing.js` and `gallery.js`.
+Publishing needs `supabase-config.js` filled in and the schema in `../backend/supabase/schema.sql` run against a real project. Until then, there's no backend connection — see the comments at the top of `drawing.js` and `gallery.js`.
 
 Stack is proposed in `../CLAUDE.md`, not locked: plain HTML5 Canvas with vanilla JS/TS, no UI framework. Replace or restructure this folder once the team confirms that and splits up ownership.

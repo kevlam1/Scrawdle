@@ -113,6 +113,10 @@
   <script src="daily.js"></script>
   <script src="drawing.js"></script>
   <script src="gallery.js"></script>
+  <!-- Publishing: no-ops until supabase-config.js has a real project (see backend/README.md). -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="supabase-config.js"></script>
+  <script src="publish.js"></script>
   <script>
     const $ = (id) => document.getElementById(id);
     const setupEl = $("setup");
