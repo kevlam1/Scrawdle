@@ -9,6 +9,7 @@
   <link rel="stylesheet" href="drawing.css" />
   <link rel="stylesheet" href="studio.css" />
   <link rel="stylesheet" href="flow.css" />
+  <link rel="stylesheet" href="lobby.css" />
 </head>
 <body>
   <template id="wordmark">
@@ -30,6 +31,7 @@
       <li>Press Done drawing to download it or watch it replay.</li>
     </ol>
     <p>Want a different creature? Free play gives you random parts any time.</p>
+    <p>Daily Scrawl has no parts: draw anything you like. It saves in your browser and clears each day, like the others.</p>
   </dialog>
 
   <main id="setup">
@@ -48,6 +50,11 @@
           <h2>Detailed</h2>
           <p>All of Basic, plus ears, eyes and mouth, with an optional skin pattern and accessory.</p>
           <button class="btn primary" id="mode-detailed" type="button">Draw Detailed</button>
+        </section>
+        <section class="home-choice">
+          <h2>Daily Scrawl</h2>
+          <p>No parts, no rules. Draw anything you like today.</p>
+          <button class="btn primary" id="mode-scrawl" type="button">Draw Daily Scrawl</button>
         </section>
         <section class="home-choice">
           <h2>Free play</h2>
@@ -117,6 +124,9 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="supabase-config.js"></script>
   <script src="publish.js"></script>
+  <!-- Lobbies: adds the Lobby card to the home screen. Games register with ScrawdleLobby.registerGame
+       (see the top of lobby.js), so load a game's script AFTER this line. -->
+  <script src="lobby.js"></script>
   <script>
     const $ = (id) => document.getElementById(id);
     const setupEl = $("setup");
@@ -239,6 +249,11 @@
     $("slot-start").addEventListener("click", () => { slotEl.hidden = true; gameEl.inert = false; $("back-home").focus({ preventScroll: true }); });
 
     /* ---------- Screens ---------- */
+    // Which saved drawing a round belongs to: Daily Scrawl, today's Basic/Detailed, or Free play.
+    const slotFor = (round) => (round.mode === "scrawl" ? "scrawl" : round.daily ? "today" : "free");
+    // Daily Scrawl is a free draw, so its one "prompt" is just a label (this also fills the finished PNG).
+    const SCRAWL_PROMPTS = [{ label: "Daily Scrawl", value: "Draw anything", optional: false }];
+
     function showParts(prompts) {
       $("prompt-text").replaceChildren(...prompts.map((p) => {
         const part = document.createElement("span");
@@ -252,10 +267,10 @@
 
     function showGame() {
       const round = board.round;
-      $("prompt-label").textContent = !round.daily ? "Free play" : round.mode === "detailed" ? "Detailed" : "Basic";
+      $("prompt-label").textContent = round.mode === "scrawl" ? "Daily Scrawl" : !round.daily ? "Free play" : round.mode === "detailed" ? "Detailed" : "Basic";
       showParts(round.prompts);
       $("restart").textContent = round.daily ? "Start over" : "New set";
-      sessionStorage.setItem(OPEN_KEY, round.daily ? "today" : "free");
+      sessionStorage.setItem(OPEN_KEY, slotFor(round));
       setupEl.hidden = true;
       gameEl.hidden = false;
     }
@@ -289,6 +304,15 @@
       start(mode);
     }
 
+    // Daily Scrawl has one save a day and no parts or slot machine. Pressing it again goes back to that drawing.
+    async function startScrawl() {
+      if (saved.scrawl && saved.scrawl.marked) return openSaved("scrawl");
+      await board.flush();
+      await board.start("scrawl", SCRAWL_PROMPTS, true);
+      resetJudgement();
+      showGame();
+    }
+
     // Free play has one save, so a new set replaces whatever is on it.
     function startFreePlay(hasDrawing) {
       if (hasDrawing && !confirm("Replace your Free play drawing with a new set of parts?")) return;
@@ -312,7 +336,7 @@
       const title = document.createElement("b");
       title.textContent = "Continue drawing";
       const prompt = document.createElement("small");
-      prompt.textContent = (draft.slot === "free" ? "Free play: " : "") + draft.prompts.map((p) => p.value).join(", ");
+      prompt.textContent = (draft.slot === "free" ? "Free play: " : draft.slot === "scrawl" ? "Daily Scrawl: " : "") + draft.prompts.map((p) => p.value).join(", ");
       text.append(title, prompt);
       card.append(thumb, text);
       card.addEventListener("click", () => openSaved(draft.slot));
@@ -327,7 +351,7 @@
       saved = await board.drafts();
       thumbUrls.forEach((u) => URL.revokeObjectURL(u));
       thumbUrls = [];
-      const cards = [saved.today, saved.free].filter((d) => d && d.marked);
+      const cards = [saved.today, saved.scrawl, saved.free].filter((d) => d && d.marked);
       $("continue-list").replaceChildren(...cards.map(continueCard));
       setupEl.classList.toggle("has-saved", cards.length > 0);
       setupEl.hidden = false;
@@ -337,7 +361,7 @@
     async function openSaved(slot) {
       const round = board.round;
       // Still the drawing on the canvas, so undo history and its verdict come along too.
-      if (round && (round.daily ? "today" : "free") === slot) { showGame(); return; }
+      if (round && slotFor(round) === slot) { showGame(); return; }
       await board.flush();
       if (await board.restore(slot)) { resetJudgement(); showGame(); }
       else showHome();
@@ -353,6 +377,7 @@
 
     $("mode-basic").addEventListener("click", () => startDaily("basic"));
     $("mode-detailed").addEventListener("click", () => startDaily("detailed"));
+    $("mode-scrawl").addEventListener("click", startScrawl);
     $("free-play").addEventListener("click", () => startFreePlay(Boolean(saved.free && saved.free.marked)));
     $("restart").addEventListener("click", restartRound);
     $("slot-new").addEventListener("click", () => { slotEl.hidden = true; start("basic", false); });
@@ -380,9 +405,10 @@
       verdictEl.hidden = false;
     }
 
+    // "Does your drawing match the parts?" makes no sense for Daily Scrawl, which has no parts.
     function resetJudgement() {
       board.setLocked(false);
-      judgeEl.hidden = false;
+      judgeEl.hidden = Boolean(board.round && board.round.mode === "scrawl");
       verdictEl.hidden = true;
     }
 
@@ -393,7 +419,7 @@
     (async () => {
       const open = sessionStorage.getItem(OPEN_KEY);
       const found = await board.drafts();
-      if (open && found[open] && await board.restore(open)) showGame();
+      if (open && found[open] && await board.restore(open)) { resetJudgement(); showGame(); }
       else showHome();
     })();
   </script>

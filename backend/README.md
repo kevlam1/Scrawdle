@@ -2,10 +2,12 @@
 
 Supabase is the team's decided database (see `../CLAUDE.md`; Firebase is crossed out in the team's own plan doc as of 2026-11-04). Supabase is a managed Postgres service, so there's no server process to run here — this folder holds the database schema as SQL.
 
-**Nothing is connected yet.** No Supabase project has been created, so there are no real keys and nothing has been tested against a live database. Kevin owns this part and the project will live on his machine.
+Kevin owns this part, and the Supabase project lives on his machine: nobody else can run SQL against it. If your work needs a database change, see "Applying an update" below.
 
-- `supabase/schema.sql`: the real schema for the one job Supabase actually does right now — storing finished drawings so they can be shown in the gallery. A `drawings` table, Row Level Security policies (anyone can read recent visible drawings and publish one; nobody can edit or delete through the public key), and a commented-out daily job that calls the cleanup function below. The table, policies, and bucket have been run against Kevin's real project, and he reported that publishing and the public gallery work; the daily wipe is deployed and scheduled (see below).
-- `supabase/functions/purge-old-drawings/index.ts`: the daily wipe, an Edge Function. Deletes old drawings' files from the `drawings` bucket and their rows. Its date and folder logic is tested in `../tests/purge.test.js`. It is deployed on Kevin's project, and a dry run through the schedule's own call returned 200; Kevin reported a real run also deleted a test file and row. No scheduled run has been observed yet.
+- `supabase/schema.sql`: the full schema for a fresh project, for two jobs. (1) Storing finished drawings for the gallery: a `drawings` table with Row Level Security (anyone can read recent visible drawings and publish one for today; nobody can edit or delete through the public key). (2) Remembering which lobby codes exist: a `lobbies` table nobody can touch directly, plus two functions the public key may call, `create_lobby()` and `lobby_exists(code)`. The drawings part was run against Kevin's real project and he reported that publishing and the public gallery work; the daily wipe is deployed and scheduled (see below). The lobby part and the Daily Scrawl mode are in `updates/001-...`; Kevin reported they were run and tested on the live project (not observed by the session that wrote them).
+- `supabase/updates/`: numbered files with only the changes a project that already exists needs, run once each, in order. `001-lobbies-and-daily-scrawl.sql` adds the `lobbies` table and functions, allows the `scrawl` drawing mode, and schedules a daily cleanup of old lobby codes. It was tested against a real Postgres (PGlite) on top of the old schema, and runs twice without error. Keep `schema.sql` in step with the updates, so a fresh project needs no updates.
+- Who is *in* a lobby and every message a game sends are not stored anywhere. That's Supabase Realtime (presence and broadcast), handled by `../frontend/lobby.js`. See "Lobbies and adding a multiplayer game" in `../CLAUDE.md`.
+- `supabase/functions/purge-old-drawings/index.ts`: the daily wipe, an Edge Function. Deletes old drawings' files from the `drawings` bucket and their rows. Its date and folder logic is tested in `../tests/purge.test.js`. It is deployed on Kevin's project, and a dry run through the schedule's own call returned 200; Kevin reported a real run also deleted a test file and row. No scheduled run has been observed yet. The file in this repo now cleans every mode folder under a day (so Daily Scrawl's `scrawl` folder is cleaned too), where the first deployed copy only knew `basic` and `detailed`. It has to be redeployed after any change to this file: paste it over the old code in the dashboard editor, then check the Settings tab still has "Verify JWT with legacy secret" off. Kevin reported redeploying it before this was pushed (not observed).
 - Prompts are **not** stored here on purpose — they stay in `../frontend/prompts.json` so any teammate can edit them by committing a file, with no Supabase access needed, since Supabase will only be set up on Kevin's machine.
 - `../frontend/supabase-config.js` and `../frontend/publish.js`: the frontend side that actually calls Supabase (upload a drawing, insert its row, read today's drawings back for the gallery). See `../frontend/README.md`.
 
@@ -28,8 +30,25 @@ These steps have been done on Kevin's project; they're kept here so the setup ca
 
 What gets deleted: anything dated before yesterday by UTC date, so a drawing lives about one to two days, not exactly 24 hours. That window is deliberate (the game's day is the player's local date; the database's is UTC). Files with no matching row, which a failed publish can leave behind, are removed too, because the function works from the storage folders, not only from the table.
 
+## Applying an update to the live project
+
+For each file in `supabase/updates/` that hasn't been run yet, in number order:
+
+1. Open the file, read it, and paste the whole thing into the SQL Editor. Run it once. (Every update is written so a second run doesn't fail, but there's no reason to.)
+2. For `001`: if publishing a Daily Scrawl is still refused afterwards, the old mode constraint has a different name than the file assumes. The comment at the top of the file has the query that finds it.
+3. Redeploy the Edge Function if its file changed (see above).
+4. Check it from the app: Create Lobby should show a 5-letter code; open that `/?CODE` link in a second window and both should list two players.
+
+A teammate who needs a database change writes a new numbered file here (and updates `schema.sql` to match) and asks Kevin to run it.
+
+## Known gaps in lobbies
+
+- Anyone with the public key can call `create_lobby()` as often as they like. The rows are tiny and deleted after a day, so this costs little, but it isn't rate-limited.
+- A lobby's code is its only privacy. Anyone who guesses or is told a code can join and read every message in it. The codes are 5 random consonants (3.2 million), so guessing a live one is unlikely but not impossible.
+- The 8-player limit is enforced by the page, not by the server.
+
 ## Known gap: no moderation UI yet
 
 There's no login system, so publishing a drawing isn't tied to a real person — anyone who finds the anon key (trivial, since it's meant to be public) could insert a row directly, bypassing the game entirely. The schema only restricts *what* can be inserted (today's date, a valid mode), not *who* inserts it. Until a report/hide button exists in the app, moderation means a teammate manually sets a row's `hidden` flag or deletes it from the Supabase dashboard.
 
-Next real step: Kevin creates the actual Supabase project, runs `schema.sql`, fills in `../frontend/supabase-config.js`, and checks the publish/gallery flow end to end.
+Next real step: watch the first scheduled runs (the Edge Function's Logs tab after 10:00 UTC, and that old lobby codes disappear after 10:15 UTC).

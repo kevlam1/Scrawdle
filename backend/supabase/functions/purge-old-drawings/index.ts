@@ -15,7 +15,6 @@
 
 const BUCKET = "drawings";
 const DAY_RE = /^\d{4}-\d{2}-\d{2}$/;
-const MODES = ["basic", "detailed"];
 const PAGE = 1000; // Supabase's docs state remove() takes 1000 objects at a time
 
 // Keep today and yesterday by UTC date (matches the one-day window in schema.sql's policies,
@@ -44,11 +43,17 @@ export async function purge(client, { now = new Date(), dryRun = false } = {}) {
     .filter((name) => DAY_RE.test(name) && name < cutoff)
     .sort();
 
+  // Files live at <day>/<mode>/<file>. Walk whatever mode folders exist instead of a fixed list,
+  // so a new game mode (Daily Scrawl, or a teammate's) is cleaned up without touching this file.
+  // A folder is anything with files inside it; a bare file directly under a day folder is removed too.
   const paths = [];
   for (const day of oldDays) {
-    for (const mode of MODES) {
-      for (const item of await listAll(bucket, `${day}/${mode}`)) {
-        paths.push(`${day}/${mode}/${item.name}`);
+    for (const item of await listAll(bucket, day)) {
+      const children = await listAll(bucket, `${day}/${item.name}`);
+      if (children.length > 0) {
+        for (const child of children) paths.push(`${day}/${item.name}/${child.name}`);
+      } else if (item.id !== null && item.id !== undefined) {
+        paths.push(`${day}/${item.name}`);
       }
     }
   }

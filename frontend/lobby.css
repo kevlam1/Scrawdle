@@ -1,0 +1,68 @@
+/* Lobbies: the home screen's Lobby card, the lobby room, and the full-screen stage a game draws
+ * into. Loaded after flow.css so it can rely on the same paper, ink, and yellow. */
+
+/* ---------- Home card ---------- */
+/* The home grid is three across (one across under 800px). Free play shares the last row with
+   this card, so it takes the two columns beside it, with Create and Join side by side inside. */
+@media (min-width: 801px) {
+  .lobby-card { grid-column: span 2; display: grid; grid-template-columns: 1fr 1fr; column-gap: 16px; align-items: end; }
+  .lobby-card h2, .lobby-card p, .lobby-error { grid-column: 1 / -1; }
+  .lobby-join { margin-top: 0; }
+}
+.lobby-card .btn { width: 100%; }
+.lobby-join { display: flex; gap: 8px; margin-top: 10px; }
+/* #setup is here only to out-rank flow.css, which sets width: 100% on every home button
+   (with an id selector) while a saved drawing is shown. */
+#setup .home-choice .lobby-join .btn { width: auto; flex: none; }
+.lobby-join input,
+.lobby-name input,
+.lobby-link {
+  min-width: 0; height: 46px; padding: 0 12px;
+  background: #fffdf8; border: var(--line); border-radius: 9px;
+  font: inherit; font-size: 14px; color: var(--ink);
+}
+.lobby-join input { flex: 1; text-align: center; text-transform: uppercase; letter-spacing: .25em; }
+.lobby-join input::placeholder { letter-spacing: 0; text-transform: none; }
+.lobby-error { margin: 10px 0 0; font-size: 13px; line-height: 1.5; color: var(--alert-ink); }
+.lobby-sr { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+
+/* ---------- The lobby room ---------- */
+#lobby { width: 100vw; max-width: none; height: 100dvh; max-height: none; margin: 0; border: 0; border-radius: 0; box-shadow: none; background: var(--paper) var(--grain); overflow: auto; padding: 20px 32px 32px; }
+#lobby[open] { display: flex; flex-direction: column; align-items: center; }
+#lobby .app-header { max-width: 1320px; }
+.lobby-body { width: min(560px, 100%); margin: auto; padding: 24px 0; text-align: center; }
+.lobby-code { margin: 8px 0 20px; font: 400 clamp(44px, 12vw, 84px)/1 var(--marker); letter-spacing: .04em; }
+.lobby-share { display: flex; gap: 8px; }
+.lobby-link { flex: 1; }
+.lobby-share .btn { flex: none; font-size: 14px; }
+.lobby-status { min-height: 1.5em; margin: 12px 0 0; font-size: 14px; color: var(--ink-soft); }
+.lobby h2 { margin: 24px 0 10px; font: 400 27px/1.2 var(--hand); text-align: left; }
+.lobby-count { margin-left: .4em; font: 14px/1 Arial, sans-serif; color: var(--ink-soft); }
+.lobby-players, .lobby-games { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; }
+.lobby-players li, .lobby-games li {
+  display: flex; align-items: center; gap: 8px; min-height: 48px; padding: 8px 14px;
+  background: #fffdf7; border: var(--line); border-radius: 12px; text-align: left;
+}
+.lobby-player-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.lobby-tag { flex: none; padding: 4px 8px; border-radius: 99px; background: var(--tan); font: 11px/1 Arial, sans-serif; letter-spacing: 1px; text-transform: uppercase; }
+.lobby-tag.host { background: var(--yellow); }
+.lobby-name { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; margin-top: 22px; font-size: 15px; text-align: left; }
+.lobby-name input { width: min(300px, 100%); }
+.lobby-game-text { display: flex; flex: 1; flex-direction: column; min-width: 0; }
+.lobby-game-text b { font-weight: 400; font-size: 20px; }
+.lobby-game-text small, .lobby-wait { font-size: 13px; color: var(--ink-soft); }
+.lobby-games .btn { flex: none; font-size: 14px; }
+.lobby-games-empty { margin: 4px 0 0; font-size: 14px; line-height: 1.6; color: var(--ink-soft); text-align: left; }
+
+/* ---------- The stage a game draws into ---------- */
+#lobby-game { width: 100vw; max-width: none; height: 100dvh; max-height: none; margin: 0; padding: 0; border: 0; border-radius: 0; box-shadow: none; background: var(--paper) var(--grain); overflow: auto; }
+.lobby-stage-root { min-height: 100%; }
+
+@media (max-width: 600px) {
+  #lobby { padding: 12px 16px 24px; }
+  .lobby-body { padding: 12px 0; }
+  .lobby h2 { font-size: 23px; }
+  .lobby-share { flex-direction: column; }
+  .lobby-link { flex: none; width: 100%; }
+  .lobby-share .btn { width: 100%; }
+}

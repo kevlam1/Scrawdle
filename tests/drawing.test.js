@@ -1,7 +1,7 @@
 // Run with: node --test tests/drawing.test.js
 const test = require("node:test");
 const assert = require("node:assert/strict");
-const { floodFill, History, dayKey } = require("../frontend/drawing.js");
+const { floodFill, History, dayKey, slotOf } = require("../frontend/drawing.js");
 const { dailyIndex } = require("../frontend/daily.js");
 
 function image(w, h, rgba = [255, 255, 255, 255]) {
@@ -129,4 +129,13 @@ test("daily picks are spread across the options", () => {
   for (let y = 2026; y < 2031; y++) for (let m = 1; m <= 12; m++) for (let d = 1; d <= 28; d++) counts[dailyIndex(`${y}-${m}-${d}`, "tail", 20)]++;
   const expected = (5 * 12 * 28) / 20;
   assert.ok(Math.max(...counts) < expected * 2 && Math.min(...counts) > expected / 2, counts.join(","));
+});
+
+test("each kind of round saves in its own slot", () => {
+  assert.equal(slotOf({ mode: "basic", daily: true }), "today");
+  assert.equal(slotOf({ mode: "detailed", daily: true }), "today");
+  assert.equal(slotOf({ mode: "basic", daily: false }), "free");
+  assert.equal(slotOf({ mode: "scrawl", daily: true }), "scrawl");
+  assert.equal(slotOf({ mode: "scrawl" }), "scrawl", "Daily Scrawl never shares a save with Free play or today's parts");
+  assert.equal(slotOf({ mode: "basic" }), "today", "an older save with no daily flag still counts as today's");
 });

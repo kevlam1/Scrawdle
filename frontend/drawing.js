@@ -194,7 +194,8 @@
       await this.remove("current");
     },
   };
-  const slotOf = (round) => (round.daily === false ? "free" : "today");
+  // Daily Scrawl (mode "scrawl") is a free draw with its own save, cleared each day like "today".
+  const slotOf = (round) => (round.mode === "scrawl" ? "scrawl" : round.daily === false ? "free" : "today");
   const draftImage = async (draft) => draft.blob || (await fetch(draft.dataUrl)).blob();
 
   /* ---------- The board ---------- */
@@ -880,16 +881,16 @@
       refreshToolbar();
       return save();
     }
-    // What's saved in each slot, for the home screen. A today's drawing from an earlier day is
-    // thrown away; Free play isn't tied to a date, so it stays.
+    // What's saved in each slot, for the home screen. A today's or Daily Scrawl drawing from an
+    // earlier day is thrown away; Free play isn't tied to a date, so it stays.
     async function drafts() {
       const found = {};
       try { await draftStore.migrate(); } catch (err) { return found; }
-      for (const slot of ["today", "free"]) {
+      for (const slot of ["today", "scrawl", "free"]) {
         try {
           const draft = await draftStore.get(slot);
           if (!draft) continue;
-          if (slot === "today" && draft.day !== dayKey()) {
+          if (slot !== "free" && draft.day !== dayKey()) {
             await draftStore.remove(slot);
             continue;
           }
@@ -1121,7 +1122,7 @@
     };
   }
 
-  const api = { floodFill, History, dayKey, brushWidthFactor };
+  const api = { floodFill, History, dayKey, brushWidthFactor, slotOf };
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   else root.ScrawdleDrawing = { ...api, createBoard, createFinishScreen, HISTORY_BYTES };
 })(typeof window !== "undefined" ? window : globalThis);

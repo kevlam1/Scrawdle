@@ -559,6 +559,53 @@ Artifact 4 is "For Someone Else," due Sunday, November 8. My team (me, Angie, Tr
 
 ---
 
+## 29. Lobbies, and a Daily Scrawl mode (2026-11-04) — Kevin
+
+**What I asked for**
+- Asked Claude to set up multiplayer lobbies joined by a 5-letter code or a link like `scrawdle.vercel.app/?ABCDE`, with a Create Lobby option on the front page that just makes a private room, so my teammates' Claudes can build their games on top of it. Also asked for a "Daily Scrawl" card on the front page: like the original but a free draw that saves and deletes daily.
+
+**What changed**
+- `frontend/lobby.js` and `lobby.css` (new): a Lobby card on the home screen (Create Lobby, or type a code), invite links, and a lobby room that shows the code, a copy-link box, who's in it (the longest-present player is the host, up to 8 players), and a Games list. Games plug in with `ScrawdleLobby.registerGame`, and the contract is written at the top of the file.
+- `backend/supabase/schema.sql` and `updates/001-lobbies-and-daily-scrawl.sql`: a `lobbies` table that nobody can read or write directly, plus two functions the public key may call (`create_lobby()` makes a code, `lobby_exists()` checks one), the `scrawl` drawing mode, and a daily cleanup of old lobby codes. Who is in a lobby and every game message are not stored: that's Supabase Realtime.
+- Daily Scrawl: a home card, its own save slot in `drawing.js` that clears each day, no slot machine, and no "does it match the parts?" buttons. It uses one pseudo-prompt, "Draw anything", so the prompt bar, finish screen, PNG, and gallery work without changes. I touched `drawing.js` and `index.html` only in a few small spots because Zainab's and Angie's work is live in them.
+- The cleanup function now walks whatever mode folders exist, instead of a fixed list, so Daily Scrawl's `scrawl` folder (and a teammate's future game) is cleaned too. **The deployed copy is still the old one.**
+- `CLAUDE.md` has a new "Lobbies and adding a multiplayer game" section for the other three sessions; `README.md`, `backend/README.md`, and `frontend/README.md` are updated.
+
+**What I checked**
+- 41 logic tests pass (14 drawing, 3 brush, 11 cleanup, 13 lobby). I broke each new module on purpose several ways and every broken copy was caught after I fixed two weak spots in my own tests.
+- Ran the SQL against a real Postgres (PGlite, installed in a scratch folder outside the repo, Apache-2.0, deleted afterwards): 17 checks, including the old schema with update 001 on top (twice), the public key being unable to read or touch lobby rows, and what happens when every code is taken.
+- 65 checks in headless Chrome across up to ten tabs at once, then screenshots at desktop and phone width: lobby create, join by link and by typed code, bad codes, rename, leave, host hand-over, the 8-player cap, a test game started, played, joined mid-game, and ended, and the whole Daily Scrawl flow including a day rollover.
+- **Not checked:** anything against the live Supabase project. The browser tests used an in-page stand-in for Supabase's realtime service. It had to guess the shape of a broadcast callback's argument and how a repeated `track()` updates presence (the docs don't say); `lobby.js` tolerates both, but that is a guess until it runs for real. Not checked either: a real phone, Safari, Firefox, or more than a few real people at once.
+
+**Decisions**
+- Lobby codes are made by the database and recorded, so a mistyped code can be told from a real lobby, instead of the page inventing codes. That costs one small table and means I run one SQL file.
+- Generated codes use 20 consonants only, so a random code almost never spells a word (nobody gets a rude lobby). Typed codes can be any 5 letters. My example `ABCDE` has vowels, so generated codes won't look like it.
+- The lobby has no game of its own: the room, the player list, and a contract only, because that's the part I own.
+- Daily Scrawl is a mode with a pseudo-prompt, not a new kind of round, to keep my edits to my teammates' files tiny.
+- Nothing is pushed. Before it goes to `main` I have to run update 001 and redeploy the cleanup function, or the Lobby card will show on the live site and fail, and Daily Scrawl drawings will be refused by the database.
+
+---
+
+## 30. Pushing lobbies and Daily Scrawl to main (2026-11-04) — Kevin
+
+**What I asked for**
+- Asked how to redeploy the cleanup function, asked what happens to an inactive lobby code, then told Claude "everything's tested" and to commit and push all of it to `main`.
+
+**What changed**
+- The docs (`CLAUDE.md`, `README.md`, `backend/README.md`) now say the lobby SQL, the redeploy, and the live testing were done by me, marked "reported by Kevin", instead of saying they were still to do. Claude was not able to see my Supabase project, so it did not write them as observed.
+- Everything from today goes to `main` in one push, including the two earlier commits that were never pushed (the Supabase scaffold and the daily wipe).
+- Answer to my question about inactive lobby codes: a code is deleted by age, not by use. The cleanup runs at 10:15 UTC and removes codes more than a day old, so a code lives 24 to 48 hours whether or not anyone is in it. People already inside stay connected, but nobody new can join once it's gone. I chose to leave it that way for now.
+
+**What I checked**
+- Claude ran all 41 logic tests once more before the commit (all pass) and scanned the files for keys; found none.
+- I did not give Claude which checks I ran on the live project. So whether update 001 ran cleanly, the function was redeployed with "Verify JWT" still off, and the two realtime details held (the shape of a broadcast message, and how a name change updates presence) has not been confirmed in a session.
+
+**Decisions**
+- Pushed straight to `main` as I asked, instead of `kevin` first, even though Claude suggested a branch first, because I'd tested it.
+- Left lobby codes expiring by age. If lobbies need to last longer than a day while in use, the fix is a `last_used` column that joining refreshes.
+
+---
+
 ## Where AI misread me, or I had to correct course
 
 - Claude's first version of the start page put "What is this?" in the top right, where it collided with the "New set" button on the game screen. I caught it by running the page; Claude hadn't opened it in a browser.
@@ -566,6 +613,9 @@ Artifact 4 is "For Someone Else," due Sunday, November 8. My team (me, Angie, Tr
 - In session 4, I said the two PDFs "should be within the root file." Claude had already searched the repo root and my home folder and found nothing; once I pointed at "the root file," it searched the whole `TCSS 490` folder and found both PDFs in `Unit 4/`, not the repo root.
 - **Wrong day comparison in the Supabase schema (Claude's slip, entry 26, found while writing the setup walkthrough on 2026-11-04):** `schema.sql` compared each drawing's `day` to `current_date`, which is the database's UTC date, but `dayKey()` in `drawing.js` is the player's local date. In Pacific time, after about 4 to 5 pm the two differ, so publishing would have been refused and the gallery would have come back empty every evening, and the hide job would have hidden drawings still counted as today's. Nothing had been run against a real project yet. Fixed by allowing a one-day window either side (`current_date - 1` to `current_date + 1`) and hiding only rows older than `current_date - 1`. I also broke the `$$` in the commented cron job with a JavaScript `String.replace` while fixing it, the exact pitfall in the shared notes, and caught it when I re-read the file.
 - **An invented date, and a scheduling block that was easy to run unfilled (Claude's slips, entries 27 and 28):** Claude wrote into `backend/README.md` that publishing was checked "on 2026-11-05", a date it had no evidence for, and caught it and changed it to say only what Kevin had reported. Separately, Claude gave Kevin the scheduling SQL as a commented block with several placeholders, and Kevin ran it once before filling them in, which created a scheduled job and two Vault secrets with junk values. It was harmless (the job could only call a URL that doesn't exist), and Claude gave him statements to remove them; whether he ran them was not confirmed in the session, though the next job id (2) suggests he did. The block should have been handed over with the project URL already filled in and one obvious placeholder, which is how Claude gave it the second time. Kevin also showed his `CRON_SECRET` in a screenshot and replaced it afterward (reported by him).
+- **Two real bugs in the first lobby code, both found by running it in a browser, not by reading it (Claude's slips, entry 29):** (1) Leaving a lobby cleared the channel before telling Supabase to untrack, and the untrack triggers one last update that the handler read from the channel Claude had just cleared, so it crashed and the lobby never closed; every handler now ignores a channel that's no longer the current one. (2) Dropping a late joiner into a game already running was only attempted on the first presence update, but that update can contain only the joiner (the others' entries arrive after), so it silently did nothing; it is now a short window after joining that closes when any game starts or ends. Neither was caught by the helper tests, because both depend on the order events arrive in.
+- **A layout that passed every check and was visibly broken (Claude's slip, entry 29):** the Lobby card's Join button overflowed the card whenever a saved drawing was showing, because an existing rule in `flow.css` forces every home button to full width with an id selector. All 65 browser checks passed anyway, because the checks tested values, not how it looked; only the screenshot showed it. Fixed by matching that rule's specificity, after printing what the browser actually computed instead of guessing.
+- **Weak or wrong tests of my own (Claude's slips, entry 29):** a lobby test compared two different random names (nonsense, fixed to check that every generated name survives cleaning); a cleanup test expected a file three folders deep to be found, which our code never makes (fixed the test, not the code); and one broken copy of the host ordering survived because the test's ids happened to be alphabetical in join order, so it passed with the join-time sort deleted (added a case where they differ). I also wrote "54 logic tests" in `CLAUDE.md` from memory and recounted to find 41.
 
 ---
 

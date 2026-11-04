@@ -10,6 +10,8 @@
 - `gallery.js` and `assets/sample-strawberries.webp`: the gallery, with labeled sample drawings until real drawings are connected.
 - `supabase-config.js`: the Supabase project URL and anon key. Filled in with Kevin's real project; safe to commit (the key is meant to be public, see `../CLAUDE.md`). Running the page locally publishes to that same real project.
 - `publish.js`: wires `window.scrawdlePublish` and `window.scrawdleGallery` to Supabase. Does nothing until `supabase-config.js` has real values, so the Publish button and gallery stay hidden exactly as before.
+- `lobby.js` and `lobby.css`: lobbies, joined with a 5-letter code or a link like `/?BCDFG`: the Lobby card on the home screen, the lobby room, and the contract games plug into (`ScrawdleLobby.registerGame`). Read the comment at the top of `lobby.js` before building a multiplayer game, and the "Lobbies and adding a multiplayer game" section of `../CLAUDE.md`. Does nothing if `supabase-config.js` is empty. Its pure logic is tested in `../tests/lobby.test.js`.
+- Daily Scrawl (a card on the home screen) is a free-draw mode with no parts. It is a normal round with mode `scrawl` and one pseudo-prompt, "Draw anything", so the prompt bar, finish screen, PNG export, and gallery work unchanged. It has its own save slot in `drawing.js` (cleared each day, like Basic and Detailed) and no match-the-parts buttons.
 
 Publishing needs `supabase-config.js` filled in and the schema in `../backend/supabase/schema.sql` run against a real project; both are done. With the two config values emptied, the page works without publishing — see the comments at the top of `drawing.js` and `gallery.js` for the hooks.
 

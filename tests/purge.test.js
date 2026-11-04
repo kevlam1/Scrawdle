@@ -16,12 +16,16 @@ function fakeClient({ files, rows, removeError, listError }) {
         async list(path, { limit, offset }) {
           if (listError) return { data: null, error: { message: listError } };
           const prefix = path === "" ? "" : path + "/";
-          const names = new Set();
+          // Like Supabase's list(): a folder entry has id null, a file entry has an id.
+          const entries = new Map();
           for (const f of state.files) {
             if (!f.startsWith(prefix)) continue;
-            names.add(f.slice(prefix.length).split("/")[0]);
+            const [first, ...more] = f.slice(prefix.length).split("/");
+            entries.set(first, more.length > 0);
           }
-          const all = [...names].sort().map((name) => ({ name }));
+          const all = [...entries]
+            .sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))
+            .map(([name, isFolder]) => ({ name, id: isFolder ? null : `id-${name}` }));
           return { data: all.slice(offset, offset + limit), error: null };
         },
         async remove(paths) {
@@ -115,6 +119,29 @@ test("files with no database row (a failed publish) are still removed", async ()
   const result = await mod.purge(client, { now: NOW });
   assert.equal(result.filesDeleted, 1);
   assert.equal(client.state.files.length, 0);
+});
+
+test("any mode folder is cleaned, including Daily Scrawl and ones that don't exist yet", async () => {
+  const client = fakeClient({
+    files: [
+      "2026-11-01/scrawl/a.png",
+      "2026-11-01/pictionary/b.png",
+      "2026-11-01/basic/c.png",
+      "2026-11-05/scrawl/keep.png",
+    ],
+    rows: [],
+  });
+  const result = await mod.purge(client, { now: NOW });
+  assert.equal(result.filesFound, 3);
+  assert.equal(result.filesDeleted, 3);
+  assert.deepEqual(client.state.files, ["2026-11-05/scrawl/keep.png"]);
+});
+
+test("a file sitting directly under an old day folder is removed", async () => {
+  const client = fakeClient({ files: ["2026-11-01/loose.png", "2026-11-05/new.png"], rows: [] });
+  const result = await mod.purge(client, { now: NOW });
+  assert.equal(result.filesDeleted, 1);
+  assert.deepEqual(client.state.files, ["2026-11-05/new.png"]);
 });
 
 test("a storage error stops before any row is deleted, so tomorrow retries", async () => {
