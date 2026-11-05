@@ -1,6 +1,11 @@
 /* Lobbies: the home screen's Lobby card, the lobby room, and the full-screen stage a game draws
  * into. Loaded after flow.css so it can rely on the same paper, ink, and yellow. */
 
+/* ---------- The home screen's link to the build log ---------- */
+/* The game's "quiet" style was made for buttons; a link would otherwise show in the browser's default blue.
+   This stylesheet loads last, so it lives here rather than in a teammate's file. */
+a.quiet { color: #5c584f; } /* the same grey flow.css gives the "Explore sample drawings" button next to it */
+
 /* ---------- Home card ---------- */
 /* The home grid is three across (one across under 800px). Free play shares the last row with
    this card, so it takes the two columns beside it, with Create and Join side by side inside. */

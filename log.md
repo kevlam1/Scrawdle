@@ -1,13 +1,13 @@
 # Build log: Artifact 4 (Scrawdle)
 
-**AI:** Claude Code | **Editor:** IntelliJ IDEA Ultimate | **Host:** not chosen yet (public repo `kevlam1/Scrawdle`, team of three: `kevlam1`, `arcangieo`, `trentenmuw`)
+**AI:** Claude Code | **Editor:** IntelliJ IDEA Ultimate | **Host:** not chosen yet (public repo `kevlam1/Scrawdle`, team of four: `kevlam1`, `arcangieo`, `trentenmuw`, `zainasuw`)
 **Stack:** not locked yet — leaning Supabase for the database, plain HTML5 Canvas for drawing. See `CLAUDE.md`.
 
 ---
 
-## What I set out to build
+## What we set out to build
 
-Artifact 4 is "For Someone Else," due Sunday, November 8. My team (me, Angie, Trenten) is building Scrawdle, a daily drawing game like Wordle or NYTimes' minigames: a prompt (or a few) each day, a browser canvas with drawing tools, and a chance to see what other players drew once you finish your own. We pitched it for artists and for the general public as a casual daily pastime. Nothing is built yet — this entry covers getting the repo and the shared `CLAUDE.md` set up, not any real feature.
+Artifact 4 is "For Someone Else," due Sunday, November 8. Our team of four (Kevin, Angie, Trenten, and Zainab) is building Scrawdle, a daily drawing game like Wordle or NYTimes' minigames: a prompt (or a few) each day, a browser canvas with drawing tools, and a chance to see what other players drew once you finish your own. We pitched it for artists and for the general public as a casual daily pastime. When this log started, nothing was built yet: the first entries cover getting the repo and the shared `CLAUDE.md` set up, not any real feature.
 
 ---
 
@@ -606,6 +606,90 @@ Artifact 4 is "For Someone Else," due Sunday, November 8. My team (me, Angie, Tr
 
 ---
 
+## 31. A logs page at /logs (2026-11-04) — Kevin
+
+**What I asked for**
+- Asked Claude for a logs page that displays `log.md`, something like `scrawdle.vercel.app/logs`.
+
+**What changed**
+- My rules say to copy the generator from MIDI Companion instead of writing a new one, so `scripts/make-logs-page.mjs`, `scripts/logs-template.html`, and `scripts/log-summaries.mjs` are copies, adapted. They write `frontend/logs/index.html`, which Vercel serves at `/logs` because `frontend/` is the site's output folder.
+- Adaptations for this repo: headings may end with `— Kevin`, `— Angie`, and so on, and the author shows as a yellow tag on each entry (the old generator stopped on that heading); a `--check` mode that fails if the page is out of date; titles with code in them show it as code; and the page is themed like the game (paper and yellow, the game's own Patrick Hand heading font) instead of MIDI Companion's dark orange one. I dropped the favicon and font links that don't exist in this repo.
+- The page has all 30 entries, the "What I set out to build" intro, and the two closing lists, with a Contents menu and Expand all / Collapse all. Nothing in the game links to it.
+- `tests/logs-page.test.js` fails if `log.md` changed and the page wasn't regenerated. **That adds a step for everyone who writes a log entry:** write a one-sentence summary in `scripts/log-summaries.mjs` and run the generator. It is now in the log protocol in `CLAUDE.md`.
+- Claude drafted the one-sentence summaries. For my entries they are in my voice; for Angie's, Zainab's, and Trenten's entries Claude wrote them in the first person of each author from their entries, and they haven't seen them.
+
+**What I checked**
+- The generator checks that every word of `log.md` is on the page, and it passed. The page shows 32 entries (30 plus the two closing lists) with 15 tags for me, 11 for Zainab, 3 for Angie, and 1 for Trenten, which matches the log.
+- Broke the log and the summaries six ways (a changed word with no regeneration, a new entry with no summary, the same entry with one, a heading with no author, skipped numbering, a stray heading): each failed or behaved as it should. Every file was restored byte for byte afterward.
+- 21 checks in headless Chrome and screenshots at desktop and phone width: the Contents menu, opening an entry from it, Expand all and Collapse all, a `#entry-22` link opening Trenten's entry, no sideways scroll on a phone, no console errors. The font loaded.
+- On my live MIDI Companion site, `/logs` and `/logs/` both answer 200, and Vercel's docs (as summarized by a fetch agent, not read directly) say both forms are served when `trailingSlash` isn't set. **Not checked: that this site's `/logs` answers without the slash, because it isn't deployed yet.**
+
+**Decisions**
+- Kept the page out of the game's own screens and kept the `noindex` tag, as on MIDI Companion.
+- Left the existing text alone even though two parts are out of date: "What I set out to build" says nothing is built and lists three people, and "Decisions and abandoned ideas" says everything is still open. The page shows them as written because the log protocol says not to rewrite old entries without asking. I should rewrite those two when I have a minute.
+
+---
+
+## 32. Adding Zainab to the log's team line and intro (2026-11-04) — Kevin
+
+**What I asked for**
+- Noticed the log only mentioned three of us and asked Claude to include Zainab as part of the team.
+
+**What changed**
+- The log's header line now says "team of four" and lists `zainasuw` along with the other three usernames, and the "What I set out to build" intro now reads "me, Angie, Trenten, and Zainab". That intro is the first text on the `/logs` page, so the page was regenerated.
+- `CLAUDE.md` and `README.md` already named all four, so they didn't change.
+
+**What I checked**
+- Searched every file for "team of three", "me, Angie", "Angie and Trenten", and the usernames. Read the log diff afterward: only those two lines of old text changed. The page and its test were regenerated and pass.
+
+**Decisions**
+- Left entries 4, 6, and 7 (and the entry-6 summary) saying "three" or "Angie and Trenten": they were written on 29 October, when the team was three people, and Zainab joined on 1 November. Changing them would make the log misreport what was true then.
+- Did not touch the other out-of-date text in the header and intro ("Host: not chosen yet", "leaning Supabase", "Nothing is built yet"), because I only asked about the team. Those are still stale.
+
+---
+
+## 33. The logs page in a team voice (2026-11-04) — Kevin
+
+**What I asked for**
+- Pointed out that the logs page is shared by all four of us, so text that says "me" as Kevin doesn't make sense, and asked for another perspective.
+
+**What changed**
+- The intro section is now headed "What we set out to build" and reads in the team's voice: "Our team of four (Kevin, Angie, Trenten, and Zainab)". Its last sentence also said "Nothing is built yet", which hasn't been true for a while, so it now says that was the case when this log started.
+- All the one-sentence summaries on the page were rewritten in the third person, naming who did the thing ("Angie built...", "Claude found..."), with no "I", and with the name repeated instead of guessing he, she, or they. The page's author tags stay.
+- The generator accepts either "What I" or "What we" for that heading. `CLAUDE.md` now tells everyone who writes an entry to write its summary in the third person, and to head the intro "What we".
+- The full text of each entry is unchanged and still first person. Each one is signed with its author's tag and the log protocol has always had each person write their own entries that way, so "I" there means the signed author.
+
+**What I checked**
+- Scanned all 35 summaries for first-person words and gendered pronouns: none. Regenerated the page; the generator's check that every word of `log.md` is on the page passes, and so do all the tests.
+
+**Decisions**
+- Kept entries in the author's own first person rather than rewriting four people's words in a different voice. If I want those changed too, that's a bigger edit and I'd have to ask each of them.
+- Left the header's "Host: not chosen yet" and "leaning Supabase" alone for now; they are still out of date.
+
+---
+
+## 34. A link to the build log from the game (2026-11-04) — Kevin
+
+**What I asked for**
+- Asked Claude to add a way to reach the log from inside Scrawdle, saying this is the last change from me, and then to commit and push everything to both the `kevin` branch and `main`.
+
+**What changed**
+- The home screen has a "Read our build log" link, next to "Explore sample drawings", that opens `/logs/`. Before this, nothing in the game linked to the logs page.
+- The game's quiet-link style was made for buttons and an anchor would have shown in the browser's default blue, so `frontend/lobby.css` (the stylesheet that loads last) sets the link to the same grey as the sample-drawings button beside it. I did it there instead of in a teammate's CSS file.
+- The four places that said "nothing in the game links to it" (the page template, `CLAUDE.md`, `README.md`, `frontend/README.md`) now say it's linked from the bottom of the home screen. The `/logs` page was regenerated.
+- The link uses `/logs/` with the trailing slash, since that is the form I have seen work on my MIDI Companion site.
+
+**What I checked**
+- 10 checks in headless Chrome with screenshots at desktop and phone width: the link exists and points at `/logs/`, it is the same colour as its neighbour and underlined, it is 44 pixels tall, nothing scrolls sideways on a phone, clicking it opens the log page with all 33 entries and the two closing lists and a way back to the game, and there were no failed requests or console errors.
+- All 42 tests pass, including the one that fails if the logs page is out of date.
+- Not checked: the live site. This log page isn't deployed until this is pushed, so whether `/logs` also works without the trailing slash on this site is still unconfirmed.
+
+**Decisions**
+- Used a small text link at the bottom of the home screen, not a card or a header button, because the log is for reading about the project and not part of playing.
+- Kept the `noindex` tag on the logs page so search engines still skip it, even though the game now links to it.
+
+---
+
 ## Where AI misread me, or I had to correct course
 
 - Claude's first version of the start page put "What is this?" in the top right, where it collided with the "New set" button on the game screen. I caught it by running the page; Claude hadn't opened it in a browser.
@@ -616,6 +700,10 @@ Artifact 4 is "For Someone Else," due Sunday, November 8. My team (me, Angie, Tr
 - **Two real bugs in the first lobby code, both found by running it in a browser, not by reading it (Claude's slips, entry 29):** (1) Leaving a lobby cleared the channel before telling Supabase to untrack, and the untrack triggers one last update that the handler read from the channel Claude had just cleared, so it crashed and the lobby never closed; every handler now ignores a channel that's no longer the current one. (2) Dropping a late joiner into a game already running was only attempted on the first presence update, but that update can contain only the joiner (the others' entries arrive after), so it silently did nothing; it is now a short window after joining that closes when any game starts or ends. Neither was caught by the helper tests, because both depend on the order events arrive in.
 - **A layout that passed every check and was visibly broken (Claude's slip, entry 29):** the Lobby card's Join button overflowed the card whenever a saved drawing was showing, because an existing rule in `flow.css` forces every home button to full width with an id selector. All 65 browser checks passed anyway, because the checks tested values, not how it looked; only the screenshot showed it. Fixed by matching that rule's specificity, after printing what the browser actually computed instead of guessing.
 - **Weak or wrong tests of my own (Claude's slips, entry 29):** a lobby test compared two different random names (nonsense, fixed to check that every generated name survives cleaning); a cleanup test expected a file three folders deep to be found, which our code never makes (fixed the test, not the code); and one broken copy of the host ordering survived because the test's ids happened to be alphabetical in join order, so it passed with the join-time sort deleted (added a case where they differ). I also wrote "54 logic tests" in `CLAUDE.md` from memory and recounted to find 41.
+- **Four faults in my own checks while building the logs page, none in the page (Claude's slips, entry 31):** (1) A "break it on purpose" test changed a phrase that isn't in `log.md`, so nothing changed and it reported "survived"; I only noticed because it should have failed. (2) Another one read a file from `/tmp`, which Node on Windows resolves to a different folder than Git Bash does. (3) The browser script waited forever for a page-load event that never comes when only the `#hash` of a page changes, and hung until it was stopped. (4) A link check searched the whole page for "midi-companion", which the log text legitimately mentions twice, so it failed on correct output. Each was fixed in the check, and the page's real links were read directly to confirm they were right.
+- **The generator would have stopped on our own headings (found before running it, entry 31):** the copied script only accepted `## N. Title (date)`, and every heading here now ends with `— Name`. Reading the script first caught it; running it unchanged would have failed with "Unexpected section".
+- **A shared page that spoke as one person (Claude's slip, entries 31 and 33, pointed out by Kevin):** Claude kept the one-sentence summaries in the first person of each entry's author, and kept the intro as written in Kevin's voice ("My team (me, Angie...)"). On a page four people share, that meant Kevin's entries said "I" next to a "by Kevin" tag and the intro said "me" as Kevin. Claude had also copied the first-person style from the MIDI Companion log, which has a single author, without asking whether it fit a team. Fixed in entry 33 by moving the shared text to a team voice and the summaries to the third person.
+- **Backticks in a shell command, the exact mistake our shared notes warn about (Claude's slip, entry 34):** a one-line script that edited four docs had backticks inside a single-quoted shell string, so the shell refused to run it. Nothing was changed, but it was a mistake the notes list by name. The edits were made with the editing tool instead. Separately, Claude's first check of the new link's colour failed because it expected the link to match the "Explore sample drawings" button, which turns out to have its own softer grey set in `flow.css`; the link was changed to match.
 
 ---
 

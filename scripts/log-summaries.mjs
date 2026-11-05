@@ -1,0 +1,45 @@
+// The one-sentence summary shown for each section of log.md on the logs page (frontend/logs/index.html).
+// Keys are the section numbers in log.md, plus 'misread' and 'decisions' for the two lists at the end.
+// scripts/make-logs-page.mjs reads these, and stops with a message if a numbered section has none.
+// The page is shared by the whole team, so each summary is in the third person and names who did the thing
+// ("Angie built...", "Claude found..."). Don't use "I" or "my", and don't guess at he/she/they: repeat the name.
+// The page also shows the author's name next to each summary. When you add a log entry, add its sentence
+// here first, then run: node scripts/make-logs-page.mjs
+export const SUMMARIES = {
+  1: 'Kevin cloned the team repo into the project folder, working around the IntelliJ settings folder that was already there.',
+  2: 'Kevin asked to push to main, found there was only an Angie branch, and chose to create main from it.',
+  3: 'Kevin checked main and found that teammates had pushed seven new commits since the first push.',
+  4: 'Kevin had Claude read the Artifact 4 assignment and the team pitch, then write a shared CLAUDE.md that leaves roles and the stack open instead of guessing.',
+  5: "Kevin asked which database fits the daily wipe, and Claude found Firebase's scheduled jobs need a paid plan while Supabase's don't; Kevin also set up this log and the rule to keep it updated.",
+  6: 'Kevin decided on Supabase, recorded as a personal call until Angie and Trenten could confirm it.',
+  7: 'Kevin had Claude write a short README and scaffold placeholder frontend and backend folders, with a draft Supabase schema.',
+  8: "Kevin ran the readme-architect tool on this repo: check mode passed, generate mode couldn't tell the project type, so Claude wrote the README update by hand.",
+  9: 'Kevin added a short "Running locally" guide to the README.',
+  10: 'Kevin added the Vercel link, and Claude found the live site returned a 404 at the root because the page lives in frontend/, so a vercel.json was added.',
+  11: 'Angie asked Claude for a temporary prompts.json instead of putting prompts in Supabase, with a list of parts for Basic and for Detailed.',
+  12: 'Angie built the start screen with Basic and Detailed, a slot machine that rolls the parts, and a bar that shows them above the canvas.',
+  13: 'Angie moved the "What is this?" button so it stopped overlapping "New set", and made the drawing canvas bigger.',
+  14: 'Zainab joined the team and took the drawing side: tools, a paint bucket, undo, auto-save, and a finish screen that exports a PNG with the prompts and date.',
+  15: 'Zainab updated the README and team notes so finished work shows as finished instead of as a placeholder.',
+  16: 'Zainab made the parts the same for everyone on a given date with no server, and added Free play and a gallery of clearly labeled sample drawings.',
+  17: 'Zainab found and fixed seven bugs in the drawing code, each reproduced with a failing check first.',
+  18: 'Zainab added Replay, which redraws a drawing stroke by stroke from the finish screen.',
+  19: 'Zainab made Replay start sped up, with a button to change its speed while it plays.',
+  20: 'Zainab replaced the speed button with a Replay that eases in and speeds up by itself, taking about 2 to 4 seconds however long the drawing took.',
+  21: 'Zainab fixed the round brush getting thinner when the mouse moves fast, so it keeps its chosen size at any speed.',
+  22: 'Trenten added a win condition where the player judges their own drawing as accurate or inaccurate to the parts rolled.',
+  23: "Zainab merged the zainab branch into main and moved Trenten's win buttons onto the new drawing board so they kept working.",
+  24: "Zainab brought illustrated tool icons into the team's game without the rest of the redesign.",
+  25: "Zainab brought over a new look for the whole game, keeping Basic, Detailed, Free play, and Trenten's win buttons.",
+  26: 'Kevin wrote the real Supabase schema and the code that publishes a drawing and shows the gallery, and kept prompts out of the database so teammates can edit them.',
+  27: 'Kevin set up Supabase for real, Claude caught a timezone bug in the schema, and Kevin wrote the daily wipe as an Edge Function.',
+  28: "Kevin deployed the daily wipe and scheduled it, after a 401 turned out to be Supabase's own \"Verify JWT\" setting.",
+  29: 'Kevin added lobbies joined by a 5-letter code or a link, and a Daily Scrawl free-draw mode, tested without touching the live project.',
+  30: 'Kevin pushed lobbies and Daily Scrawl to main, and worked out that a lobby code is deleted by age, not by use.',
+  31: 'Kevin added a build-log page at /logs, generated from this log with the generator copied from MIDI Companion, showing each entry with its author and a one-sentence summary.',
+  32: "Kevin had Zainab added to the log's team line and intro after noticing only three people were named, and left the older entries saying three because they were true when written.",
+  33: 'Kevin had the logs page written in a team voice instead of Kevin\'s, since the page is shared by four people: the intro now says "we" and every summary names who did the thing.',
+  34: 'Kevin had a "Read our build log" link added to the bottom of the home screen so players can reach the log page from the game.',
+  misread: 'Where the AI got something wrong or we had to correct course, and what happened next.',
+  decisions: 'What we decided and what we dropped along the way.',
+}
