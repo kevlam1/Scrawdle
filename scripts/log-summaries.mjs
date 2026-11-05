@@ -37,9 +37,7 @@ export const SUMMARIES = {
   29: 'Kevin added lobbies joined by a 5-letter code or a link, and a Daily Scrawl free-draw mode, tested without touching the live project.',
   30: 'Kevin pushed lobbies and Daily Scrawl to main, and worked out that a lobby code is deleted by age, not by use.',
   31: 'Kevin added a build-log page at /logs, generated from this log with the generator copied from MIDI Companion, showing each entry with its author and a one-sentence summary.',
-  32: "Kevin had Zainab added to the log's team line and intro after noticing only three people were named, and left the older entries saying three because they were true when written.",
-  33: 'Kevin had the logs page written in a team voice instead of Kevin\'s, since the page is shared by four people: the intro now says "we" and every summary names who did the thing.',
-  34: 'Kevin had a "Read our build log" link added to the bottom of the home screen so players can reach the log page from the game.',
+  32: 'Kevin had a "Read our build log" link added to the bottom of the home screen so players can reach the log page from the game.',
   misread: 'Where the AI got something wrong or we had to correct course, and what happened next.',
   decisions: 'What we decided and what we dropped along the way.',
 }

@@ -630,45 +630,7 @@ Artifact 4 is "For Someone Else," due Sunday, November 8. Our team of four (Kevi
 
 ---
 
-## 32. Adding Zainab to the log's team line and intro (2026-11-04) — Kevin
-
-**What I asked for**
-- Noticed the log only mentioned three of us and asked Claude to include Zainab as part of the team.
-
-**What changed**
-- The log's header line now says "team of four" and lists `zainasuw` along with the other three usernames, and the "What I set out to build" intro now reads "me, Angie, Trenten, and Zainab". That intro is the first text on the `/logs` page, so the page was regenerated.
-- `CLAUDE.md` and `README.md` already named all four, so they didn't change.
-
-**What I checked**
-- Searched every file for "team of three", "me, Angie", "Angie and Trenten", and the usernames. Read the log diff afterward: only those two lines of old text changed. The page and its test were regenerated and pass.
-
-**Decisions**
-- Left entries 4, 6, and 7 (and the entry-6 summary) saying "three" or "Angie and Trenten": they were written on 29 October, when the team was three people, and Zainab joined on 1 November. Changing them would make the log misreport what was true then.
-- Did not touch the other out-of-date text in the header and intro ("Host: not chosen yet", "leaning Supabase", "Nothing is built yet"), because I only asked about the team. Those are still stale.
-
----
-
-## 33. The logs page in a team voice (2026-11-04) — Kevin
-
-**What I asked for**
-- Pointed out that the logs page is shared by all four of us, so text that says "me" as Kevin doesn't make sense, and asked for another perspective.
-
-**What changed**
-- The intro section is now headed "What we set out to build" and reads in the team's voice: "Our team of four (Kevin, Angie, Trenten, and Zainab)". Its last sentence also said "Nothing is built yet", which hasn't been true for a while, so it now says that was the case when this log started.
-- All the one-sentence summaries on the page were rewritten in the third person, naming who did the thing ("Angie built...", "Claude found..."), with no "I", and with the name repeated instead of guessing he, she, or they. The page's author tags stay.
-- The generator accepts either "What I" or "What we" for that heading. `CLAUDE.md` now tells everyone who writes an entry to write its summary in the third person, and to head the intro "What we".
-- The full text of each entry is unchanged and still first person. Each one is signed with its author's tag and the log protocol has always had each person write their own entries that way, so "I" there means the signed author.
-
-**What I checked**
-- Scanned all 35 summaries for first-person words and gendered pronouns: none. Regenerated the page; the generator's check that every word of `log.md` is on the page passes, and so do all the tests.
-
-**Decisions**
-- Kept entries in the author's own first person rather than rewriting four people's words in a different voice. If I want those changed too, that's a bigger edit and I'd have to ask each of them.
-- Left the header's "Host: not chosen yet" and "leaning Supabase" alone for now; they are still out of date.
-
----
-
-## 34. A link to the build log from the game (2026-11-04) — Kevin
+## 32. A link to the build log from the game (2026-11-04) — Kevin
 
 **What I asked for**
 - Asked Claude to add a way to reach the log from inside Scrawdle, saying this is the last change from me, and then to commit and push everything to both the `kevin` branch and `main`.
@@ -702,8 +664,7 @@ Artifact 4 is "For Someone Else," due Sunday, November 8. Our team of four (Kevi
 - **Weak or wrong tests of my own (Claude's slips, entry 29):** a lobby test compared two different random names (nonsense, fixed to check that every generated name survives cleaning); a cleanup test expected a file three folders deep to be found, which our code never makes (fixed the test, not the code); and one broken copy of the host ordering survived because the test's ids happened to be alphabetical in join order, so it passed with the join-time sort deleted (added a case where they differ). I also wrote "54 logic tests" in `CLAUDE.md` from memory and recounted to find 41.
 - **Four faults in my own checks while building the logs page, none in the page (Claude's slips, entry 31):** (1) A "break it on purpose" test changed a phrase that isn't in `log.md`, so nothing changed and it reported "survived"; I only noticed because it should have failed. (2) Another one read a file from `/tmp`, which Node on Windows resolves to a different folder than Git Bash does. (3) The browser script waited forever for a page-load event that never comes when only the `#hash` of a page changes, and hung until it was stopped. (4) A link check searched the whole page for "midi-companion", which the log text legitimately mentions twice, so it failed on correct output. Each was fixed in the check, and the page's real links were read directly to confirm they were right.
 - **The generator would have stopped on our own headings (found before running it, entry 31):** the copied script only accepted `## N. Title (date)`, and every heading here now ends with `— Name`. Reading the script first caught it; running it unchanged would have failed with "Unexpected section".
-- **A shared page that spoke as one person (Claude's slip, entries 31 and 33, pointed out by Kevin):** Claude kept the one-sentence summaries in the first person of each entry's author, and kept the intro as written in Kevin's voice ("My team (me, Angie...)"). On a page four people share, that meant Kevin's entries said "I" next to a "by Kevin" tag and the intro said "me" as Kevin. Claude had also copied the first-person style from the MIDI Companion log, which has a single author, without asking whether it fit a team. Fixed in entry 33 by moving the shared text to a team voice and the summaries to the third person.
-- **Backticks in a shell command, the exact mistake our shared notes warn about (Claude's slip, entry 34):** a one-line script that edited four docs had backticks inside a single-quoted shell string, so the shell refused to run it. Nothing was changed, but it was a mistake the notes list by name. The edits were made with the editing tool instead. Separately, Claude's first check of the new link's colour failed because it expected the link to match the "Explore sample drawings" button, which turns out to have its own softer grey set in `flow.css`; the link was changed to match.
+- **Backticks in a shell command, the exact mistake our shared notes warn about (Claude's slip, entry 32):** a one-line script that edited four docs had backticks inside a single-quoted shell string, so the shell refused to run it. Nothing was changed, but it was a mistake the notes list by name. The edits were made with the editing tool instead. Separately, Claude's first check of the new link's colour failed because it expected the link to match the "Explore sample drawings" button, which turns out to have its own softer grey set in `flow.css`; the link was changed to match.
 
 ---
 
