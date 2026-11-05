@@ -652,6 +652,27 @@ Artifact 4 is "For Someone Else," due Sunday, November 8. Our team of four (Kevi
 
 ---
 
+## 33. Renaming Daily Scrawl to Daily Free Play (2026-11-04) — Kevin
+
+**What I asked for**
+- Asked Claude whether renaming the mode in the table would cause problems, because what I built as "Daily Scrawl" should have been called "Daily Free Play", and someone else on the team will later combine Basic and Detailed and call that "Daily Scrawl". After Claude's answer I kept the name Daily Free Play, and asked for a note in `CLAUDE.md` that picks up if a teammate is working on the merge.
+
+**What changed**
+- Only the name people see changed: the home card heading and button, the prompt label on the game screen, the label in the "Continue drawing" card, the one-line "prompt" that ends up on the finished PNG, and the How to play text, all in `frontend/index.html`, plus the wording in `README.md` and `frontend/README.md`.
+- The internal id `scrawl` did not change. Claude searched the repo first: the database's `drawings.mode` check constraint and insert policy (`schema.sql`, update `001`), the save slot in `drawing.js`, and two test files all use it, and changing it would have needed a new database update that I'd have to run before pushing. A database that refuses the id would make publishing fail.
+- `CLAUDE.md` has a new section, "Mode names, and the planned Basic + Detailed merge". It says the name "Daily Scrawl" is reserved for the merged mode, that nobody is known to be building it yet, that whoever does should add a line under Status saying who and on which branch, that it needs a new id and a new `002-...` database update run before the frontend is pushed, and that "Free play" and "Daily Free Play" are two different things.
+
+**What I checked**
+- All 42 tests pass.
+- Claude drove headless Chrome at desktop and phone width: the home card says Daily Free Play, the game screen says Daily Free Play with "Draw anything", the judge buttons are still hidden, nothing scrolls sideways, and I looked at the screenshots. The first phone "home" screenshot was really the game screen (see below), so it was retaken.
+- Not checked: the live site (nothing pushed), the finished PNG, the gallery, or the "Continue drawing" card. A drawing someone has already saved today probably still carries the old "Daily Scrawl" label inside it until the day rolls over; that comes from reading the code, not from a test.
+
+**Decisions**
+- Kept the id `scrawl` and the filename `001-lobbies-and-daily-scrawl.sql` as they are, rather than renaming them for tidiness; the old entries in this log also still say "Daily Scrawl", since they describe what was true then.
+- The merged mode will need its own new id (for example `daily`), not `scrawl`, so a player's saved free draw isn't opened as the merged mode.
+
+---
+
 ## Where AI misread me, or I had to correct course
 
 - Claude's first version of the start page put "What is this?" in the top right, where it collided with the "New set" button on the game screen. I caught it by running the page; Claude hadn't opened it in a browser.
@@ -666,8 +687,12 @@ Artifact 4 is "For Someone Else," due Sunday, November 8. Our team of four (Kevi
 - **The generator would have stopped on our own headings (found before running it, entry 31):** the copied script only accepted `## N. Title (date)`, and every heading here now ends with `— Name`. Reading the script first caught it; running it unchanged would have failed with "Unexpected section".
 - **Backticks in a shell command, the exact mistake our shared notes warn about (Claude's slip, entry 32):** a one-line script that edited four docs had backticks inside a single-quoted shell string, so the shell refused to run it. Nothing was changed, but it was a mistake the notes list by name. The edits were made with the editing tool instead. Separately, Claude's first check of the new link's colour failed because it expected the link to match the "Explore sample drawings" button, which turns out to have its own softer grey set in `flow.css`; the link was changed to match.
 
+- **A phone screenshot that wasn't the screen I thought (Claude's slip, entry 33):** Claude's browser check printed the right text for the phone home screen and moved on, but the screenshot it took was the game screen, because the page had restored the drawing left open by the desktop run. Claude noticed when it looked at the image instead of trusting the printed values, cleared the saved state, and retook it.
+
 ---
 
 ## Decisions and abandoned ideas
 
 - Nothing abandoned yet. Team roles, exact prompt format, branch workflow, and the Supabase-vs-Firebase pick are all still open (see `CLAUDE.md`), not decided and discarded.
+- (Kevin, 2026-11-04, entry 33) The free-draw mode is "Daily Free Play" on screen but keeps the id `scrawl` underneath, and the name "Daily Scrawl" is saved for the Basic + Detailed merge a teammate will build, which gets its own new id. Dropped: renaming the id now, because that needs a database update for a cosmetic gain.
+- (Kevin, 2026-11-04, entry 33) Basic and Detailed will go away as separate modes and become the one "Daily Scrawl". When that ships, their database values stay allowed for a day and are removed in a later update; they are not renamed in place. Noted in `CLAUDE.md`.

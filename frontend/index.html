@@ -31,7 +31,7 @@
       <li>Press Done drawing to download it or watch it replay.</li>
     </ol>
     <p>Want a different creature? Free play gives you random parts any time.</p>
-    <p>Daily Scrawl has no parts: draw anything you like. It saves in your browser and clears each day, like the others.</p>
+    <p>Daily Free Play has no parts: draw anything you like. It saves in your browser and clears each day, like the others.</p>
   </dialog>
 
   <main id="setup">
@@ -52,9 +52,9 @@
           <button class="btn primary" id="mode-detailed" type="button">Draw Detailed</button>
         </section>
         <section class="home-choice">
-          <h2>Daily Scrawl</h2>
+          <h2>Daily Free Play</h2>
           <p>No parts, no rules. Draw anything you like today.</p>
-          <button class="btn primary" id="mode-scrawl" type="button">Draw Daily Scrawl</button>
+          <button class="btn primary" id="mode-scrawl" type="button">Draw Daily Free Play</button>
         </section>
         <section class="home-choice">
           <h2>Free play</h2>
@@ -250,10 +250,10 @@
     $("slot-start").addEventListener("click", () => { slotEl.hidden = true; gameEl.inert = false; $("back-home").focus({ preventScroll: true }); });
 
     /* ---------- Screens ---------- */
-    // Which saved drawing a round belongs to: Daily Scrawl, today's Basic/Detailed, or Free play.
+    // Which saved drawing a round belongs to: Daily Free Play (id "scrawl"), today's Basic/Detailed, or Free play.
     const slotFor = (round) => (round.mode === "scrawl" ? "scrawl" : round.daily ? "today" : "free");
-    // Daily Scrawl is a free draw, so its one "prompt" is just a label (this also fills the finished PNG).
-    const SCRAWL_PROMPTS = [{ label: "Daily Scrawl", value: "Draw anything", optional: false }];
+    // Daily Free Play is a free draw, so its one "prompt" is just a label (this also fills the finished PNG).
+    const SCRAWL_PROMPTS = [{ label: "Daily Free Play", value: "Draw anything", optional: false }];
 
     function showParts(prompts) {
       $("prompt-text").replaceChildren(...prompts.map((p) => {
@@ -268,7 +268,7 @@
 
     function showGame() {
       const round = board.round;
-      $("prompt-label").textContent = round.mode === "scrawl" ? "Daily Scrawl" : !round.daily ? "Free play" : round.mode === "detailed" ? "Detailed" : "Basic";
+      $("prompt-label").textContent = round.mode === "scrawl" ? "Daily Free Play" : !round.daily ? "Free play" : round.mode === "detailed" ? "Detailed" : "Basic";
       showParts(round.prompts);
       $("restart").textContent = round.daily ? "Start over" : "New set";
       sessionStorage.setItem(OPEN_KEY, slotFor(round));
@@ -305,7 +305,7 @@
       start(mode);
     }
 
-    // Daily Scrawl has one save a day and no parts or slot machine. Pressing it again goes back to that drawing.
+    // Daily Free Play has one save a day and no parts or slot machine. Pressing it again goes back to that drawing.
     async function startScrawl() {
       if (saved.scrawl && saved.scrawl.marked) return openSaved("scrawl");
       await board.flush();
@@ -337,7 +337,7 @@
       const title = document.createElement("b");
       title.textContent = "Continue drawing";
       const prompt = document.createElement("small");
-      prompt.textContent = (draft.slot === "free" ? "Free play: " : draft.slot === "scrawl" ? "Daily Scrawl: " : "") + draft.prompts.map((p) => p.value).join(", ");
+      prompt.textContent = (draft.slot === "free" ? "Free play: " : draft.slot === "scrawl" ? "Daily Free Play: " : "") + draft.prompts.map((p) => p.value).join(", ");
       text.append(title, prompt);
       card.append(thumb, text);
       card.addEventListener("click", () => openSaved(draft.slot));
@@ -406,7 +406,7 @@
       verdictEl.hidden = false;
     }
 
-    // "Does your drawing match the parts?" makes no sense for Daily Scrawl, which has no parts.
+    // "Does your drawing match the parts?" makes no sense for Daily Free Play, which has no parts.
     function resetJudgement() {
       board.setLocked(false);
       judgeEl.hidden = Boolean(board.round && board.round.mode === "scrawl");
