@@ -219,7 +219,7 @@
     let ops = [];
     let opsAt = 0;
     let canReplay = true;
-    let locked = false; // a judged drawing can't change
+    let locked = false; // set by setLocked; nothing locks the board since votes replaced self-judging
     let onDone = () => {};
 
     const rgba = (hex) => [parseInt(hex.slice(1, 3), 16), parseInt(hex.slice(3, 5), 16), parseInt(hex.slice(5, 7), 16), 255];

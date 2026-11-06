@@ -27,8 +27,8 @@
       <li>Watch the slot machine spin. Whatever it lands on is your set of parts.</li>
       <li>Your parts stay above the canvas while you draw. Parts marked optional are yours to use or skip.</li>
       <li>Draw with your mouse, finger or stylus. Your drawing saves in this browser as you go.</li>
-      <li>When you're done, judge your own drawing: Accurate if it matches your parts (you win!), Inaccurate if it doesn't.</li>
-      <li>Press Done drawing to download it or watch it replay.</li>
+      <li>Press Done drawing to publish it, download it, or watch it replay.</li>
+      <li>In today's gallery, give other players' drawings a thumbs up or thumbs down. Once anyone gives your published drawing a thumbs up, you win!</li>
     </ol>
     <p>Want a different creature? Free play gives you random parts any time.</p>
     <p>Daily Free Play has no parts: draw anything you like. It saves in your browser and clears each day, like the others.</p>
@@ -106,20 +106,13 @@
     <div id="stage">
       <canvas id="board" width="1800" height="1200" aria-label="Drawing canvas"></canvas>
     </div>
-    <div id="judge-area">
-      <div id="judge">
-        <p class="question">Done? Does your drawing match the parts?</p>
-        <button class="btn" id="judge-accurate" type="button">Accurate</button>
-        <button class="btn" id="judge-inaccurate" type="button">Inaccurate</button>
-      </div>
-      <p id="verdict" role="status" hidden></p>
-    </div>
     <aside id="brush-settings" aria-label="Drawing settings"></aside>
     <div id="tools"></div>
   </section>
 
   <script src="daily.js"></script>
   <script src="drawing.js"></script>
+  <script src="votes.js"></script>
   <script src="gallery.js"></script>
   <!-- Publishing: no-ops until supabase-config.js has a real project (see backend/README.md). -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -290,7 +283,6 @@
       const today = ScrawdleDrawing.dayKey();
       const results = parts.map((p) => (daily ? p.options[ScrawdleDaily.dailyIndex(today, p.key, p.options.length)] : pickRandom(p.options)));
       await board.start(mode, parts.map((p, i) => ({ label: p.label, value: results[i], optional: Boolean(p.optional) })), daily);
-      resetJudgement();
       showGame();
       spin(parts, results, mode, daily);
     }
@@ -310,7 +302,6 @@
       if (saved.scrawl && saved.scrawl.marked) return openSaved("scrawl");
       await board.flush();
       await board.start("scrawl", SCRAWL_PROMPTS, true);
-      resetJudgement();
       showGame();
     }
 
@@ -361,10 +352,10 @@
 
     async function openSaved(slot) {
       const round = board.round;
-      // Still the drawing on the canvas, so undo history and its verdict come along too.
+      // Still the drawing on the canvas, so its undo history comes along too.
       if (round && slotFor(round) === slot) { showGame(); return; }
       await board.flush();
-      if (await board.restore(slot)) { resetJudgement(); showGame(); }
+      if (await board.restore(slot)) showGame();
       else showHome();
     }
 
@@ -392,35 +383,11 @@
       onHome: async () => { await board.flush(); showHome(); },
     });
 
-    /* ---------- Self-judgement (the player decides if they won) ---------- */
-    const judgeEl = $("judge");
-    const verdictEl = $("verdict");
-
-    function judge(accurate) {
-      board.setLocked(true);
-      judgeEl.hidden = true;
-      verdictEl.className = accurate ? "win" : "lose";
-      verdictEl.textContent = accurate
-        ? "You win! Your creature matches the parts."
-        : `Not this time. Hit ${$("restart").textContent} to try again.`;
-      verdictEl.hidden = false;
-    }
-
-    // "Does your drawing match the parts?" makes no sense for Daily Free Play, which has no parts.
-    function resetJudgement() {
-      board.setLocked(false);
-      judgeEl.hidden = Boolean(board.round && board.round.mode === "scrawl");
-      verdictEl.hidden = true;
-    }
-
-    $("judge-accurate").addEventListener("click", () => judge(true));
-    $("judge-inaccurate").addEventListener("click", () => judge(false));
-
     // A refresh returns to the drawing this tab was on. A new visit starts at home.
     (async () => {
       const open = sessionStorage.getItem(OPEN_KEY);
       const found = await board.drafts();
-      if (open && found[open] && await board.restore(open)) { resetJudgement(); showGame(); }
+      if (open && found[open] && await board.restore(open)) showGame();
       else showHome();
     })();
   </script>

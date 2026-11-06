@@ -698,6 +698,34 @@ Artifact 4 is "For Someone Else," due Sunday, November 8. Our team of four (Kevi
 
 ---
 
+## 35. Votes replace the self-judged win (2026-11-05) — Trenten
+
+**What I asked for**
+- A real win-lose condition: other players vote on shared drawings with a thumbs up or thumbs down, and one thumbs up from anyone means you've won that drawing. I asked Claude to plan it first, since the system will be built on and changed later, then to build it with the choices it recommended: remove my Accurate/Inaccurate buttons, let anyone vote with an id kept in their browser, hide the buttons on your own drawing, and allow votes in every mode, Daily Free Play included.
+
+**What changed**
+- `backend/supabase/updates/002-votes.sql` (new) and `backend/supabase/schema.sql`: a `votes` table (drawing, voter, up or down) that the public key can't read or write directly, like Kevin's lobby codes, plus two functions it may call: `cast_vote` (vote, change your vote, or take it back) and `vote_counts` (thumbs up and down for a list of drawings, plus your own vote). Votes are deleted with their drawing, so the daily wipe clears them with no new schedule. Only drawings the gallery can show (today's, not hidden) take votes.
+- `frontend/votes.js` (new): the rules on their own, so they're easy to change: one thumbs up wins, pressing your vote again takes it back, pressing the other button switches it.
+- `frontend/publish.js`: a published drawing's id is now made in the browser and remembered, so the game knows which drawing is yours. The gallery's cards now carry their id and votes, and `window.scrawdleVote` saves a vote. Each browser gets a random voter id. If the database doesn't have update 002 yet, the gallery still loads, just without vote buttons.
+- `frontend/gallery.js` and `flow.css`: 👍 and 👎 buttons with counts on other players' drawings, showing the new vote straight away and putting the old one back with a message if saving fails. Your own card says "You won!" with the tally, "Waiting for votes.", or "Publish it to get votes."
+- `frontend/index.html` and `flow.css`: removed the Accurate/Inaccurate buttons and their styles, and updated How to play.
+- `tests/votes.test.js` and `tests/publish-votes.test.js` (new). The second runs the real `publish.js` against an in-memory stand-in for Supabase.
+- `README.md`, `frontend/README.md`, `backend/README.md`, `CLAUDE.md`: what was built, the new test files, and that Kevin needs to run update 002.
+
+**What I checked**
+- All 58 Node tests pass: the 42 from before, 9 for the vote rules, and 7 for `publish.js` (publishing marks the drawing as yours, someone else's thumbs up is a win, changing and taking back a vote, your drawing's result still showing when it's older than the 24 the gallery lists, a drawing published before votes existed, and the gallery still loading before update 002 is run).
+- In a browser, with stand-ins in place of Supabase so nothing reached the live project: the vote buttons, counts, taking a vote back, switching it, a failed save putting the old vote back, the "You won!", "Waiting for votes." and "Publish it to get votes." results, and no buttons when voting isn't set up. Looked at it at desktop and phone width (buttons stay 44 px tall, nothing scrolls sideways), and the drawing screen without the judge row.
+- The SQL, in PGlite (real Postgres in WebAssembly, what Kevin used for update 001), with stand-ins for Supabase's public role, storage schema and `cron.schedule`: 16 of 16 checks pass. Update 002 runs on top of Kevin's original schema plus update 001, and runs a second time without an error; a fresh project's `schema.sql` runs on its own. As the public role: publishing with an id the game made, counting, one vote per voter, switching and taking back a vote, refusing bad votes and votes on hidden, old or missing drawings, no way to read or write the `votes` table directly, and votes deleted with their drawing. To check the checks, Claude broke the SQL two ways in a copy (dropped the hidden-drawing rule, and the table's Row Level Security), and 4 checks failed as they should. The test script and PGlite stayed in a temporary folder, not in the repo, so no new dependency was added.
+- Not checked: nothing has been tried against the live project.
+
+**Decisions**
+- Votes are the win condition for every mode. In Daily Free Play, which has no parts, a thumbs up just means another player liked it.
+- There's still no login, so a determined player can vote twice (by clearing browser data) or vote for their own drawing (by calling the database directly). Supabase's anonymous sign-in would fix the first; recording who published each drawing would fix the second. Both are left for later.
+- The win rule lives in `votes.js` rather than the database, so it can change without asking Kevin to run another update.
+- Kevin has to run `002-votes.sql` on the live project before this reaches `main`.
+
+---
+
 ## Where AI misread me, or I had to correct course
 
 - Claude's first version of the start page put "What is this?" in the top right, where it collided with the "New set" button on the game screen. I caught it by running the page; Claude hadn't opened it in a browser.

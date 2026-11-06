@@ -1,6 +1,9 @@
 /* Real community results and a clearly separate sample gallery.
- * Real drawings aren't connected yet, so only the samples show. To connect them, set:
- *   window.scrawdleGallery = async ({ day, mode, prompts }) => [{ imageUrl, caption }];
+ * publish.js connects the real drawings and votes by setting:
+ *   window.scrawdleGallery = async ({ day, mode, prompts }) => [{ id, imageUrl, caption, mine, votes }];
+ *   window.scrawdleVote = async ({ drawingId, value }) => {};  // 1, -1, or 0 to take it back
+ * `votes` is { up, down, mine } (see votes.js), or null when voting isn't available. Your own
+ * drawing (mine: true) gets no vote buttons; its votes show as your result instead.
  */
 (function (root) {
   "use strict";
@@ -31,6 +34,49 @@
         li.append(p);
       }
       grid.append(li);
+      return li;
+    }
+    // Thumbs up and down under someone else's drawing. Shows the new vote straight away, and
+    // puts the old one back if saving it fails.
+    function addVotes(li, item) {
+      const bar = document.createElement("div");
+      bar.className = "vote-bar";
+      const buttons = [[1, "👍", "Thumbs up"], [-1, "👎", "Thumbs down"]].map(([value, icon, name]) => {
+        const b = document.createElement("button");
+        b.type = "button";
+        b.className = "vote";
+        b.addEventListener("click", () => vote(value));
+        bar.append(b);
+        return { b, value, icon, name };
+      });
+      let busy = false;
+      const render = () => {
+        for (const { b, value, icon, name } of buttons) {
+          const count = value === 1 ? item.votes.up : item.votes.down;
+          b.textContent = `${icon} ${count}`;
+          b.setAttribute("aria-label", `${name}, ${count} ${count === 1 ? "vote" : "votes"}`);
+          b.setAttribute("aria-pressed", String(item.votes.mine === value));
+          b.disabled = busy;
+        }
+      };
+      async function vote(pressed) {
+        if (busy) return;
+        const before = item.votes;
+        const { value, votes } = root.ScrawdleVotes.applyVote(before, pressed);
+        item.votes = votes;
+        busy = true;
+        render();
+        try {
+          await root.scrawdleVote({ drawingId: item.id, value });
+        } catch (err) {
+          item.votes = before;
+          note.textContent = err.userMessage || "Couldn't save your vote. Try again.";
+        }
+        busy = false;
+        render();
+      }
+      render();
+      li.append(bar);
     }
     function showSamples() {
       request++;
@@ -59,14 +105,29 @@
       tag.hidden = true;
       title.textContent = "Today's drawings";
       grid.replaceChildren();
-      addCard(myImageUrl, "Your drawing · saved locally", true);
+      const myCard = addCard(myImageUrl, "Your drawing · saved locally", true);
       dialog.showModal();
       note.textContent = "Loading…";
       try {
         const items = await root.scrawdleGallery({ day: round.day, mode: round.mode, prompts: round.prompts });
         if (token !== request || !dialog.open) return;
-        note.textContent = items.length ? "" : "No community drawings to show yet.";
-        for (const item of items) addCard(item.imageUrl, item.caption);
+        const mine = items.find((item) => item.mine);
+        const others = items.filter((item) => !item.mine);
+        // Your result: won once anyone gives your published drawing a thumbs up (see votes.js).
+        if (mine) myCard.querySelector("p").textContent = "Your drawing · published";
+        if (!mine || mine.votes) {
+          const result = document.createElement("p");
+          result.className = "vote-result";
+          result.classList.toggle("won", root.ScrawdleVotes.isWin(mine && mine.votes));
+          result.textContent = root.ScrawdleVotes.resultText(mine && mine.votes);
+          myCard.append(result);
+        }
+        note.textContent = others.length ? "" : "No community drawings to show yet.";
+        const canVote = typeof root.scrawdleVote === "function";
+        for (const item of others) {
+          const li = addCard(item.imageUrl, item.caption);
+          if (canVote && item.votes) addVotes(li, item);
+        }
       } catch (err) {
         if (token === request && dialog.open) note.textContent = "Couldn't load today's drawings. Close and reopen the gallery to try again.";
       }
