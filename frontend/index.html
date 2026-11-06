@@ -67,9 +67,8 @@
           <button class="btn" id="free-play" type="button">Start free play</button>
         </section>
       </div>
-      <button class="quiet" id="my-drawings" type="button">My drawings</button>
+      <button class="quiet" id="my-drawings" type="button" hidden>My drawings</button>
       <a class="quiet" href="/logs/">Read our build log</a>
-      <p class="home-storage">Your drafts save in this browser.</p>
       <p id="setup-error" role="alert" hidden></p>
     </div>
   </main>
@@ -371,9 +370,17 @@
       thumbUrls = [];
       const cards = [saved.today, saved.scrawl, saved.free].filter((d) => d && d.marked);
       $("continue-list").replaceChildren(...cards.map(continueCard));
+      await showMyDrawingsLink();
       setupEl.classList.toggle("has-saved", cards.length > 0);
       setupEl.hidden = false;
       $("home-date").textContent = new Date().toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric" });
+    }
+
+    // My drawings only shows once there's something in it: a drawing in progress or one already kept.
+    async function showMyDrawingsLink() {
+      const open = [saved.today, saved.scrawl, saved.free].some((d) => d && d.marked);
+      const kept = await ScrawdleDrawing.myDrawings.count().catch(() => 0);
+      $("my-drawings").hidden = !open && kept === 0;
     }
 
     async function openSaved(slot) {
@@ -442,6 +449,7 @@
     const gallery = ScrawdleGallery.createGallery(board);
     const sketchbook = ScrawdleSketchbook.create(board, { onContinue: openSaved });
     $("my-drawings").addEventListener("click", () => sketchbook.show());
+    $("sketchbook").addEventListener("close", showMyDrawingsLink); // in case the last one was deleted
     ScrawdleDrawing.createFinishScreen(board, gallery, {
       onHome: goHome,
     });

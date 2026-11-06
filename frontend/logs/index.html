@@ -583,7 +583,7 @@
         <h1>Scrawdle: build log</h1>
         <p class="intro">
           A daily drawing game, built by a team of four with Claude Code: a new set of parts to draw each day, a gallery of what
-          other people drew, and private lobbies. Here are the 46 entries of our log with one sentence on each and the name of
+          other people drew, and private lobbies. Here are the 51 entries of our log with one sentence on each and the name of
           whoever wrote it. Open an entry to read everything they wrote for it.
         </p>
         <ul class="facts" aria-label="Project facts">
@@ -673,7 +673,7 @@
   </ul></div>
 </div>
 <div class="toc-group is-open">
-  <button class="toc-head" type="button" aria-expanded="true">Thursday 5 November <span class="count">13</span></button>
+  <button class="toc-head" type="button" aria-expanded="true">Thursday 5 November <span class="count">18</span></button>
   <div class="toc-list-wrap"><ul class="toc-list">
     <li><a href="#entry-34"><span class="n">34</span><span>Fixed lag in the line tool and the marker and watercolor brushes</span></a></li>
     <li><a href="#entry-35"><span class="n">35</span><span>Votes replace the self-judged win</span></a></li>
@@ -688,6 +688,11 @@
     <li><a href="#entry-44"><span class="n">44</span><span>The leftover sample-drawing code is gone</span></a></li>
     <li><a href="#entry-45"><span class="n">45</span><span>A Share button for finished drawings</span></a></li>
     <li><a href="#entry-46"><span class="n">46</span><span>Invite friends to a lobby in one tap</span></a></li>
+    <li><a href="#entry-47"><span class="n">47</span><span>Reporting drawings: the database part</span></a></li>
+    <li><a href="#entry-48"><span class="n">48</span><span>A tidier home screen: My drawings appears when there's something in it</span></a></li>
+    <li><a href="#entry-49"><span class="n">49</span><span>The Report button</span></a></li>
+    <li><a href="#entry-50"><span class="n">50</span><span>A play button for Replay</span></a></li>
+    <li><a href="#entry-51"><span class="n">51</span><span>The Publish button shows that publishing worked</span></a></li>
   </ul></div>
 </div>
 <div class="toc-group is-open">
@@ -1486,6 +1491,83 @@
 <ul><li><code>frontend/lobby.js</code> (Kevin's file; this is the only change in it): the lobby room has an Invite friends button beside the invite link. It opens the browser's share menu with &quot;Join my Scrawdle lobby! Code BCDFG&quot; and the invite link filled in. It only shows where the browser has a share menu (phones, and some laptop browsers). Elsewhere it stays hidden and Copy link is the main button, as before. Closing the menu does nothing.</li><li>No phone numbers or contacts ever reach the game: the phone's own menu handles who it goes to.</li></ul>
 <p class="sub"><strong>What I checked</strong></p>
 <ul><li>77 logic tests pass. 12 checks in Chromium with a stand-in for Supabase, so no real lobby was created in Kevin's project (checked: no request reached it): the button shows with a share menu and is the main button, the menu gets the right text and link, closing it does nothing, without a share menu it stays hidden and Copy link still copies the link, and both buttons fit at 390x844 and 320x740. I looked at the lobby room on a phone and in dark mode, which entry 43 couldn't check.</li><li>Not checked: a real phone's share menu, or a real lobby.</li></ul>
+  </div></div></div>
+</article>
+<article class="entry" id="entry-47">
+  <h3 class="entry-head"><button type="button" aria-expanded="false" aria-controls="entry-47-body">
+    <span class="num">47</span>
+    <span><span class="title">Reporting drawings: the database part<span class="by">by Zainab</span></span><span class="sum">Zainab wrote database update 003 for reporting, which hides a published drawing once 3 different players report it, tested against a real Postgres and waiting for Kevin to run it.</span></span>
+    <span class="caret" aria-hidden="true"></span>
+  </button></h3>
+  <div class="body" id="entry-47-body"><div class="body-in"><div class="body-pad">
+<p class="sub"><strong>What I asked for</strong></p>
+<ul><li>A Report button for the public gallery, which the team said I could add. A drawing should only be hidden once a few different players report it, not one.</li></ul>
+<p class="sub"><strong>What changed</strong></p>
+<ul><li><code>backend/supabase/updates/003-reports.sql</code>, copied into <code>schema.sql</code> the same way votes were: a <code>reports</code> table nobody can read or write through the public key, and a <code>report_drawing</code> function that records one report per player per drawing and hides the drawing once 3 different players have reported it. The number 3 is set in that function, so it can't be changed from a browser. Only today's drawings can be reported. The daily wipe deletes a drawing's reports along with it.</li><li>It uses the drawings' existing <code>hidden</code> setting, which the gallery already leaves out, so no gallery query changed.</li><li><code>CLAUDE.md</code> lists it under &quot;Pending database updates&quot; with steps for Kevin, and <code>backend/README.md</code> describes it, says it hasn't been run yet, and adds how to check it in the app.</li><li>The Report button itself comes in the next entry.</li></ul>
+<p class="sub"><strong>What I checked</strong></p>
+<ul><li>32 checks against a real Postgres (PGlite), with Supabase's roles stubbed: on top of the current schema with the update run twice, and as part of a fresh <code>schema.sql</code>. One or two reports leave a drawing visible; the same player twice counts once; the third player hides it and the public key can no longer read it; a fourth report is fine; other drawings aren't affected; old drawings and reports with no reporter id are refused; the public key can't read reports, add them directly, or unhide a drawing; deleting a drawing deletes its reports; and votes still work.</li><li>Not checked against Kevin's real project, which only he can run it on.</li></ul>
+<p class="sub"><strong>Decisions</strong></p>
+<ul><li>Three players, as the team asked. There are no logins, so a reporter is the same random browser id votes use. Someone who keeps clearing their browser data could report one drawing three times alone. That stops accidents and casual misuse, not a determined person, and a teammate can bring a wrongly hidden drawing back from the dashboard.</li></ul>
+  </div></div></div>
+</article>
+<article class="entry" id="entry-48">
+  <h3 class="entry-head"><button type="button" aria-expanded="false" aria-controls="entry-48-body">
+    <span class="num">48</span>
+    <span><span class="title">A tidier home screen: My drawings appears when there's something in it<span class="by">by Zainab</span></span><span class="sum">Zainab made the My drawings link appear only once a player has a drawing, and removed the line saying drafts save in the browser.</span></span>
+    <span class="caret" aria-hidden="true"></span>
+  </button></h3>
+  <div class="body" id="entry-48-body"><div class="body-in"><div class="body-pad">
+<p class="sub"><strong>What I asked for</strong></p>
+<ul><li>Hide the My drawings link until someone has actually drawn something, since drawings go there by themselves. And drop &quot;Your drafts save in this browser.&quot; from the home screen, because saving just happens.</li></ul>
+<p class="sub"><strong>What changed</strong></p>
+<ul><li><code>frontend/index.html</code>: the My drawings link is hidden until there's a drawing in progress (one the home screen offers to continue) or a kept one. Deleting the last kept drawing hides it again as soon as My drawings closes. A round opened and left blank doesn't count. The &quot;Your drafts save in this browser.&quot; line is gone.</li><li><code>frontend/drawing.js</code>: My drawings can count its drawings without loading their pictures, so the home screen stays quick.</li><li><code>frontend/theme.css</code>: dropped the dark-mode color for the removed line.</li></ul>
+<p class="sub"><strong>What I checked</strong></p>
+<ul><li>77 logic tests pass. In Chromium: 30 My drawings checks, including the link hidden on a first visit and after a blank round, showing once there's a drawing or only a kept one, and hiding right after the last one is deleted. The Back button (29), dark mode (51), and sample-drawing (12) checks pass.</li></ul>
+  </div></div></div>
+</article>
+<article class="entry" id="entry-49">
+  <h3 class="entry-head"><button type="button" aria-expanded="false" aria-controls="entry-49-body">
+    <span class="num">49</span>
+    <span><span class="title">The Report button<span class="by">by Zainab</span></span><span class="sum">Zainab added a Report button under other players' drawings in the gallery, which hides a drawing once 3 different players report it, waiting on Kevin's database update.</span></span>
+    <span class="caret" aria-hidden="true"></span>
+  </button></h3>
+  <div class="body" id="entry-49-body"><div class="body-in"><div class="body-pad">
+<p class="sub"><strong>What I asked for</strong></p>
+<ul><li>The Report button itself, using the database part from entry 47.</li></ul>
+<p class="sub"><strong>What changed</strong></p>
+<ul><li><code>frontend/gallery.js</code>: other players' drawings in today's gallery have a small Report button under the votes. Your own drawing has none. It asks first (&quot;Report this drawing? It's hidden from the gallery once 3 players report it.&quot;), then says &quot;Reported&quot; and can't be pressed again. This browser remembers what it reported, so it still says &quot;Reported&quot; after the gallery reopens. When a report is the third, the drawing disappears from the gallery straight away.</li><li><code>frontend/publish.js</code>: <code>window.scrawdleReport</code> sends the report to <code>report_drawing</code> with the same browser id votes use. Until Kevin runs update 003, pressing Report says &quot;Reporting isn't switched on yet.&quot; and nothing else changes. Any other failure can be tried again.</li><li><code>frontend/flow.css</code> and <code>frontend/theme.css</code>: the button's small grey style, in both modes. <code>README.md</code> and <code>frontend/README.md</code> describe it.</li></ul>
+<p class="sub"><strong>What I checked</strong></p>
+<ul><li>77 logic tests pass. 16 checks in Chromium with a stand-in for Supabase holding three other players' drawings, so nothing reached Kevin's project (checked): a button on each other drawing and none on yours, the confirmation mentioning 3 players, the drawing id and browser id sent, &quot;Reported&quot; afterwards and after reopening, the third report removing the drawing, cancelling sending nothing, the &quot;isn't switched on yet&quot; message, a failed report being retryable, votes still there, and phone and dark-mode layouts. The dark mode, Share, Back button, and My drawings checks still pass.</li><li>Not checked on the live site, which needs update 003 first.</li></ul>
+  </div></div></div>
+</article>
+<article class="entry" id="entry-50">
+  <h3 class="entry-head"><button type="button" aria-expanded="false" aria-controls="entry-50-body">
+    <span class="num">50</span>
+    <span><span class="title">A play button for Replay<span class="by">by Zainab</span></span><span class="sum">Zainab replaced Replay's text link with a round play button over the finished drawing that comes back as 'watch again'.</span></span>
+    <span class="caret" aria-hidden="true"></span>
+  </button></h3>
+  <div class="body" id="entry-50-body"><div class="body-in"><div class="body-pad">
+<p class="sub"><strong>What I asked for</strong></p>
+<ul><li>Replay (entries 18 and 20) started from a &quot;Watch it redraw&quot; text link under the drawing. A play button on top of the drawing is clearer, so I swapped it.</li></ul>
+<p class="sub"><strong>What changed</strong></p>
+<ul><li><code>frontend/drawing.js</code>: the finish screen has a round play button over the middle of the finished drawing instead of the text link. It fades away while the drawing redraws, then comes back as a &quot;watch again&quot; arrow. Reopening the finish screen shows play again. A blank drawing has no button, as before. Screen readers still hear &quot;Watch it redraw&quot; and &quot;Watch it again&quot;. Replay itself didn't change.</li><li><code>frontend/flow.css</code>: the button's look: a dark see-through circle with a white edge, slightly bigger on hover, smaller on phones, and no animation for players who turn motion off.</li></ul>
+<p class="sub"><strong>What I checked</strong></p>
+<ul><li>77 logic tests pass. 13 checks in Chromium: the button is centered on the drawing, the old link is gone, it fades while redrawing and returns as &quot;Watch it again&quot;, the replay still ends on an exact match of the drawing, it can play again, reopening shows play, reduced motion, no button for a blank drawing, and it fits on a phone and in dark mode. I looked at it before, during, and after a replay. The dark mode, Share, My drawings, and Report checks still pass.</li></ul>
+  </div></div></div>
+</article>
+<article class="entry" id="entry-51">
+  <h3 class="entry-head"><button type="button" aria-expanded="false" aria-controls="entry-51-body">
+    <span class="num">51</span>
+    <span><span class="title">The Publish button shows that publishing worked<span class="by">by Zainab</span></span><span class="sum">Zainab made the Publish button say 'Publishing…' and then turn green as 'Published ✓', because publishing worked but looked stuck.</span></span>
+    <span class="caret" aria-hidden="true"></span>
+  </button></h3>
+  <div class="body" id="entry-51-body"><div class="body-in"><div class="body-pad">
+<p class="sub"><strong>What I asked for</strong></p>
+<ul><li>After pressing Publish drawing, the screen looked stuck. Publishing had worked, but the only sign was a small line of text, and the button stayed yellow with the same words. I wanted it to be obvious.</li></ul>
+<p class="sub"><strong>What changed</strong></p>
+<ul><li><code>frontend/drawing.js</code>: the button now shows where publishing is up to. It says &quot;Publishing…&quot; while sending, then turns green as &quot;Published ✓&quot;. If publishing fails, it goes back to &quot;Publish drawing&quot; so it can be tried again. Coming back to the finish screen, or trying again after a refresh (which says it's already published), shows &quot;Published ✓&quot; too. The line under it now says &quot;Your drawing is published. See it in today's drawings.&quot;</li><li><code>frontend/flow.css</code>: the green published style, which also works in dark mode.</li></ul>
+<p class="sub"><strong>What I checked</strong></p>
+<ul><li>77 logic tests pass. 10 checks in Chromium with a stand-in for Supabase whose upload waits, so each step could be seen: &quot;Publishing…&quot; while sending, &quot;Published ✓&quot; in green with the new line, still published when the finish screen reopens, a failed publish going back to &quot;Publish drawing&quot;, already published after a refresh, and dark mode. Nothing reached Kevin's project. The dark mode, Share, play button, and Report checks still pass.</li></ul>
   </div></div></div>
 </article>
       </section>

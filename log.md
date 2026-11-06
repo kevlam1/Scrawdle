@@ -939,6 +939,85 @@ Artifact 4 is "For Someone Else," due Sunday, November 8. Our team of four (Kevi
 
 ---
 
+## 47. Reporting drawings: the database part (2026-11-05) — Zainab
+
+**What I asked for**
+- A Report button for the public gallery, which the team said I could add. A drawing should only be hidden once a few different players report it, not one.
+
+**What changed**
+- `backend/supabase/updates/003-reports.sql`, copied into `schema.sql` the same way votes were: a `reports` table nobody can read or write through the public key, and a `report_drawing` function that records one report per player per drawing and hides the drawing once 3 different players have reported it. The number 3 is set in that function, so it can't be changed from a browser. Only today's drawings can be reported. The daily wipe deletes a drawing's reports along with it.
+- It uses the drawings' existing `hidden` setting, which the gallery already leaves out, so no gallery query changed.
+- `CLAUDE.md` lists it under "Pending database updates" with steps for Kevin, and `backend/README.md` describes it, says it hasn't been run yet, and adds how to check it in the app.
+- The Report button itself comes in the next entry.
+
+**What I checked**
+- 32 checks against a real Postgres (PGlite), with Supabase's roles stubbed: on top of the current schema with the update run twice, and as part of a fresh `schema.sql`. One or two reports leave a drawing visible; the same player twice counts once; the third player hides it and the public key can no longer read it; a fourth report is fine; other drawings aren't affected; old drawings and reports with no reporter id are refused; the public key can't read reports, add them directly, or unhide a drawing; deleting a drawing deletes its reports; and votes still work.
+- Not checked against Kevin's real project, which only he can run it on.
+
+**Decisions**
+- Three players, as the team asked. There are no logins, so a reporter is the same random browser id votes use. Someone who keeps clearing their browser data could report one drawing three times alone. That stops accidents and casual misuse, not a determined person, and a teammate can bring a wrongly hidden drawing back from the dashboard.
+
+---
+
+## 48. A tidier home screen: My drawings appears when there's something in it (2026-11-05) — Zainab
+
+**What I asked for**
+- Hide the My drawings link until someone has actually drawn something, since drawings go there by themselves. And drop "Your drafts save in this browser." from the home screen, because saving just happens.
+
+**What changed**
+- `frontend/index.html`: the My drawings link is hidden until there's a drawing in progress (one the home screen offers to continue) or a kept one. Deleting the last kept drawing hides it again as soon as My drawings closes. A round opened and left blank doesn't count. The "Your drafts save in this browser." line is gone.
+- `frontend/drawing.js`: My drawings can count its drawings without loading their pictures, so the home screen stays quick.
+- `frontend/theme.css`: dropped the dark-mode color for the removed line.
+
+**What I checked**
+- 77 logic tests pass. In Chromium: 30 My drawings checks, including the link hidden on a first visit and after a blank round, showing once there's a drawing or only a kept one, and hiding right after the last one is deleted. The Back button (29), dark mode (51), and sample-drawing (12) checks pass.
+
+---
+
+## 49. The Report button (2026-11-05) — Zainab
+
+**What I asked for**
+- The Report button itself, using the database part from entry 47.
+
+**What changed**
+- `frontend/gallery.js`: other players' drawings in today's gallery have a small Report button under the votes. Your own drawing has none. It asks first ("Report this drawing? It's hidden from the gallery once 3 players report it."), then says "Reported" and can't be pressed again. This browser remembers what it reported, so it still says "Reported" after the gallery reopens. When a report is the third, the drawing disappears from the gallery straight away.
+- `frontend/publish.js`: `window.scrawdleReport` sends the report to `report_drawing` with the same browser id votes use. Until Kevin runs update 003, pressing Report says "Reporting isn't switched on yet." and nothing else changes. Any other failure can be tried again.
+- `frontend/flow.css` and `frontend/theme.css`: the button's small grey style, in both modes. `README.md` and `frontend/README.md` describe it.
+
+**What I checked**
+- 77 logic tests pass. 16 checks in Chromium with a stand-in for Supabase holding three other players' drawings, so nothing reached Kevin's project (checked): a button on each other drawing and none on yours, the confirmation mentioning 3 players, the drawing id and browser id sent, "Reported" afterwards and after reopening, the third report removing the drawing, cancelling sending nothing, the "isn't switched on yet" message, a failed report being retryable, votes still there, and phone and dark-mode layouts. The dark mode, Share, Back button, and My drawings checks still pass.
+- Not checked on the live site, which needs update 003 first.
+
+---
+
+## 50. A play button for Replay (2026-11-05) — Zainab
+
+**What I asked for**
+- Replay (entries 18 and 20) started from a "Watch it redraw" text link under the drawing. A play button on top of the drawing is clearer, so I swapped it.
+
+**What changed**
+- `frontend/drawing.js`: the finish screen has a round play button over the middle of the finished drawing instead of the text link. It fades away while the drawing redraws, then comes back as a "watch again" arrow. Reopening the finish screen shows play again. A blank drawing has no button, as before. Screen readers still hear "Watch it redraw" and "Watch it again". Replay itself didn't change.
+- `frontend/flow.css`: the button's look: a dark see-through circle with a white edge, slightly bigger on hover, smaller on phones, and no animation for players who turn motion off.
+
+**What I checked**
+- 77 logic tests pass. 13 checks in Chromium: the button is centered on the drawing, the old link is gone, it fades while redrawing and returns as "Watch it again", the replay still ends on an exact match of the drawing, it can play again, reopening shows play, reduced motion, no button for a blank drawing, and it fits on a phone and in dark mode. I looked at it before, during, and after a replay. The dark mode, Share, My drawings, and Report checks still pass.
+
+---
+
+## 51. The Publish button shows that publishing worked (2026-11-05) — Zainab
+
+**What I asked for**
+- After pressing Publish drawing, the screen looked stuck. Publishing had worked, but the only sign was a small line of text, and the button stayed yellow with the same words. I wanted it to be obvious.
+
+**What changed**
+- `frontend/drawing.js`: the button now shows where publishing is up to. It says "Publishing…" while sending, then turns green as "Published ✓". If publishing fails, it goes back to "Publish drawing" so it can be tried again. Coming back to the finish screen, or trying again after a refresh (which says it's already published), shows "Published ✓" too. The line under it now says "Your drawing is published. See it in today's drawings."
+- `frontend/flow.css`: the green published style, which also works in dark mode.
+
+**What I checked**
+- 77 logic tests pass. 10 checks in Chromium with a stand-in for Supabase whose upload waits, so each step could be seen: "Publishing…" while sending, "Published ✓" in green with the new line, still published when the finish screen reopens, a failed publish going back to "Publish drawing", already published after a refresh, and dark mode. Nothing reached Kevin's project. The dark mode, Share, play button, and Report checks still pass.
+
+---
+
 ## Where AI misread me, or I had to correct course
 
 - Claude's first version of the start page put "What is this?" in the top right, where it collided with the "New set" button on the game screen. I caught it by running the page; Claude hadn't opened it in a browser.

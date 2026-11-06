@@ -5,7 +5,12 @@ Read this file first. It is shared by four people's Claude sessions (GitHub: `ke
 ## Pending database updates (for Kevin's session: action needed)
 Database changes are written as numbered files in `backend/supabase/updates/` by whoever needs them, but only Kevin can run them on the live Supabase project. **If you are working with Kevin, check this list first.** After running one, remove its entry here (leave the heading, and write "None." if the list is empty).
 
-None. (`002-votes.sql` was run on Kevin's project on 2026-11-05. The next database change is `003-...`.)
+- **`backend/supabase/updates/003-reports.sql`** (written by Zainab's session, 2026-11-05; `log.md` entry 47). Adds reporting: a `reports` table with Row Level Security and no policies, and one function the public key may call, `report_drawing`, which hides a drawing once 3 different players have reported it.
+  1. Read the whole file first. Then run its full contents **once** in the Supabase SQL Editor. Running it a second time is harmless (tested). Never put the service_role key or any other secret in the repo or in this file.
+  2. If it errors, stop and show Kevin the raw error. Don't edit `003-reports.sql` to work around it without telling Zainab; the same SQL is copied into `schema.sql`, so the two must stay identical.
+  3. Check it in the SQL Editor: `select to_regclass('public.reports');` should return `reports`, and `select proname from pg_proc where proname = 'report_drawing';` should return one row.
+  4. Check it in the app once the Report button is on the site: see step 6 under "Applying an update to the live project" in `backend/README.md`.
+  5. Afterwards: remove this entry (write "None." if the list is empty), and in `backend/README.md` change "**Not run yet on Kevin's project**" for `003` to say it was run and checked, and by whom.
 
 ## What this is
 - Artifact 4 of TCSS 490: a team of four building something for people outside the team. Due **Sunday, November 8, 2026 at 11:59 PM** on Canvas. Portfolio status check at end of Week 4 (Sunday, November 1).
