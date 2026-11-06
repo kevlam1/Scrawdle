@@ -26,7 +26,7 @@ h1{font:400 44px/1.15 var(--hand);margin:0}
 .home-choice h2{font:400 27px/1.2 var(--hand);margin:0}
 .home-choice p{font-size:13px;line-height:1.6;color:var(--ink-soft);margin:12px 0 24px;flex:1}
 .home-choice .btn{font-size:13px;padding:0 12px;width:100%}
-#sample-gallery{margin:20px auto 0;color:#5c584f}
+#my-drawings{margin:20px auto 0;color:#5c584f}
 .home-storage{font-size:12px;color:#736e63;margin:8px 0 0}
 #setup.has-saved .home-actions{grid-template-columns:1fr}
 #setup.has-saved .home-choice{flex-direction:row;align-items:center;flex-wrap:wrap;column-gap:15px;padding:18px 22px}
@@ -109,7 +109,6 @@ h1{font:400 44px/1.15 var(--hand);margin:0}
 .gallery-grid li.mine{background:#fff3d0}
 .gallery-grid img{object-fit:contain;aspect-ratio:3/2;border-radius:0}
 .gallery-grid p{font-size:12px;margin:12px;text-align:left;color:#6b665d}
-.sample-art{width:100%;aspect-ratio:1;background-image:url('assets/sample-strawberries.webp');background-repeat:no-repeat;background-size:300% 200%;background-position:var(--sample-position)}
 /* Votes: thumbs up or down on other players' drawings, and your result on your own. */
 .vote-bar{display:flex;gap:8px;margin:0 12px 12px}
 .vote{flex:1;min-height:44px;border:var(--line);border-radius:9px;background:white;font:400 18px/1 var(--hand);color:var(--ink);cursor:pointer}
@@ -119,7 +118,6 @@ h1{font:400 44px/1.15 var(--hand);margin:0}
 .vote:disabled{cursor:progress;opacity:.7}
 .gallery-grid p.vote-result{margin-top:-6px;font:400 19px/1.2 var(--hand);color:var(--ink)}
 .gallery-grid p.vote-result.won{color:var(--sage-ink)}
-.sample-tag{display:inline-block;border:var(--line);border-radius:5px;padding:4px 8px;font-size:10px;letter-spacing:1px;text-transform:uppercase;color:#716d64}
 @media(min-width:1000px){.brush-toggle{display:none}}
 @media(max-width:1100px) and (min-width:1000px){.tray-tools .tool{width:60px}.tray-colors{gap:12px;padding-left:12px}.swatches{grid-template-columns:repeat(6,35px)}.swatch{width:35px;height:35px}}
 @media(max-width:999px){
@@ -142,7 +140,7 @@ h1{font:400 44px/1.15 var(--hand);margin:0}
  #brush-settings{padding:10px 12px;column-gap:12px}#brush-settings .tray-sizes{gap:8px}.size-value{min-width:67px;font-size:11px}.brush-panel{grid-template-columns:repeat(3,minmax(0,1fr))}.brush-choice{min-height:68px}
  .studio-footer{grid-template-columns:1fr auto;gap:8px}.history-actions{grid-column:1/-1;grid-row:1;justify-self:center;order:initial;width:auto}.history-actions .tool{padding:0 12px}.save-status{grid-column:1;grid-row:2;justify-self:start;order:initial;padding:0;max-width:150px}.done{grid-column:2;grid-row:2;order:initial;min-width:128px;margin:0;font-size:13px}
  #finish[open]{padding:12px 16px 24px;gap:15px}.finish-heading h1{font-size:36px}.finish-art{width:100%;min-width:0}.finish-date{font-size:9px}.finish-actions{width:100%}.finish-actions .btn{flex:1;min-width:0;font-size:13px;padding:0 16px}.finish-secondary{gap:6px 14px}.finish-prompt{font-size:20px}
- #gallery h2{font-size:30px}.gallery-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.gallery-grid p{font-size:11px;margin:9px}.gallery-heading{margin-top:22px}.gallery-note{font-size:12px}.sample-tag{font-size:9px}
+ #gallery h2{font-size:30px}.gallery-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.gallery-grid p{font-size:11px;margin:9px}.gallery-heading{margin-top:22px}.gallery-note{font-size:12px}
 }
 @media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important}.strip{will-change:auto}}
 /* Keep the whole desktop work area reachable without hiding its controls. */

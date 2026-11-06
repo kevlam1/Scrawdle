@@ -4,6 +4,8 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Scrawdle</title>
+  <!-- Dark mode is set before anything draws, so the page doesn't flash light first. -->
+  <script>try { if (localStorage.getItem("scrawdle-theme") === "dark") document.documentElement.dataset.theme = "dark"; } catch (err) {}</script>
   <link rel="preload" href="fonts/patrick-hand.woff2" as="font" type="font/woff2" crossorigin />
   <link rel="preload" href="fonts/gochi-hand.woff2" as="font" type="font/woff2" crossorigin />
   <link rel="stylesheet" href="drawing.css" />
@@ -11,6 +13,8 @@
   <link rel="stylesheet" href="flow.css" />
   <link rel="stylesheet" href="lobby.css" />
   <link rel="stylesheet" href="party.css" />
+  <link rel="stylesheet" href="sketchbook.css" />
+  <link rel="stylesheet" href="theme.css" />
 </head>
 <body>
   <template id="wordmark">
@@ -36,7 +40,7 @@
   </dialog>
 
   <main id="setup">
-    <header class="app-header"><span class="wm-slot"></span><button class="help-open quiet" type="button">How to play</button></header>
+    <header class="app-header"><span class="wm-slot"></span><div class="header-actions"><button class="quiet" id="theme-toggle" type="button">Dark mode</button><button class="help-open quiet" type="button">How to play</button></div></header>
     <div class="home-body">
       <p class="eyebrow" id="home-date"></p>
       <h1>Ready to draw?</h1>
@@ -63,7 +67,7 @@
           <button class="btn" id="free-play" type="button">Start free play</button>
         </section>
       </div>
-      <button class="quiet" id="sample-gallery" type="button">Explore sample drawings</button>
+      <button class="quiet" id="my-drawings" type="button">My drawings</button>
       <a class="quiet" href="/logs/">Read our build log</a>
       <p class="home-storage">Your drafts save in this browser.</p>
       <p id="setup-error" role="alert" hidden></p>
@@ -115,6 +119,7 @@
   <script src="drawing.js"></script>
   <script src="votes.js"></script>
   <script src="gallery.js"></script>
+  <script src="sketchbook.js"></script>
   <!-- Publishing: no-ops until supabase-config.js has a real project (see backend/README.md). -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="supabase-config.js"></script>
@@ -144,6 +149,22 @@
     // The finished PNG is lettered on a canvas, so these fonts must be ready before anyone gets there.
     document.fonts.load('32px "Patrick Hand"');
     document.fonts.load('36px "Gochi Hand"');
+
+    /* ---------- Light and dark mode ---------- */
+    // Light unless the player picks dark. The choice is remembered in this browser (see theme.css).
+    const THEME_KEY = "scrawdle-theme";
+    const themeBtn = $("theme-toggle");
+    function showTheme() {
+      themeBtn.textContent = document.documentElement.dataset.theme === "dark" ? "Light mode" : "Dark mode";
+    }
+    themeBtn.addEventListener("click", () => {
+      const dark = document.documentElement.dataset.theme !== "dark";
+      if (dark) document.documentElement.dataset.theme = "dark";
+      else delete document.documentElement.dataset.theme;
+      try { localStorage.setItem(THEME_KEY, dark ? "dark" : "light"); } catch (err) { /* private browsing: it just isn't remembered */ }
+      showTheme();
+    });
+    showTheme();
 
     /* ---------- Prompt data ---------- */
     let promptData = null;
@@ -271,6 +292,7 @@
       sessionStorage.setItem(OPEN_KEY, slotFor(round));
       setupEl.hidden = true;
       gameEl.hidden = false;
+      markGameEntry();
     }
 
     async function start(mode, daily = true) {
@@ -296,7 +318,7 @@
       const today = saved.today;
       if (today && today.marked) {
         if (today.mode === mode) return openSaved("today");
-        if (!confirm("Start over with this mode? Your drawing for today will be replaced.")) return;
+        if (!confirm("Start over with this mode? Your drawing for today will be replaced, and kept in My drawings.")) return;
       }
       start(mode);
     }
@@ -311,7 +333,7 @@
 
     // Free play has one save, so a new set replaces whatever is on it.
     function startFreePlay(hasDrawing) {
-      if (hasDrawing && !confirm("Replace your Free play drawing with a new set of parts?")) return;
+      if (hasDrawing && !confirm("Replace your Free play drawing with a new set of parts? The old one is kept in My drawings.")) return;
       start("basic", false);
     }
 
@@ -368,7 +390,7 @@
       if (!round.daily) return startFreePlay(!board.isEmpty);
       if (!board.isEmpty && !confirm("Start over? Your current drawing will be lost.")) return;
       await board.discard();
-      showHome();
+      goHome();
     }
 
     $("mode-basic").addEventListener("click", () => startDaily("basic"));
@@ -377,14 +399,51 @@
     $("free-play").addEventListener("click", () => startFreePlay(Boolean(saved.free && saved.free.marked)));
     $("restart").addEventListener("click", restartRound);
     $("slot-new").addEventListener("click", () => { slotEl.hidden = true; start("basic", false); });
-    $("back-home").addEventListener("click", async () => { await board.flush(); showHome(); });
+    $("back-home").addEventListener("click", goHome);
+
+    /* ---------- The browser's Back button ---------- */
+    // The game is one page, so the browser can't tell when a drawing opens, and Back used to leave the
+    // site. Opening a drawing now adds one history entry: Back closes the finish screen, gallery, or help
+    // first, then returns home, and Forward reopens the drawing. The lobby's invite links use the same
+    // history (replaceState in lobby.js), so this only adds its own key to whatever state is there.
+    const GAME_ENTRY = "scrawdleGame";
+    let lastSlot = null; // the drawing Back left, so Forward can reopen it
+    const onGameEntry = () => Boolean(history.state && history.state[GAME_ENTRY]);
+    function markGameEntry() {
+      if (!onGameEntry()) history.pushState({ ...(history.state || {}), [GAME_ENTRY]: true }, "", location.href);
+    }
+    // The in-page "Back to home" buttons go through history too, so the browser's Back afterwards leaves.
+    async function goHome() {
+      if (onGameEntry()) { history.back(); return; }
+      await board.flush();
+      showHome();
+    }
+    window.addEventListener("popstate", async () => {
+      const open = ["finish", "gallery", "help"].map((id) => document.getElementById(id)).find((d) => d && d.open);
+      if (open) {
+        open.close();
+        if (!gameEl.hidden) markGameEntry(); // still drawing, so the next Back goes home
+        return;
+      }
+      if (onGameEntry()) { // Forward, back into the drawing
+        if (gameEl.hidden && lastSlot) openSaved(lastSlot);
+        else if (gameEl.hidden) history.back();
+        return;
+      }
+      if (!gameEl.hidden || !slotEl.hidden) {
+        lastSlot = board.round ? slotFor(board.round) : null;
+        await board.flush();
+        showHome();
+      }
+    });
 
     /* ---------- Drawing board (see drawing.js) ---------- */
     const board = ScrawdleDrawing.createBoard({ canvas: $("board"), toolbar: $("tools"), settings: $("brush-settings") });
     const gallery = ScrawdleGallery.createGallery(board);
-    $("sample-gallery").addEventListener("click", () => gallery.showSamples());
+    const sketchbook = ScrawdleSketchbook.create(board, { onContinue: openSaved });
+    $("my-drawings").addEventListener("click", () => sketchbook.show());
     ScrawdleDrawing.createFinishScreen(board, gallery, {
-      onHome: async () => { await board.flush(); showHome(); },
+      onHome: goHome,
     });
 
     // A refresh returns to the drawing this tab was on. A new visit starts at home.

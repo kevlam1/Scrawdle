@@ -583,7 +583,7 @@
         <h1>Scrawdle: build log</h1>
         <p class="intro">
           A daily drawing game, built by a team of four with Claude Code: a new set of parts to draw each day, a gallery of what
-          other people drew, and private lobbies. Here are the 37 entries of our log with one sentence on each and the name of
+          other people drew, and private lobbies. Here are the 46 entries of our log with one sentence on each and the name of
           whoever wrote it. Open an entry to read everything they wrote for it.
         </p>
         <ul class="facts" aria-label="Project facts">
@@ -673,12 +673,21 @@
   </ul></div>
 </div>
 <div class="toc-group is-open">
-  <button class="toc-head" type="button" aria-expanded="true">Thursday 5 November <span class="count">4</span></button>
+  <button class="toc-head" type="button" aria-expanded="true">Thursday 5 November <span class="count">13</span></button>
   <div class="toc-list-wrap"><ul class="toc-list">
     <li><a href="#entry-34"><span class="n">34</span><span>Fixed lag in the line tool and the marker and watercolor brushes</span></a></li>
     <li><a href="#entry-35"><span class="n">35</span><span>Votes replace the self-judged win</span></a></li>
     <li><a href="#entry-36"><span class="n">36</span><span>A to-do list for database updates in <code>CLAUDE.md</code></span></a></li>
     <li><a href="#entry-37"><span class="n">37</span><span>Scrawdle Party, the first lobby game</span></a></li>
+    <li><a href="#entry-38"><span class="n">38</span><span>The browser's Back button stays in the game</span></a></li>
+    <li><a href="#entry-39"><span class="n">39</span><span>Color names, for colorblind players and screen readers</span></a></li>
+    <li><a href="#entry-40"><span class="n">40</span><span>My drawings: keeping drawings after their day ends</span></a></li>
+    <li><a href="#entry-41"><span class="n">41</span><span>The sample drawings are gone</span></a></li>
+    <li><a href="#entry-42"><span class="n">42</span><span>Old Free play drawings move to My drawings</span></a></li>
+    <li><a href="#entry-43"><span class="n">43</span><span>Dark mode</span></a></li>
+    <li><a href="#entry-44"><span class="n">44</span><span>The leftover sample-drawing code is gone</span></a></li>
+    <li><a href="#entry-45"><span class="n">45</span><span>A Share button for finished drawings</span></a></li>
+    <li><a href="#entry-46"><span class="n">46</span><span>Invite friends to a lobby in one tap</span></a></li>
   </ul></div>
 </div>
 <div class="toc-group is-open">
@@ -1328,6 +1337,155 @@
 <ul><li>11 new Node tests for the rules (scoring, winners, ties, self-votes not counting, a phase ending without waiting for players who left, settings, rolling parts from the real <code>prompts.json</code>). All 69 Node tests pass.</li><li>Before building: a second board on the page draws, undoes, has no repeated ids, and left the saved drafts exactly as they were.</li><li>In a browser with a stand-in lobby (each player is the real page in its own frame; messages are passed between them as JSON with small random delays): a full 3-round game with Ana, Ben and Cal: same parts for everyone, Cal's blank canvas left out of voting, no buttons on your own drawing, a switched vote counted once, correct scores and tied places. Round 2: Cal left mid-drawing and the round went on without her (her points stayed); Dan joined mid-round, was told he'd join next round, and played round 3. Round 3: nobody pressed Done, and the drawings sent themselves when the timer hit 0:00, and voting ended by itself after 30 seconds. Final scores, &quot;Back to lobby&quot;, and the host leaving mid-round (everyone sees &quot;The host left&quot; and the new host ends it). Layout measured at 1280 by 800 and 375 by 812: nothing overlaps or scrolls sideways; on a phone the drawing screen scrolls down to &quot;Done drawing&quot;, like the main one.</li><li>On the live lobby, with two tabs of the local page as two players (lobby <code>CLCPM</code>, made for the test and deleted by the daily job): both got the same parts over Supabase Realtime, both drawings arrived (WebP, about 12 to 13 KB each), the votes counted on both sides, the results and &quot;Ben wins!&quot; final screen showed in both tabs, &quot;Back to lobby&quot; returned both to the lobby room, and both left cleanly. No errors in either tab's console.</li><li>Not checked: more than two real players, players on different computers or networks, Safari or Firefox, a real phone, and a close look at the screens (the preview pane was too small for useful screenshots, so the layout was checked by measuring).</li></ul>
 <p class="sub"><strong>Decisions</strong></p>
 <ul><li>900 by 600 drawings: Claude drew test pictures on the real board and measured them at that size. A simple drawing was 21 KB as WebP, a busy one 49 KB, and one loaded with spray, watercolor, crayon and paint-bucket fills 113 KB (136 KB as JPEG), all under the 256 KB message limit even after the third added by sending it as text. PNG was too big (up to 636 KB). So it's WebP where the browser can make it, JPEG otherwise, with lower quality and then a smaller size only as a fallback.</li><li>Names are hidden while voting, so votes go to the drawing. Thumbs down don't take points away.</li><li>The parts are random each round (not the daily ones), so a party doesn't spoil today's.</li><li>A short &quot;Your parts&quot; screen replaces the slot machine from the main game, to keep the game's code separate from <code>index.html</code>.</li><li>If the host leaves, the game ends rather than passing a half-finished round to someone else.</li></ul>
+  </div></div></div>
+</article>
+<article class="entry" id="entry-38">
+  <h3 class="entry-head"><button type="button" aria-expanded="false" aria-controls="entry-38-body">
+    <span class="num">38</span>
+    <span><span class="title">The browser's Back button stays in the game<span class="by">by Zainab</span></span><span class="sum">Zainab made the browser's Back button return to the home screen from a drawing instead of leaving the site, closing the finish screen, gallery, or help first.</span></span>
+    <span class="caret" aria-hidden="true"></span>
+  </button></h3>
+  <div class="body" id="entry-38-body"><div class="body-in"><div class="body-pad">
+<p class="sub"><strong>What I asked for</strong></p>
+<ul><li>Pressing the browser's Back button while drawing left Scrawdle completely. It's the home-page navigation bug on the team's list, and I took it.</li></ul>
+<p class="sub"><strong>What changed</strong></p>
+<ul><li><code>frontend/index.html</code>: opening a drawing adds one entry to the browser's history. Back now closes the finish screen, the gallery, or help first, then returns to the home screen, where the drawing is offered under &quot;Continue drawing&quot;. Forward reopens it. One more Back from the home screen leaves the site, as before.</li><li>The &quot;Back to home&quot; buttons on the game and finish screens, and Start over, go through the same history, so the browser's Back afterwards doesn't need an extra press.</li><li>The lobby's invite links already change the address with <code>replaceState</code>. This keeps whatever state is there and only adds its own key.</li></ul>
+<p class="sub"><strong>What I checked</strong></p>
+<ul><li>All 42 logic tests pass. 29 checks in Chromium: Back and Forward from Basic, Daily Free Play, and Free play; Back during the Detailed reveal; Back from the finish screen, the gallery, and help; the in-page Back to home buttons; after a refresh; after Start over; with two saved drawings; and no page errors. One check failed at first because it compared a label without noticing the page shows it in capitals. The page was right.</li><li>Not checked: Safari, Firefox, a phone's back gesture, or the lobby, because joining one would create a real lobby in Kevin's project.</li></ul>
+<p class="sub"><strong>Decisions</strong></p>
+<ul><li>Back never throws a drawing away. It stays saved and shows on the home screen.</li></ul>
+  </div></div></div>
+</article>
+<article class="entry" id="entry-39">
+  <h3 class="entry-head"><button type="button" aria-expanded="false" aria-controls="entry-39-body">
+    <span class="num">39</span>
+    <span><span class="title">Color names, for colorblind players and screen readers<span class="by">by Zainab</span></span><span class="sum">Zainab gave the 12 colors plain names, shown on hover, read by screen readers, and written beside the tool name for touch screens, so nobody has to tell colors apart by sight.</span></span>
+    <span class="caret" aria-hidden="true"></span>
+  </button></h3>
+  <div class="body" id="entry-39-body"><div class="body-in"><div class="body-pad">
+<p class="sub"><strong>What I asked for</strong></p>
+<ul><li>The color buttons only had codes like &quot;#da382e&quot; as their names, so a screen reader read the code out and nothing helped anyone who can't tell two colors apart. A colorblind color tooltip is on the team's list, and I took it.</li></ul>
+<p class="sub"><strong>What changed</strong></p>
+<ul><li><code>frontend/drawing.js</code>: each of the 12 colors has a plain name (Black, Gray, White, Red, Orange, Yellow, Green, Teal, Light blue, Dark blue, Purple, Pink). Hovering shows it, and screen readers read it instead of the code.</li><li>Hovering doesn't work on touch screens, so the settings panel's title now names the color too: &quot;Pen · Red&quot;, &quot;Brushes · Red&quot;, &quot;Bucket · Red&quot;. The eraser just says &quot;Eraser&quot;. A color from the color wheel says &quot;Custom color&quot;.</li><li><code>tests/colors.test.js</code>: every color has a name, no two share one, and no name is a code.</li></ul>
+<p class="sub"><strong>What I checked</strong></p>
+<ul><li>44 logic tests pass. 23 checks in Chromium: the names on hover and for screen readers match, the title follows the tool and color, the eraser and custom color, and that the title fits on one line without overlapping the size at 1440x900, 1280x800, 390x844, and 320x740. I looked at the panel at the widest and narrowest sizes.</li><li>Not checked with a real screen reader, or by a colorblind player.</li></ul>
+<p class="sub"><strong>Decisions</strong></p>
+<ul><li>The names are short, everyday words rather than exact shade names, so they're quick to read.</li></ul>
+  </div></div></div>
+</article>
+<article class="entry" id="entry-40">
+  <h3 class="entry-head"><button type="button" aria-expanded="false" aria-controls="entry-40-body">
+    <span class="num">40</span>
+    <span><span class="title">My drawings: keeping drawings after their day ends<span class="by">by Zainab</span></span><span class="sum">Zainab added My drawings, which keeps a player's drawings in their browser after the day ends or a new round replaces them, with Download and Delete for each.</span></span>
+    <span class="caret" aria-hidden="true"></span>
+  </button></h3>
+  <div class="body" id="entry-40-body"><div class="body-in"><div class="body-pad">
+<p class="sub"><strong>What I asked for</strong></p>
+<ul><li>The team asked me to add saving. Drawings already saved in the browser, but today's was thrown away when the day ended, and a Free play drawing was lost when a new set replaced it. I wanted players to keep what they make.</li></ul>
+<p class="sub"><strong>What changed</strong></p>
+<ul><li><code>frontend/drawing.js</code>: when a day ends, that day's Basic, Detailed, or Daily Free Play drawing is kept instead of thrown away. So is a Free play drawing, or today's in the other mode, when a new round replaces it. A drawing cleared with Start over isn't kept, because that button already says it will be lost, and blank rounds aren't kept either. The 60 most recent are kept, and the oldest go first.</li><li>They're stored in the same browser storage as the drafts, under their own keys, so the storage didn't need a new version. A page still open on the old code keeps saving normally.</li><li>The download with the parts and date written under the drawing is now one shared function, used by the finish screen and by My drawings.</li><li><code>frontend/sketchbook.js</code> and <code>sketchbook.css</code>: a &quot;My drawings&quot; link on the home screen opens a page in the gallery's style. Today's drawings show as &quot;in progress&quot; with Continue and Download, and kept ones show their mode, date, and parts with Download and Delete.</li><li>The two confirmations that replace a drawing now say the old one is kept in My drawings.</li><li><code>tests/my-drawings.test.js</code>: kept drawings sort oldest first, only the oldest go past the limit, and drafts are never dropped.</li></ul>
+<p class="sub"><strong>What I checked</strong></p>
+<ul><li>47 logic tests pass. 21 checks in Chromium: the empty page, an in-progress drawing with Continue and Download, the downloaded PNG's size, a replaced Free play drawing, a day ending (by changing a saved drawing's date to an earlier day), Daily Free Play, switching Basic to Detailed, Start over, a blank round, Delete surviving a refresh, a phone-size page with nothing running off the side, and no page errors. The Back button and color checks from entries 38 and 39 still pass. I looked at the page on a laptop and a phone.</li><li>Not checked: Safari or Firefox, a real phone, or what happens when a browser runs out of storage.</li></ul>
+<p class="sub"><strong>Decisions</strong></p>
+<ul><li>Drawings stay only in that browser and are never uploaded. Clearing the browser's data deletes them, and Safari deletes a site's saved data after about 7 days without a visit. The page says so.</li></ul>
+  </div></div></div>
+</article>
+<article class="entry" id="entry-41">
+  <h3 class="entry-head"><button type="button" aria-expanded="false" aria-controls="entry-41-body">
+    <span class="num">41</span>
+    <span><span class="title">The sample drawings are gone<span class="by">by Zainab</span></span><span class="sum">Zainab removed the strawberry sample drawings from the home and finish screens because the team didn't like them, leaving their unused code to clear out after Trenten's gallery changes merge.</span></span>
+    <span class="caret" aria-hidden="true"></span>
+  </button></h3>
+  <div class="body" id="entry-41-body"><div class="body-in"><div class="body-pad">
+<p class="sub"><strong>What I asked for</strong></p>
+<ul><li>The team didn't like the strawberry sample drawings, so I took them out.</li></ul>
+<p class="sub"><strong>What changed</strong></p>
+<ul><li><code>frontend/index.html</code>: the home screen's &quot;Explore sample drawings&quot; button is gone. &quot;My drawings&quot; takes its place and its spacing.</li><li><code>frontend/drawing.js</code>: the finish screen's &quot;View sample gallery&quot; button is gone. When publishing isn't connected, the finish screen just has no gallery button.</li><li>Not removed yet: the samples code in <code>frontend/gallery.js</code>, its two CSS rules in <code>flow.css</code>, and <code>assets/sample-strawberries.webp</code>. Nothing in the game reaches them now, and the image only loads when that code runs. Trenten's unmerged gallery changes edit the same lines, so I'll remove them after his work is merged instead of causing a conflict.</li><li><code>README.md</code> and <code>frontend/README.md</code> say the same.</li></ul>
+<p class="sub"><strong>What I checked</strong></p>
+<ul><li>47 logic tests pass. 12 checks in Chromium, with publishing connected and with it turned off: no sample drawings on the home or finish screen, My drawings still there, the gallery button only when publishing is on, Download and Replay still there, and no page errors. The checks from entries 38, 39, and 40 still pass.</li></ul>
+<p class="sub"><strong>Decisions</strong></p>
+<ul><li>Left the leftover code for one more merge instead of editing lines Trenten is changing.</li></ul>
+  </div></div></div>
+</article>
+<article class="entry" id="entry-42">
+  <h3 class="entry-head"><button type="button" aria-expanded="false" aria-controls="entry-42-body">
+    <span class="num">42</span>
+    <span><span class="title">Old Free play drawings move to My drawings<span class="by">by Zainab</span></span><span class="sum">Zainab made an old Free play drawing move to My drawings when the day changes, so the home screen only offers today's drawings.</span></span>
+    <span class="caret" aria-hidden="true"></span>
+  </button></h3>
+  <div class="body" id="entry-42-body"><div class="body-in"><div class="body-pad">
+<p class="sub"><strong>What I asked for</strong></p>
+<ul><li>An old Free play drawing from testing kept showing as &quot;Continue drawing&quot; on the home screen days later, because Free play drawings never expired. I wanted the home screen to only show today's drawings.</li></ul>
+<p class="sub"><strong>What changed</strong></p>
+<ul><li><code>frontend/drawing.js</code>: when the day changes, a Free play drawing now moves to My drawings, the same as Basic, Detailed, and Daily Free Play. It can still be downloaded there, but not drawn on any more, which is how the daily drawings already worked.</li><li><code>README.md</code> says the same.</li></ul>
+<p class="sub"><strong>What I checked</strong></p>
+<ul><li>74 logic tests pass. 25 My drawings checks in Chromium pass, including new ones: today's Free play is offered to continue, and one from an earlier day leaves the home screen and shows in My drawings with its date. The Back button checks still pass.</li></ul>
+<p class="sub"><strong>Decisions</strong></p>
+<ul><li>Someone mid-way through a Free play drawing at midnight can't keep drawing on it the next day. That matches the daily drawings, and nothing is lost.</li></ul>
+  </div></div></div>
+</article>
+<article class="entry" id="entry-43">
+  <h3 class="entry-head"><button type="button" aria-expanded="false" aria-controls="entry-43-body">
+    <span class="num">43</span>
+    <span><span class="title">Dark mode<span class="by">by Zainab</span></span><span class="sum">Zainab added an optional dark mode, following Material Design and Apple guidance and checked for contrast on every screen, with the canvas and drawings kept white.</span></span>
+    <span class="caret" aria-hidden="true"></span>
+  </button></h3>
+  <div class="body" id="entry-43-body"><div class="body-in"><div class="body-pad">
+<p class="sub"><strong>What I asked for</strong></p>
+<ul><li>Light and dark settings are on the team's list, and I took them. I asked for the colors to follow what designers recommend for dark mode, not guesses.</li></ul>
+<p class="sub"><strong>What changed</strong></p>
+<ul><li><code>frontend/theme.css</code>: dark mode, applied only when the page has <code>data-theme=&quot;dark&quot;</code>, so the light look is the other style files exactly as they were. It changes colors only. The canvas, every drawing, the finished picture, and the drawings in the gallery and My drawings stay white, so a drawing looks the same in both modes.</li><li><code>frontend/index.html</code>: a &quot;Dark mode&quot; button beside &quot;How to play&quot; on the home screen (it says &quot;Light mode&quot; while dark is on). The choice is remembered in this browser and set before the page draws, so it doesn't flash light first. Light is the default, so nobody's game changes unless they pick dark.</li><li>The colors follow Material Design's dark theme and Apple's dark mode guidance: a warm dark gray instead of pure black (Material's own is #121212), raised cards a little lighter than the page, off-white text instead of pure white, a calmer yellow, and WCAG AA contrast (4.5:1 for text, 3:1 for the edges of buttons and text boxes). Yellow buttons keep dark text. Brush previews sit on a strip of white so they show in any color, and the color dots have a light ring so black, dark blue, and purple don't disappear.</li></ul>
+<p class="sub"><strong>What I checked</strong></p>
+<ul><li>74 logic tests pass. 60 checks in Chromium at 1440x900 and 390x844: on the home, help, reveal, drawing, brush, finish, gallery, and My drawings screens in dark mode, every piece of text measured at least 4.5:1 (3:1 for large text) and every visible button and text-box edge at least 3:1; the canvas stays white; nothing runs off the side. Light mode, compared pixel by pixel with the version before this change, is identical except for the new button. The choice is remembered after a refresh, in both directions. I looked at each dark screen.</li><li>The automatic checks caught problems I then fixed: two of my style rules were accidentally stronger than the ones meant to win, which turned the yellow buttons gray with dark text and kept some grey text too faint; black, dark blue, and purple color dots almost disappeared; and button and text-box edges were too faint. Two checks of mine were also too strict at first (faint anti-aliasing in a screenshot comparison, and buttons that have no border at all, which are known by their words and pictures).</li><li>Not checked: the lobby room and Scrawdle Party screens in dark mode, because opening them creates a real lobby in Kevin's project; the /logs page, which has its own style and stays light; Safari, Firefox, and real phones.</li></ul>
+<p class="sub"><strong>Decisions</strong></p>
+<ul><li>Light by default instead of following the computer's own dark setting, so the team doesn't see the game change without choosing it. Following the system setting is a one-line change if the team wants it.</li><li>Kept in its own file instead of editing the existing style files, so the light look can't change by accident.</li></ul>
+  </div></div></div>
+</article>
+<article class="entry" id="entry-44">
+  <h3 class="entry-head"><button type="button" aria-expanded="false" aria-controls="entry-44-body">
+    <span class="num">44</span>
+    <span><span class="title">The leftover sample-drawing code is gone<span class="by">by Zainab</span></span><span class="sum">Zainab removed the leftover sample-drawing code, styles, and image once Trenten's gallery changes were merged.</span></span>
+    <span class="caret" aria-hidden="true"></span>
+  </button></h3>
+  <div class="body" id="entry-44-body"><div class="body-in"><div class="body-pad">
+<p class="sub"><strong>What I asked for</strong></p>
+<ul><li>Finish removing the sample drawings, now that Trenten's gallery changes are merged and the lines can change without a conflict (see entry 41).</li></ul>
+<p class="sub"><strong>What changed</strong></p>
+<ul><li><code>frontend/gallery.js</code>: the samples function, its &quot;Sample drawings&quot; tag, and the samples mention in the top comment are gone. The gallery itself is unchanged.</li><li><code>frontend/flow.css</code> and <code>frontend/theme.css</code>: the two sample styles are gone.</li><li><code>frontend/assets/sample-strawberries.webp</code> (196 KB) is deleted. <code>frontend/README.md</code> no longer mentions it.</li><li>Left alone: a comment in Kevin's <code>frontend/lobby.css</code> still mentions the old &quot;Explore sample drawings&quot; button. It's only a comment, and lobby files are Kevin's to change.</li></ul>
+<p class="sub"><strong>What I checked</strong></p>
+<ul><li>74 logic tests pass, and <code>flow.css</code> still has matching braces. The checks from entries 38, 40, 41, and 43 pass again in Chromium, including opening today's gallery and dark mode on every screen.</li></ul>
+  </div></div></div>
+</article>
+<article class="entry" id="entry-45">
+  <h3 class="entry-head"><button type="button" aria-expanded="false" aria-controls="entry-45-body">
+    <span class="num">45</span>
+    <span><span class="title">A Share button for finished drawings<span class="by">by Zainab</span></span><span class="sum">Zainab added a Share button to the finish screen that opens the phone's share menu with the drawing and a link to the game, copying or downloading it where that menu isn't available.</span></span>
+    <span class="caret" aria-hidden="true"></span>
+  </button></h3>
+  <div class="body" id="entry-45-body"><div class="body-in"><div class="body-pad">
+<p class="sub"><strong>What I asked for</strong></p>
+<ul><li>A quick way to share a finished drawing, the way daily puzzles like Wordle spread: one button that opens the phone's own share menu.</li></ul>
+<p class="sub"><strong>What changed</strong></p>
+<ul><li><code>frontend/drawing.js</code>: the finish screen has a Share button next to Download PNG. It shares the same picture as the download, with the parts and date written under it, plus a short line such as &quot;My Scrawdle Basic drawing for November 5: Parrot, T-rex arms, ... Draw yours:&quot; and the game's link. Free play leaves out the date, and Daily Free Play leaves out its &quot;Draw anything&quot; placeholder.</li><li>Where there's no share menu (many laptop browsers), it copies the picture to paste into a message or post. Where that isn't possible either, it downloads the picture and says why. Closing the share menu does nothing. A blank drawing has no Share button.</li><li>The finish screen's fallback message when publishing fails now says &quot;Couldn't publish&quot; instead of &quot;Couldn't share&quot;, so the two buttons don't get mixed up.</li><li><code>tests/share.test.js</code>: the share line for Basic, Detailed, Free play, and Daily Free Play.</li></ul>
+<p class="sub"><strong>What I checked</strong></p>
+<ul><li>77 logic tests pass. 17 checks in Chromium with a stand-in share menu that records what it receives: one PNG file with the parts and date (1880 pixels wide), the right text and link, &quot;Shared.&quot; afterwards, nothing when the menu is closed, the copy fallback (the clipboard really holds a PNG), the download fallback, no button for a blank drawing, and all three buttons fitting at 1280x800, 390x844, and 320x740. Dark mode, the Back button, My drawings, and the color checks still pass.</li><li>Not checked: a real phone's share menu, Safari, or Firefox. The stand-in only shows the game hands the right things to the browser.</li></ul>
+<p class="sub"><strong>Decisions</strong></p>
+<ul><li>Inviting friends to a lobby the same way (&quot;Invite friends&quot; opening the share menu with the code and link) would help too, but the lobby is Kevin's, so I'm asking him first.</li></ul>
+  </div></div></div>
+</article>
+<article class="entry" id="entry-46">
+  <h3 class="entry-head"><button type="button" aria-expanded="false" aria-controls="entry-46-body">
+    <span class="num">46</span>
+    <span><span class="title">Invite friends to a lobby in one tap<span class="by">by Zainab</span></span><span class="sum">Zainab added an Invite friends button to Kevin's lobby, with the team's OK, that opens the phone's share menu with the lobby code and link filled in.</span></span>
+    <span class="caret" aria-hidden="true"></span>
+  </button></h3>
+  <div class="body" id="entry-46-body"><div class="body-in"><div class="body-pad">
+<p class="sub"><strong>What I asked for</strong></p>
+<ul><li>Inviting friends to a lobby meant copying the link and pasting it into a message. I wanted one button that opens the phone's share menu, so a friend can be picked straight from Messages or WhatsApp. The lobby is Kevin's, and the team said I could add this.</li></ul>
+<p class="sub"><strong>What changed</strong></p>
+<ul><li><code>frontend/lobby.js</code> (Kevin's file; this is the only change in it): the lobby room has an Invite friends button beside the invite link. It opens the browser's share menu with &quot;Join my Scrawdle lobby! Code BCDFG&quot; and the invite link filled in. It only shows where the browser has a share menu (phones, and some laptop browsers). Elsewhere it stays hidden and Copy link is the main button, as before. Closing the menu does nothing.</li><li>No phone numbers or contacts ever reach the game: the phone's own menu handles who it goes to.</li></ul>
+<p class="sub"><strong>What I checked</strong></p>
+<ul><li>77 logic tests pass. 12 checks in Chromium with a stand-in for Supabase, so no real lobby was created in Kevin's project (checked: no request reached it): the button shows with a share menu and is the main button, the menu gets the right text and link, closing it does nothing, without a share menu it stays hidden and Copy link still copies the link, and both buttons fit at 390x844 and 320x740. I looked at the lobby room on a phone and in dark mode, which entry 43 couldn't check.</li><li>Not checked: a real phone's share menu, or a real lobby.</li></ul>
   </div></div></div>
 </article>
       </section>

@@ -771,6 +771,174 @@ Artifact 4 is "For Someone Else," due Sunday, November 8. Our team of four (Kevi
 
 ---
 
+## 38. The browser's Back button stays in the game (2026-11-05) — Zainab
+
+**What I asked for**
+- Pressing the browser's Back button while drawing left Scrawdle completely. It's the home-page navigation bug on the team's list, and I took it.
+
+**What changed**
+- `frontend/index.html`: opening a drawing adds one entry to the browser's history. Back now closes the finish screen, the gallery, or help first, then returns to the home screen, where the drawing is offered under "Continue drawing". Forward reopens it. One more Back from the home screen leaves the site, as before.
+- The "Back to home" buttons on the game and finish screens, and Start over, go through the same history, so the browser's Back afterwards doesn't need an extra press.
+- The lobby's invite links already change the address with `replaceState`. This keeps whatever state is there and only adds its own key.
+
+**What I checked**
+- All 42 logic tests pass. 29 checks in Chromium: Back and Forward from Basic, Daily Free Play, and Free play; Back during the Detailed reveal; Back from the finish screen, the gallery, and help; the in-page Back to home buttons; after a refresh; after Start over; with two saved drawings; and no page errors. One check failed at first because it compared a label without noticing the page shows it in capitals. The page was right.
+- Not checked: Safari, Firefox, a phone's back gesture, or the lobby, because joining one would create a real lobby in Kevin's project.
+
+**Decisions**
+- Back never throws a drawing away. It stays saved and shows on the home screen.
+
+---
+
+## 39. Color names, for colorblind players and screen readers (2026-11-05) — Zainab
+
+**What I asked for**
+- The color buttons only had codes like "#da382e" as their names, so a screen reader read the code out and nothing helped anyone who can't tell two colors apart. A colorblind color tooltip is on the team's list, and I took it.
+
+**What changed**
+- `frontend/drawing.js`: each of the 12 colors has a plain name (Black, Gray, White, Red, Orange, Yellow, Green, Teal, Light blue, Dark blue, Purple, Pink). Hovering shows it, and screen readers read it instead of the code.
+- Hovering doesn't work on touch screens, so the settings panel's title now names the color too: "Pen · Red", "Brushes · Red", "Bucket · Red". The eraser just says "Eraser". A color from the color wheel says "Custom color".
+- `tests/colors.test.js`: every color has a name, no two share one, and no name is a code.
+
+**What I checked**
+- 44 logic tests pass. 23 checks in Chromium: the names on hover and for screen readers match, the title follows the tool and color, the eraser and custom color, and that the title fits on one line without overlapping the size at 1440x900, 1280x800, 390x844, and 320x740. I looked at the panel at the widest and narrowest sizes.
+- Not checked with a real screen reader, or by a colorblind player.
+
+**Decisions**
+- The names are short, everyday words rather than exact shade names, so they're quick to read.
+
+---
+
+## 40. My drawings: keeping drawings after their day ends (2026-11-05) — Zainab
+
+**What I asked for**
+- The team asked me to add saving. Drawings already saved in the browser, but today's was thrown away when the day ended, and a Free play drawing was lost when a new set replaced it. I wanted players to keep what they make.
+
+**What changed**
+- `frontend/drawing.js`: when a day ends, that day's Basic, Detailed, or Daily Free Play drawing is kept instead of thrown away. So is a Free play drawing, or today's in the other mode, when a new round replaces it. A drawing cleared with Start over isn't kept, because that button already says it will be lost, and blank rounds aren't kept either. The 60 most recent are kept, and the oldest go first.
+- They're stored in the same browser storage as the drafts, under their own keys, so the storage didn't need a new version. A page still open on the old code keeps saving normally.
+- The download with the parts and date written under the drawing is now one shared function, used by the finish screen and by My drawings.
+- `frontend/sketchbook.js` and `sketchbook.css`: a "My drawings" link on the home screen opens a page in the gallery's style. Today's drawings show as "in progress" with Continue and Download, and kept ones show their mode, date, and parts with Download and Delete.
+- The two confirmations that replace a drawing now say the old one is kept in My drawings.
+- `tests/my-drawings.test.js`: kept drawings sort oldest first, only the oldest go past the limit, and drafts are never dropped.
+
+**What I checked**
+- 47 logic tests pass. 21 checks in Chromium: the empty page, an in-progress drawing with Continue and Download, the downloaded PNG's size, a replaced Free play drawing, a day ending (by changing a saved drawing's date to an earlier day), Daily Free Play, switching Basic to Detailed, Start over, a blank round, Delete surviving a refresh, a phone-size page with nothing running off the side, and no page errors. The Back button and color checks from entries 38 and 39 still pass. I looked at the page on a laptop and a phone.
+- Not checked: Safari or Firefox, a real phone, or what happens when a browser runs out of storage.
+
+**Decisions**
+- Drawings stay only in that browser and are never uploaded. Clearing the browser's data deletes them, and Safari deletes a site's saved data after about 7 days without a visit. The page says so.
+
+---
+
+## 41. The sample drawings are gone (2026-11-05) — Zainab
+
+**What I asked for**
+- The team didn't like the strawberry sample drawings, so I took them out.
+
+**What changed**
+- `frontend/index.html`: the home screen's "Explore sample drawings" button is gone. "My drawings" takes its place and its spacing.
+- `frontend/drawing.js`: the finish screen's "View sample gallery" button is gone. When publishing isn't connected, the finish screen just has no gallery button.
+- Not removed yet: the samples code in `frontend/gallery.js`, its two CSS rules in `flow.css`, and `assets/sample-strawberries.webp`. Nothing in the game reaches them now, and the image only loads when that code runs. Trenten's unmerged gallery changes edit the same lines, so I'll remove them after his work is merged instead of causing a conflict.
+- `README.md` and `frontend/README.md` say the same.
+
+**What I checked**
+- 47 logic tests pass. 12 checks in Chromium, with publishing connected and with it turned off: no sample drawings on the home or finish screen, My drawings still there, the gallery button only when publishing is on, Download and Replay still there, and no page errors. The checks from entries 38, 39, and 40 still pass.
+
+**Decisions**
+- Left the leftover code for one more merge instead of editing lines Trenten is changing.
+
+---
+
+## 42. Old Free play drawings move to My drawings (2026-11-05) — Zainab
+
+**What I asked for**
+- An old Free play drawing from testing kept showing as "Continue drawing" on the home screen days later, because Free play drawings never expired. I wanted the home screen to only show today's drawings.
+
+**What changed**
+- `frontend/drawing.js`: when the day changes, a Free play drawing now moves to My drawings, the same as Basic, Detailed, and Daily Free Play. It can still be downloaded there, but not drawn on any more, which is how the daily drawings already worked.
+- `README.md` says the same.
+
+**What I checked**
+- 74 logic tests pass. 25 My drawings checks in Chromium pass, including new ones: today's Free play is offered to continue, and one from an earlier day leaves the home screen and shows in My drawings with its date. The Back button checks still pass.
+
+**Decisions**
+- Someone mid-way through a Free play drawing at midnight can't keep drawing on it the next day. That matches the daily drawings, and nothing is lost.
+
+---
+
+## 43. Dark mode (2026-11-05) — Zainab
+
+**What I asked for**
+- Light and dark settings are on the team's list, and I took them. I asked for the colors to follow what designers recommend for dark mode, not guesses.
+
+**What changed**
+- `frontend/theme.css`: dark mode, applied only when the page has `data-theme="dark"`, so the light look is the other style files exactly as they were. It changes colors only. The canvas, every drawing, the finished picture, and the drawings in the gallery and My drawings stay white, so a drawing looks the same in both modes.
+- `frontend/index.html`: a "Dark mode" button beside "How to play" on the home screen (it says "Light mode" while dark is on). The choice is remembered in this browser and set before the page draws, so it doesn't flash light first. Light is the default, so nobody's game changes unless they pick dark.
+- The colors follow Material Design's dark theme and Apple's dark mode guidance: a warm dark gray instead of pure black (Material's own is #121212), raised cards a little lighter than the page, off-white text instead of pure white, a calmer yellow, and WCAG AA contrast (4.5:1 for text, 3:1 for the edges of buttons and text boxes). Yellow buttons keep dark text. Brush previews sit on a strip of white so they show in any color, and the color dots have a light ring so black, dark blue, and purple don't disappear.
+
+**What I checked**
+- 74 logic tests pass. 60 checks in Chromium at 1440x900 and 390x844: on the home, help, reveal, drawing, brush, finish, gallery, and My drawings screens in dark mode, every piece of text measured at least 4.5:1 (3:1 for large text) and every visible button and text-box edge at least 3:1; the canvas stays white; nothing runs off the side. Light mode, compared pixel by pixel with the version before this change, is identical except for the new button. The choice is remembered after a refresh, in both directions. I looked at each dark screen.
+- The automatic checks caught problems I then fixed: two of my style rules were accidentally stronger than the ones meant to win, which turned the yellow buttons gray with dark text and kept some grey text too faint; black, dark blue, and purple color dots almost disappeared; and button and text-box edges were too faint. Two checks of mine were also too strict at first (faint anti-aliasing in a screenshot comparison, and buttons that have no border at all, which are known by their words and pictures).
+- Not checked: the lobby room and Scrawdle Party screens in dark mode, because opening them creates a real lobby in Kevin's project; the /logs page, which has its own style and stays light; Safari, Firefox, and real phones.
+
+**Decisions**
+- Light by default instead of following the computer's own dark setting, so the team doesn't see the game change without choosing it. Following the system setting is a one-line change if the team wants it.
+- Kept in its own file instead of editing the existing style files, so the light look can't change by accident.
+
+---
+
+## 44. The leftover sample-drawing code is gone (2026-11-05) — Zainab
+
+**What I asked for**
+- Finish removing the sample drawings, now that Trenten's gallery changes are merged and the lines can change without a conflict (see entry 41).
+
+**What changed**
+- `frontend/gallery.js`: the samples function, its "Sample drawings" tag, and the samples mention in the top comment are gone. The gallery itself is unchanged.
+- `frontend/flow.css` and `frontend/theme.css`: the two sample styles are gone.
+- `frontend/assets/sample-strawberries.webp` (196 KB) is deleted. `frontend/README.md` no longer mentions it.
+- Left alone: a comment in Kevin's `frontend/lobby.css` still mentions the old "Explore sample drawings" button. It's only a comment, and lobby files are Kevin's to change.
+
+**What I checked**
+- 74 logic tests pass, and `flow.css` still has matching braces. The checks from entries 38, 40, 41, and 43 pass again in Chromium, including opening today's gallery and dark mode on every screen.
+
+---
+
+## 45. A Share button for finished drawings (2026-11-05) — Zainab
+
+**What I asked for**
+- A quick way to share a finished drawing, the way daily puzzles like Wordle spread: one button that opens the phone's own share menu.
+
+**What changed**
+- `frontend/drawing.js`: the finish screen has a Share button next to Download PNG. It shares the same picture as the download, with the parts and date written under it, plus a short line such as "My Scrawdle Basic drawing for November 5: Parrot, T-rex arms, ... Draw yours:" and the game's link. Free play leaves out the date, and Daily Free Play leaves out its "Draw anything" placeholder.
+- Where there's no share menu (many laptop browsers), it copies the picture to paste into a message or post. Where that isn't possible either, it downloads the picture and says why. Closing the share menu does nothing. A blank drawing has no Share button.
+- The finish screen's fallback message when publishing fails now says "Couldn't publish" instead of "Couldn't share", so the two buttons don't get mixed up.
+- `tests/share.test.js`: the share line for Basic, Detailed, Free play, and Daily Free Play.
+
+**What I checked**
+- 77 logic tests pass. 17 checks in Chromium with a stand-in share menu that records what it receives: one PNG file with the parts and date (1880 pixels wide), the right text and link, "Shared." afterwards, nothing when the menu is closed, the copy fallback (the clipboard really holds a PNG), the download fallback, no button for a blank drawing, and all three buttons fitting at 1280x800, 390x844, and 320x740. Dark mode, the Back button, My drawings, and the color checks still pass.
+- Not checked: a real phone's share menu, Safari, or Firefox. The stand-in only shows the game hands the right things to the browser.
+
+**Decisions**
+- Inviting friends to a lobby the same way ("Invite friends" opening the share menu with the code and link) would help too, but the lobby is Kevin's, so I'm asking him first.
+
+---
+
+## 46. Invite friends to a lobby in one tap (2026-11-05) — Zainab
+
+**What I asked for**
+- Inviting friends to a lobby meant copying the link and pasting it into a message. I wanted one button that opens the phone's share menu, so a friend can be picked straight from Messages or WhatsApp. The lobby is Kevin's, and the team said I could add this.
+
+**What changed**
+- `frontend/lobby.js` (Kevin's file; this is the only change in it): the lobby room has an Invite friends button beside the invite link. It opens the browser's share menu with "Join my Scrawdle lobby! Code BCDFG" and the invite link filled in. It only shows where the browser has a share menu (phones, and some laptop browsers). Elsewhere it stays hidden and Copy link is the main button, as before. Closing the menu does nothing.
+- No phone numbers or contacts ever reach the game: the phone's own menu handles who it goes to.
+
+**What I checked**
+- 77 logic tests pass. 12 checks in Chromium with a stand-in for Supabase, so no real lobby was created in Kevin's project (checked: no request reached it): the button shows with a share menu and is the main button, the menu gets the right text and link, closing it does nothing, without a share menu it stays hidden and Copy link still copies the link, and both buttons fit at 390x844 and 320x740. I looked at the lobby room on a phone and in dark mode, which entry 43 couldn't check.
+- Not checked: a real phone's share menu, or a real lobby.
+
+---
+
 ## Where AI misread me, or I had to correct course
 
 - Claude's first version of the start page put "What is this?" in the top right, where it collided with the "New set" button on the game screen. I caught it by running the page; Claude hadn't opened it in a browser.

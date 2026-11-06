@@ -15,6 +15,13 @@
   const SCALE = 2;
   const HISTORY_BYTES = 96 * 1024 * 1024;
   const COLORS = ["#292b2c", "#99938a", "#ffffff", "#da382e", "#e67732", "#f4c735", "#3f854d", "#198d8c", "#78b4d9", "#2c507e", "#855087", "#d984ab"];
+  // Names for the colors, so nobody has to tell them apart by sight: shown on hover, read by screen
+  // readers, and shown beside the tool's name for touch screens, where hovering isn't possible.
+  const COLOR_NAMES = {
+    "#292b2c": "Black", "#99938a": "Gray", "#ffffff": "White", "#da382e": "Red", "#e67732": "Orange", "#f4c735": "Yellow",
+    "#3f854d": "Green", "#198d8c": "Teal", "#78b4d9": "Light blue", "#2c507e": "Dark blue", "#855087": "Purple", "#d984ab": "Pink",
+  };
+  const colorName = (hex) => COLOR_NAMES[hex] || "Custom color";
   const TOOLS = [
     { id: "pen", label: "Pen", size: 3 },
     { id: "pencil", label: "Pencil", size: 4 },
@@ -186,6 +193,7 @@
     get(slot) { return this.run("readonly", (s) => s.get(slot)); },
     put(draft, slot) { return this.run("readwrite", (s) => s.put(draft, slot)); },
     remove(slot) { return this.run("readwrite", (s) => s.delete(slot)); },
+    keys() { return this.run("readonly", (s) => s.getAllKeys()); },
     // Saves from before Today and Free play had their own slots were all kept under "current".
     async migrate() {
       const old = await this.get("current");
@@ -197,6 +205,85 @@
   // Daily Scrawl (mode "scrawl") is a free draw with its own save, cleared each day like "today".
   const slotOf = (round) => (round.mode === "scrawl" ? "scrawl" : round.daily === false ? "free" : "today");
   const draftImage = async (draft) => draft.blob || (await fetch(draft.dataUrl)).blob();
+  // A drawing with something in it, as opposed to a round that was opened and left blank.
+  const isMarked = (draft) => !Array.isArray(draft.ops) || draft.ops.length > 0 || draft.canReplay === false;
+
+  /* ---------- My drawings: finished drawings kept after their day ends (in this browser only) ---------- */
+  // Stored in the same "drafts" store under keys starting "book|". A new store would mean a new database
+  // version, and a page still open on the old code would then be unable to save.
+  const BOOK = "book|";
+  const BOOK_MAX = 60; // about two months of daily drawings; the oldest go first
+  // Keys sort by day, then slot, then time, so sorting them sorts the drawings oldest first.
+  const bookKey = (draft, slot) => `${BOOK}${draft.day}|${slot}|${String(draft.savedAt || 0).padStart(15, "0")}`;
+  const keysToDrop = (keys, max = BOOK_MAX) => {
+    const kept = keys.filter((k) => String(k).startsWith(BOOK)).sort();
+    return kept.slice(0, Math.max(0, kept.length - max));
+  };
+  const myDrawings = {
+    // Copies a drawing that's about to be thrown away or replaced. Blank rounds aren't kept.
+    async keep(draft, slot) {
+      if (!draft || !isMarked(draft)) return;
+      const blob = await draftImage(draft);
+      const entry = { day: draft.day, mode: draft.mode, daily: draft.daily !== false, prompts: draft.prompts, blob, savedAt: draft.savedAt || Date.now() };
+      await draftStore.put(entry, bookKey(entry, slot));
+      for (const key of keysToDrop(await draftStore.keys())) await draftStore.remove(key);
+    },
+    // Newest first.
+    async list() {
+      const keys = (await draftStore.keys()).filter((k) => String(k).startsWith(BOOK)).sort().reverse();
+      const out = [];
+      for (const key of keys) {
+        const entry = await draftStore.get(key);
+        if (entry && entry.blob) out.push({ key, ...entry });
+      }
+      return out;
+    },
+    forget(key) { return String(key).startsWith(BOOK) ? draftStore.remove(key) : Promise.resolve(); },
+  };
+
+  /* ---------- Sharing: the line that goes with a shared drawing, like a daily puzzle's ---------- */
+  function shareLine({ mode, daily, prompts, day }, url) {
+    const date = new Date(`${day}T12:00:00`).toLocaleDateString(undefined, { month: "long", day: "numeric" });
+    if (mode === "scrawl") return `My Scrawdle Daily Free Play drawing for ${date}. Draw yours: ${url}`;
+    const parts = prompts.map((p) => p.value).join(", ");
+    if (daily === false) return `My Scrawdle Free play drawing: ${parts}. Draw yours: ${url}`;
+    return `My Scrawdle ${mode === "detailed" ? "Detailed" : "Basic"} drawing for ${date}: ${parts}. Draw yours: ${url}`;
+  }
+
+  /* ---------- The finished image: the drawing with its prompts and date underneath ---------- */
+  function letterDrawing(source, { prompts, day }) {
+    const W = source.width;
+    const H = source.height;
+    const m = 40;
+    const lineHeight = 44;
+    const measure = document.createElement("canvas").getContext("2d");
+    const font = '32px "Patrick Hand", "Trebuchet MS", sans-serif';
+    measure.font = font;
+    const lines = [""];
+    for (const pr of prompts) {
+      const piece = `${pr.label}: ${pr.value}`;
+      const next = lines[lines.length - 1] ? `${lines[lines.length - 1]}   ${piece}` : piece;
+      if (measure.measureText(next).width > W - m * 2 && lines[lines.length - 1]) lines.push(piece);
+      else lines[lines.length - 1] = next;
+    }
+    const out = document.createElement("canvas");
+    out.width = W + m * 2;
+    out.height = H + m * 2 + (lines.length + 1) * lineHeight + 20;
+    const c = out.getContext("2d");
+    c.fillStyle = "#fbf8f1";
+    c.fillRect(0, 0, out.width, out.height);
+    c.drawImage(source, m, m);
+    c.strokeStyle = "#2c2a28";
+    c.lineWidth = 3;
+    c.strokeRect(m, m, W, H);
+    c.fillStyle = "#2c2a28";
+    c.font = font;
+    c.textBaseline = "top";
+    lines.forEach((line, i) => c.fillText(line, m, H + m + 24 + i * lineHeight));
+    c.font = '36px "Gochi Hand", "Trebuchet MS", sans-serif';
+    c.fillText(`Scrawdle, ${day}`, m, H + m + 24 + lines.length * lineHeight);
+    return out;
+  }
 
   /* ---------- The board ---------- */
   // idPrefix keeps a second board's controls (a lobby game's, say) from repeating the main board's ids.
@@ -248,10 +335,10 @@
     const toolButtons = {};
     for (const t of TOOLS) toolButtons[t.id] = trayButton(t.id, t.label, () => setTool(t.id));
     const swatches = COLORS.map((c) => {
-      const b = el("button", { type: "button", className: "swatch", title: c, onclick: () => setColor(c) });
+      const b = el("button", { type: "button", className: "swatch", title: colorName(c), onclick: () => setColor(c) });
       b.style.setProperty("--swatch", c);
       b.dataset.color = c;
-      b.setAttribute("aria-label", `Color ${c}`);
+      b.setAttribute("aria-label", colorName(c));
       return b;
     });
     const picker = el("input", { type: "color", className: "picker", value: color, title: "Pick any color", oninput: (e) => setColor(e.target.value) });
@@ -339,7 +426,8 @@
       sizeInput.disabled = noSize;
       for (const b of presetButtons) b.disabled = noSize;
       sizeGroup.classList.toggle("off", noSize);
-      settingsTitle.textContent = tool === "brush" ? "Brushes" : TOOLS.find(t => t.id === tool).label;
+      const toolName = tool === "brush" ? "Brushes" : TOOLS.find(t => t.id === tool).label;
+      settingsTitle.textContent = tool === "eraser" ? toolName : `${toolName} · ${colorName(color)}`;
       brushLabel.hidden = tool !== "brush";
       brushControls.hidden = tool !== "brush";
       brushToggle.textContent = `${BRUSHES.find(b => b.id === brushKind).label} · brush settings`;
@@ -904,6 +992,10 @@
 
     /* --- rounds --- */
     function start(mode, prompts, daily = true) {
+      // A Free play drawing, or today's in the other mode, that this round replaces goes to My drawings
+      // first. The new round saves only after that, so it can't overwrite the old one before it's kept.
+      const slot = slotOf({ mode, daily });
+      const kept = draftStore.get(slot).then((old) => myDrawings.keep(old, slot)).catch(() => {});
       clearTimeout(saveTimer);
       saveGeneration++;
       unsaved = false;
@@ -914,10 +1006,10 @@
       opsAt = 0;
       canReplay = true;
       refreshToolbar();
-      return save();
+      return kept.then(save);
     }
-    // What's saved in each slot, for the home screen. A today's or Daily Scrawl drawing from an
-    // earlier day is thrown away; Free play isn't tied to a date, so it stays.
+    // What's saved in each slot, for the home screen. A drawing from an earlier day, Free play
+    // included, moves to My drawings, so the home screen only offers today's.
     async function drafts() {
       const found = {};
       try { await draftStore.migrate(); } catch (err) { return found; }
@@ -925,14 +1017,14 @@
         try {
           const draft = await draftStore.get(slot);
           if (!draft) continue;
-          if (slot !== "free" && draft.day !== dayKey()) {
+          if (draft.day !== dayKey()) {
+            await myDrawings.keep(draft, slot).catch(() => {}); // its day is over, so it goes to My drawings
             await draftStore.remove(slot);
             continue;
           }
           const image = await draftImage(draft);
           (await createImageBitmap(image)).close();
-          const marked = !Array.isArray(draft.ops) || draft.ops.length > 0 || draft.canReplay === false;
-          found[slot] = { slot, mode: draft.mode, prompts: draft.prompts, image, marked };
+          found[slot] = { slot, mode: draft.mode, daily: draft.daily !== false, day: draft.day, prompts: draft.prompts, image, marked: isMarked(draft) };
         } catch (err) { // a damaged save shouldn't stop the game from opening
           await draftStore.remove(slot).catch(() => {});
         }
@@ -987,35 +1079,7 @@
 
     /* --- finished image: the drawing with its prompts and date underneath --- */
     function exportCanvas() {
-      const m = 40;
-      const lineHeight = 44;
-      const measure = document.createElement("canvas").getContext("2d");
-      const font = '32px "Patrick Hand", "Trebuchet MS", sans-serif';
-      measure.font = font;
-      const lines = [""];
-      for (const pr of round.prompts) {
-        const piece = `${pr.label}: ${pr.value}`;
-        const next = lines[lines.length - 1] ? `${lines[lines.length - 1]}   ${piece}` : piece;
-        if (measure.measureText(next).width > W - m * 2 && lines[lines.length - 1]) lines.push(piece);
-        else lines[lines.length - 1] = next;
-      }
-      const out = document.createElement("canvas");
-      out.width = W + m * 2;
-      out.height = H + m * 2 + (lines.length + 1) * lineHeight + 20;
-      const c = out.getContext("2d");
-      c.fillStyle = "#fbf8f1";
-      c.fillRect(0, 0, out.width, out.height);
-      c.drawImage(canvas, m, m);
-      c.strokeStyle = "#2c2a28";
-      c.lineWidth = 3;
-      c.strokeRect(m, m, W, H);
-      c.fillStyle = "#2c2a28";
-      c.font = font;
-      c.textBaseline = "top";
-      lines.forEach((line, i) => c.fillText(line, m, H + m + 24 + i * lineHeight));
-      c.font = '36px "Gochi Hand", "Trebuchet MS", sans-serif';
-      c.fillText(`Scrawdle, ${round.day}`, m, H + m + 24 + lines.length * lineHeight);
-      return out;
+      return letterDrawing(canvas, round);
     }
 
     refreshToolbar();
@@ -1046,13 +1110,13 @@
         <div class="finish-actions">
           <button type="button" class="btn" data-act="publish">Publish drawing</button>
           <button type="button" class="btn" data-act="download">Download PNG</button>
+          <button type="button" class="btn" data-act="share">Share</button>
         </div>
         <p class="publish-disclosure" hidden>Publishing shares your drawing with today’s gallery.</p>
         <p class="finish-note" role="status"></p>
         <div class="finish-secondary">
           <button type="button" class="quiet" data-act="keep">Keep drawing</button>
           <button type="button" class="quiet" data-act="gallery">See today’s drawings</button>
-          <button type="button" class="quiet" data-act="samples">View sample gallery</button>
         </div>
       </div>`;
     document.body.appendChild(dialog);
@@ -1060,6 +1124,7 @@
     const note = dialog.querySelector(".finish-note");
     const publishBtn = dialog.querySelector('[data-act="publish"]');
     const downloadBtn = dialog.querySelector('[data-act="download"]');
+    const shareBtn = dialog.querySelector('[data-act="share"]');
     const galleryBtn = dialog.querySelector('[data-act="gallery"]');
     const replayBtn = dialog.querySelector('[data-act="replay"]');
     const replayCanvas = dialog.querySelector(".replay");
@@ -1091,14 +1156,14 @@
       dialog.close();
       gallery.show(shown);
     });
-    dialog.querySelector('[data-act="samples"]').addEventListener("click", () => gallery.showSamples());
     let viewUrl = null; // the drawing on its own, for the screen
     let exportUrl = null; // the drawing with its prompt and date, for the download
+    let exportBlob = null; // the same picture, for sharing
 
     const release = () => {
       if (viewUrl) URL.revokeObjectURL(viewUrl);
       if (exportUrl) URL.revokeObjectURL(exportUrl);
-      viewUrl = exportUrl = null;
+      viewUrl = exportUrl = exportBlob = null;
     };
     const close = () => { dialog.close(); release(); };
     const keepBtn = dialog.querySelector('[data-act="keep"]');
@@ -1112,6 +1177,29 @@
       a.click();
       note.textContent = "Downloaded.";
     });
+    // Phones (and some laptop browsers) open their own share menu with the picture attached. Where that
+    // isn't available, the picture is copied to paste anywhere, and as a last resort it downloads.
+    shareBtn.addEventListener("click", async () => {
+      const round = board.round;
+      const file = new File([exportBlob], `scrawdle-${round.day}.png`, { type: "image/png" });
+      const text = shareLine(round, `${location.origin}${location.pathname}`);
+      if (navigator.canShare && navigator.canShare({ files: [file] })) {
+        try {
+          await navigator.share({ files: [file], title: "My Scrawdle drawing", text });
+          note.textContent = "Shared.";
+          return;
+        } catch (err) {
+          if (err.name === "AbortError") return; // they closed the share menu
+        }
+      }
+      try {
+        await navigator.clipboard.write([new ClipboardItem({ "image/png": exportBlob })]);
+        note.textContent = "Picture copied. Paste it into a message or post.";
+        return;
+      } catch (err) { /* no image clipboard here, so download instead */ }
+      downloadBtn.click();
+      note.textContent = "Sharing isn't available in this browser, so it downloaded instead. Attach the file to share it.";
+    });
     publishBtn.addEventListener("click", async () => {
       const key = roundKey();
       publishBtn.disabled = true;
@@ -1122,7 +1210,7 @@
         note.textContent = "Your drawing is published.";
         published.set(key, note.textContent);
       } catch (err) {
-        note.textContent = err.userMessage || "Couldn't share. Your drawing is still saved here, so try again.";
+        note.textContent = err.userMessage || "Couldn't publish. Your drawing is still saved here, so try again.";
         if (err.alreadyPublished) published.set(key, note.textContent);
         else publishBtn.disabled = false;
       }
@@ -1136,12 +1224,12 @@
       release();
       viewUrl = URL.createObjectURL(view);
       exportUrl = URL.createObjectURL(full);
+      exportBlob = full;
       img.src = viewUrl;
       const { daily, day, prompts } = board.round;
       const empty = board.isEmpty;
       const ready = daily && !empty && typeof window.scrawdlePublish === "function";
       dialog.querySelector(".publish-disclosure").hidden = !ready;
-      dialog.querySelector('[data-act="samples"]').hidden = !daily || typeof window.scrawdleGallery === "function";
       publishBtn.hidden = !ready;
       const publishedNote = published.get(roundKey());
       publishBtn.disabled = Boolean(publishedNote);
@@ -1149,6 +1237,7 @@
       downloadBtn.classList.toggle("primary", !ready);
       galleryBtn.hidden = !daily || empty || typeof window.scrawdleGallery !== "function";
       replayBtn.hidden = empty || !board.canReplay;
+      shareBtn.hidden = empty;
       keepBtn.textContent = board.locked ? "Back" : "Keep drawing";
       dialog.querySelector(".finish-prompt").textContent = prompts.map((p) => p.value).join(", ");
       dialog.querySelector(".finish-date").textContent = new Date(`${day}T12:00:00`).toLocaleDateString(undefined, { weekday: "long", year: "numeric", month: "long", day: "numeric" });
@@ -1157,8 +1246,8 @@
     };
   }
 
-  const api = { floodFill, History, dayKey, brushWidthFactor, slotOf };
+  const api = { floodFill, History, dayKey, brushWidthFactor, slotOf, COLORS, COLOR_NAMES, bookKey, keysToDrop, BOOK_MAX, shareLine };
   if (typeof module !== "undefined" && module.exports) module.exports = api;
-  else root.ScrawdleDrawing = { ...api, createBoard, createFinishScreen, HISTORY_BYTES };
+  else root.ScrawdleDrawing = { ...api, createBoard, createFinishScreen, HISTORY_BYTES, myDrawings, letterDrawing };
 })(typeof window !== "undefined" ? window : globalThis);
 
