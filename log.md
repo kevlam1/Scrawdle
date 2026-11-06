@@ -673,6 +673,31 @@ Artifact 4 is "For Someone Else," due Sunday, November 8. Our team of four (Kevi
 
 ---
 
+## 34. Fixed lag in the line tool and the marker and watercolor brushes (2026-11-05) — Trenten
+
+**What I asked for**
+- The line tool lags badly when I draw more than a few lines in quick succession, and the brushes lag too. I asked Claude to find out why, then to fix both the line tool and the layered brushes (marker and watercolor).
+
+**What changed**
+- `frontend/drawing.js`:
+- The line tool used to put back the whole 1800×1200 canvas and redraw its preview for every point the mouse sent, which can be many per frame. Now it redraws at most once per frame, and only puts back the area the previous preview covered.
+- Marker and watercolor did the same full-canvas redraw for every point. Now they redraw at most once per frame, and only inside the stroke's own area.
+- A line now saves just its start and end points instead of every point the mouse passed through (about 67 per line in a test), so saves are smaller and replay has less to redo. Lines saved before this still replay, since replay draws whatever points a line has.
+- Letting go always finishes the drawing right away, even if no frame was drawn since the last move, so a quick flick still leaves its line.
+
+**What I checked**
+- Claude timed the strokes in a browser before and after, on the same 1800×1200 canvas. Letting go of a line went from 60–120 ms to about 4 ms; marker and watercolor from about 240–260 ms to about 12–13 ms. Each mouse movement went from 1.4–5.5 ms to about the same as the pen (under 0.1 ms). A long line drag with 120 mouse points used to put back about 260 million pixels; now it's about 16 million in total, roughly 0.6 ms per frame.
+- A replay of a drawing with lines, marker, watercolor, a marker crossing a line, and pen came out pixel-for-pixel the same as the live drawing. Undo after a line that wandered across the canvas restored it exactly. The line's preview disappears from where it was once the line moves on.
+- I installed Node so the team's tests could run. All 42 pass, both on `main` before this change and with it. Those tests cover helper functions (the paint bucket, undo history, save slots), not the stroke drawing itself, so the browser checks above are what cover this change. Regenerated the `/logs` page with `node scripts/make-logs-page.mjs`.
+- Not checked: timings came from the app's built-in browser running in the background, with a timer standing in for screen frames, so the numbers are rough; I haven't felt it with a real mouse, a stylus, or on a phone.
+
+**Decisions**
+- Kept everything inside `drawing.js` rather than adding a second see-through canvas on top of the board for the line preview. Redrawing just the line's area once per frame was enough, and it doesn't touch the page's layout.
+- Every new stroke still copies the whole canvas once when it starts (about 10–15 ms), for undo. That's the same for every tool, so I left it for now.
+- `drawing.js` is Zainab's code; she gave me permission to work on it.
+
+---
+
 ## Where AI misread me, or I had to correct course
 
 - Claude's first version of the start page put "What is this?" in the top right, where it collided with the "New set" button on the game screen. I caught it by running the page; Claude hadn't opened it in a browser.

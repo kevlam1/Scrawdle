@@ -433,8 +433,13 @@
     function showLayer() {
       const s = stroke;
       const look = LAYERED[s.kind];
-      ctx.putImageData(s.base, 0, 0);
+      // Only the stroke's own area changes, so only that area is put back and redrawn.
+      const r = boxRect(s.box);
+      ctx.putImageData(s.base, 0, 0, r.x, r.y, r.w, r.h);
       ctx.save();
+      ctx.beginPath();
+      ctx.rect(r.x, r.y, r.w, r.h);
+      ctx.clip();
       ctx.globalAlpha = look.alpha;
       // White can't show through "multiply", so it paints normally.
       if (look.blend && paintColorOf(s) !== "#ffffff") ctx.globalCompositeOperation = look.blend;
@@ -500,7 +505,7 @@
         s.mid = mid;
         grow(p.x, p.y, s.width * 1.5);
         grow(s.last.x, s.last.y, s.width * 1.5);
-        if (!s.quiet) showLayer(); // a replay shows the layer once per frame instead
+        if (!s.quiet) paintSoon(s); // a replay shows the layer once per frame itself
       },
       calligraphy(p) { // a slanted nib: thick one way, thin the other
         const s = stroke;
@@ -677,25 +682,51 @@
       else if (strokeTool !== "line") dab(p.x, p.y, width / 2);
     }
     function addPoint(p) {
-      stroke.op.points.push(p);
+      // A line only needs its two ends, so it doesn't keep every point the mouse passed through.
+      if (stroke.tool === "line") stroke.op.points = [stroke.op.points[0], p];
+      else stroke.op.points.push(p);
       extend(p);
     }
     function extend(p) {
       const s = stroke;
       if (s.tool === "line") {
-        ctx.putImageData(s.base, 0, 0);
-        ctx.lineWidth = s.width;
-        ctx.lineCap = "round";
-        ctx.beginPath();
-        ctx.moveTo(s.start.x, s.start.y);
-        ctx.lineTo(p.x, p.y);
-        ctx.stroke();
         grow(p.x, p.y, s.width);
+        s.last = p;
+        s.moved = true;
+        if (s.quiet) drawLine(s); else paintSoon(s);
+        return;
       } else if (s.tool === "pencil") draw.pencil(p);
       else if (s.tool === "brush") draw.brush(p);
       else draw.smooth(p);
       s.last = p;
       s.moved = true;
+    }
+    // Puts back only where the last preview was, then draws the line to the newest point.
+    function drawLine(s) {
+      if (s.drawn) ctx.putImageData(s.base, 0, 0, s.drawn.x, s.drawn.y, s.drawn.w, s.drawn.h);
+      ctx.strokeStyle = s.color;
+      ctx.lineWidth = s.width;
+      ctx.lineCap = "round";
+      ctx.beginPath();
+      ctx.moveTo(s.start.x, s.start.y);
+      ctx.lineTo(s.last.x, s.last.y);
+      ctx.stroke();
+      const pad = s.width + 2;
+      s.drawn = boxRect({ minX: Math.min(s.start.x, s.last.x) - pad, maxX: Math.max(s.start.x, s.last.x) + pad, minY: Math.min(s.start.y, s.last.y) - pad, maxY: Math.max(s.start.y, s.last.y) + pad });
+    }
+    // Mice and pens can send many points per frame, so the line and layered brushes redraw at
+    // most once per frame instead of once per point.
+    function paintSoon(s) {
+      s.dirty = true;
+      if (s.frame) return;
+      s.frame = requestAnimationFrame(() => {
+        s.frame = 0;
+        if (stroke === s) paint(s);
+      });
+    }
+    function paint(s) {
+      s.dirty = false;
+      if (s.tool === "line") drawLine(s); else showLayer();
     }
     function move(e) {
       if (!stroke || e.pointerId !== stroke.id) return;
@@ -719,6 +750,8 @@
         ctx.lineTo(s.last.x, s.last.y);
         ctx.stroke();
       }
+      cancelAnimationFrame(s.frame);
+      if (s.tool === "line" && s.dirty) paint(s);
       if (s.tool === "line" && !s.moved) dab(s.start.x, s.start.y, s.width / 2);
       if (s.layer) {
         s.layer.lineWidth = s.width;

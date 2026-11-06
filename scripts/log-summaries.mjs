@@ -39,6 +39,7 @@ export const SUMMARIES = {
   31: 'Kevin added a build-log page at /logs, generated from this log with the generator copied from MIDI Companion, showing each entry with its author and a one-sentence summary.',
   32: 'Kevin had a "Read our build log" link added to the bottom of the home screen so players can reach the log page from the game.',
   33: 'Kevin renamed the free-draw mode from Daily Scrawl to Daily Free Play on screen, kept its internal id so the database did not need to change, and left a note in CLAUDE.md for whoever merges Basic and Detailed into the new Daily Scrawl.',
+  34: 'Trenten had Claude find and fix lag in the line tool and the marker and watercolor brushes, which were redrawing the whole canvas for every mouse point; they now redraw once per frame and only where the stroke is.',
   misread: 'Where the AI got something wrong or we had to correct course, and what happened next.',
   decisions: 'What we decided and what we dropped along the way.',
 }
