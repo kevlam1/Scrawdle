@@ -54,6 +54,7 @@ export const SUMMARIES = {
   46: "Zainab added an Invite friends button to Kevin's lobby, with the team's OK, that opens the phone's share menu with the lobby code and link filled in.",
   47: 'Zainab wrote database update 003 for reporting, which hides a published drawing once 3 different players report it, tested against a real Postgres and waiting for Kevin to run it.',
   48: 'Zainab made the My drawings link appear only once a player has a drawing, and removed the line saying drafts save in the browser.',
+  49: "Zainab added a Report button under other players' drawings in the gallery, which hides a drawing once 3 different players report it, waiting on Kevin's database update.",
   misread: 'Where the AI got something wrong or we had to correct course, and what happened next.',
   decisions: 'What we decided and what we dropped along the way.',
 }

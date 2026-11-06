@@ -2,7 +2,7 @@
  * drawing.js and gallery.js) to Supabase. Does nothing if supabase-config.js has no real
  * url/anonKey yet, so the Publish and gallery buttons stay hidden exactly as before.
  *
- * Also sets window.scrawdleVote, and adds vote counts to the gallery's cards (update 002 in
+ * Also sets window.scrawdleReport (update 003), window.scrawdleVote, and adds vote counts to the gallery's cards (update 002 in
  * backend/supabase/updates/, rules in votes.js).
  *
  * Scope: only "store today's finished drawings, show them in the gallery." Multiplayer
@@ -150,5 +150,20 @@
       err.userMessage = "Couldn't save your vote. Try again.";
       throw err;
     }
+  };
+
+  // Reports a drawing (update 003). Three different players' reports hide it from the gallery for
+  // everyone; the database decides that, so it can't be changed from a page. Resolves to
+  // { hidden: true } once the drawing is hidden.
+  root.scrawdleReport = async function ({ drawingId }) {
+    const { data, error } = await client.rpc("report_drawing", { target_drawing: drawingId, reporter: voterId() });
+    if (error) {
+      console.error("publish.js report_drawing error (raw):", error);
+      const err = new Error(error.message || "report failed");
+      // PGRST202 is PostgREST's "no such function": update 003 hasn't been run on this project yet.
+      err.userMessage = error.code === "PGRST202" ? "Reporting isn't switched on yet." : "Couldn't send your report. Try again.";
+      throw err;
+    }
+    return { hidden: data === true };
   };
 })(typeof window !== "undefined" ? window : globalThis);

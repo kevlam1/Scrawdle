@@ -77,6 +77,36 @@
       render();
       li.append(bar);
     }
+    // Report, under someone else's drawing. Three different players' reports hide it for everyone
+    // (the number is set in the database's report_drawing; change this message with it). This
+    // browser remembers what it reported, so the button stays "Reported".
+    const REPORTED_KEY = "scrawdle-reported";
+    const reportedIds = () => {
+      try { return JSON.parse(localStorage.getItem(REPORTED_KEY) || "[]"); } catch (err) { return []; }
+    };
+    function addReport(li, item) {
+      const b = document.createElement("button");
+      b.type = "button";
+      b.className = "quiet report";
+      const reported = () => { b.textContent = "Reported"; b.disabled = true; };
+      if (reportedIds().includes(item.id)) reported();
+      else b.textContent = "Report";
+      b.addEventListener("click", async () => {
+        if (!confirm("Report this drawing? It's hidden from the gallery once 3 players report it.")) return;
+        b.disabled = true;
+        try {
+          const { hidden } = await root.scrawdleReport({ drawingId: item.id });
+          try { localStorage.setItem(REPORTED_KEY, JSON.stringify([...reportedIds(), item.id].slice(-200))); } catch (err) { /* private browsing */ }
+          reported();
+          note.textContent = hidden ? "Thanks. That drawing is hidden now." : "Thanks for reporting it.";
+          if (hidden) li.remove();
+        } catch (err) {
+          b.disabled = false;
+          note.textContent = err.userMessage || "Couldn't send your report. Try again.";
+        }
+      });
+      li.append(b);
+    }
     async function show(myImageUrl) {
       const round = board.round;
       const token = ++request;
@@ -101,9 +131,11 @@
         }
         note.textContent = others.length ? "" : "No community drawings to show yet.";
         const canVote = typeof root.scrawdleVote === "function";
+        const canReport = typeof root.scrawdleReport === "function";
         for (const item of others) {
           const li = addCard(item.imageUrl, item.caption);
           if (canVote && item.votes) addVotes(li, item);
+          if (canReport && item.id) addReport(li, item);
         }
       } catch (err) {
         if (token === request && dialog.open) note.textContent = "Couldn't load today's drawings. Close and reopen the gallery to try again.";

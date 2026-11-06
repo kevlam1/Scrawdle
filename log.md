@@ -974,6 +974,22 @@ Artifact 4 is "For Someone Else," due Sunday, November 8. Our team of four (Kevi
 
 ---
 
+## 49. The Report button (2026-11-05) — Zainab
+
+**What I asked for**
+- The Report button itself, using the database part from entry 47.
+
+**What changed**
+- `frontend/gallery.js`: other players' drawings in today's gallery have a small Report button under the votes. Your own drawing has none. It asks first ("Report this drawing? It's hidden from the gallery once 3 players report it."), then says "Reported" and can't be pressed again. This browser remembers what it reported, so it still says "Reported" after the gallery reopens. When a report is the third, the drawing disappears from the gallery straight away.
+- `frontend/publish.js`: `window.scrawdleReport` sends the report to `report_drawing` with the same browser id votes use. Until Kevin runs update 003, pressing Report says "Reporting isn't switched on yet." and nothing else changes. Any other failure can be tried again.
+- `frontend/flow.css` and `frontend/theme.css`: the button's small grey style, in both modes. `README.md` and `frontend/README.md` describe it.
+
+**What I checked**
+- 77 logic tests pass. 16 checks in Chromium with a stand-in for Supabase holding three other players' drawings, so nothing reached Kevin's project (checked): a button on each other drawing and none on yours, the confirmation mentioning 3 players, the drawing id and browser id sent, "Reported" afterwards and after reopening, the third report removing the drawing, cancelling sending nothing, the "isn't switched on yet" message, a failed report being retryable, votes still there, and phone and dark-mode layouts. The dark mode, Share, Back button, and My drawings checks still pass.
+- Not checked on the live site, which needs update 003 first.
+
+---
+
 ## Where AI misread me, or I had to correct course
 
 - Claude's first version of the start page put "What is this?" in the top right, where it collided with the "New set" button on the game screen. I caught it by running the page; Claude hadn't opened it in a browser.

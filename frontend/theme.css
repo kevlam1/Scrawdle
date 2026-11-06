@@ -62,7 +62,7 @@ html[data-theme="dark"] .tray-group { border-left-color: #4b463e; }
 html[data-theme="dark"] #board { border-color: #4b463e; box-shadow: none; }
 
 /* Grey text. */
-html[data-theme="dark"] :is(.eyebrow, .publish-disclosure, .reel-label, .gallery-grid p, a.quiet) { color: var(--soft-text); }
+html[data-theme="dark"] :is(.eyebrow, .publish-disclosure, .reel-label, .gallery-grid p, .gallery-grid .report, a.quiet) { color: var(--soft-text); }
 html[data-theme="dark"] #prompt-label, html[data-theme="dark"] #my-drawings { color: var(--soft-text); }
 html[data-theme="dark"] .save-status { color: var(--soft-text) !important; }
 html[data-theme="dark"] .save-status[data-state="saved"] { color: var(--sage-ink) !important; }

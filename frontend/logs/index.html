@@ -583,7 +583,7 @@
         <h1>Scrawdle: build log</h1>
         <p class="intro">
           A daily drawing game, built by a team of four with Claude Code: a new set of parts to draw each day, a gallery of what
-          other people drew, and private lobbies. Here are the 48 entries of our log with one sentence on each and the name of
+          other people drew, and private lobbies. Here are the 49 entries of our log with one sentence on each and the name of
           whoever wrote it. Open an entry to read everything they wrote for it.
         </p>
         <ul class="facts" aria-label="Project facts">
@@ -673,7 +673,7 @@
   </ul></div>
 </div>
 <div class="toc-group is-open">
-  <button class="toc-head" type="button" aria-expanded="true">Thursday 5 November <span class="count">15</span></button>
+  <button class="toc-head" type="button" aria-expanded="true">Thursday 5 November <span class="count">16</span></button>
   <div class="toc-list-wrap"><ul class="toc-list">
     <li><a href="#entry-34"><span class="n">34</span><span>Fixed lag in the line tool and the marker and watercolor brushes</span></a></li>
     <li><a href="#entry-35"><span class="n">35</span><span>Votes replace the self-judged win</span></a></li>
@@ -690,6 +690,7 @@
     <li><a href="#entry-46"><span class="n">46</span><span>Invite friends to a lobby in one tap</span></a></li>
     <li><a href="#entry-47"><span class="n">47</span><span>Reporting drawings: the database part</span></a></li>
     <li><a href="#entry-48"><span class="n">48</span><span>A tidier home screen: My drawings appears when there's something in it</span></a></li>
+    <li><a href="#entry-49"><span class="n">49</span><span>The Report button</span></a></li>
   </ul></div>
 </div>
 <div class="toc-group is-open">
@@ -1520,6 +1521,21 @@
 <ul><li><code>frontend/index.html</code>: the My drawings link is hidden until there's a drawing in progress (one the home screen offers to continue) or a kept one. Deleting the last kept drawing hides it again as soon as My drawings closes. A round opened and left blank doesn't count. The &quot;Your drafts save in this browser.&quot; line is gone.</li><li><code>frontend/drawing.js</code>: My drawings can count its drawings without loading their pictures, so the home screen stays quick.</li><li><code>frontend/theme.css</code>: dropped the dark-mode color for the removed line.</li></ul>
 <p class="sub"><strong>What I checked</strong></p>
 <ul><li>77 logic tests pass. In Chromium: 30 My drawings checks, including the link hidden on a first visit and after a blank round, showing once there's a drawing or only a kept one, and hiding right after the last one is deleted. The Back button (29), dark mode (51), and sample-drawing (12) checks pass.</li></ul>
+  </div></div></div>
+</article>
+<article class="entry" id="entry-49">
+  <h3 class="entry-head"><button type="button" aria-expanded="false" aria-controls="entry-49-body">
+    <span class="num">49</span>
+    <span><span class="title">The Report button<span class="by">by Zainab</span></span><span class="sum">Zainab added a Report button under other players' drawings in the gallery, which hides a drawing once 3 different players report it, waiting on Kevin's database update.</span></span>
+    <span class="caret" aria-hidden="true"></span>
+  </button></h3>
+  <div class="body" id="entry-49-body"><div class="body-in"><div class="body-pad">
+<p class="sub"><strong>What I asked for</strong></p>
+<ul><li>The Report button itself, using the database part from entry 47.</li></ul>
+<p class="sub"><strong>What changed</strong></p>
+<ul><li><code>frontend/gallery.js</code>: other players' drawings in today's gallery have a small Report button under the votes. Your own drawing has none. It asks first (&quot;Report this drawing? It's hidden from the gallery once 3 players report it.&quot;), then says &quot;Reported&quot; and can't be pressed again. This browser remembers what it reported, so it still says &quot;Reported&quot; after the gallery reopens. When a report is the third, the drawing disappears from the gallery straight away.</li><li><code>frontend/publish.js</code>: <code>window.scrawdleReport</code> sends the report to <code>report_drawing</code> with the same browser id votes use. Until Kevin runs update 003, pressing Report says &quot;Reporting isn't switched on yet.&quot; and nothing else changes. Any other failure can be tried again.</li><li><code>frontend/flow.css</code> and <code>frontend/theme.css</code>: the button's small grey style, in both modes. <code>README.md</code> and <code>frontend/README.md</code> describe it.</li></ul>
+<p class="sub"><strong>What I checked</strong></p>
+<ul><li>77 logic tests pass. 16 checks in Chromium with a stand-in for Supabase holding three other players' drawings, so nothing reached Kevin's project (checked): a button on each other drawing and none on yours, the confirmation mentioning 3 players, the drawing id and browser id sent, &quot;Reported&quot; afterwards and after reopening, the third report removing the drawing, cancelling sending nothing, the &quot;isn't switched on yet&quot; message, a failed report being retryable, votes still there, and phone and dark-mode layouts. The dark mode, Share, Back button, and My drawings checks still pass.</li><li>Not checked on the live site, which needs update 003 first.</li></ul>
   </div></div></div>
 </article>
       </section>

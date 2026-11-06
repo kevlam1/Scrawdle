@@ -118,6 +118,7 @@ h1{font:400 44px/1.15 var(--hand);margin:0}
 .vote:disabled{cursor:progress;opacity:.7}
 .gallery-grid p.vote-result{margin-top:-6px;font:400 19px/1.2 var(--hand);color:var(--ink)}
 .gallery-grid p.vote-result.won{color:var(--sage-ink)}
+.gallery-grid .report{min-height:36px;margin:0 6px 6px;font-size:12px;color:#716d64}
 @media(min-width:1000px){.brush-toggle{display:none}}
 @media(max-width:1100px) and (min-width:1000px){.tray-tools .tool{width:60px}.tray-colors{gap:12px;padding-left:12px}.swatches{grid-template-columns:repeat(6,35px)}.swatch{width:35px;height:35px}}
 @media(max-width:999px){
