@@ -40,6 +40,8 @@ a.quiet { color: #5c584f; } /* the same grey flow.css gives the "Explore sample 
 .lobby-share { display: flex; gap: 8px; }
 .lobby-link { flex: 1; }
 .lobby-share .btn { flex: none; font-size: 14px; }
+.lobby-invite-menu { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; margin-top: 8px; }
+.lobby-invite-menu .btn { font-size: 14px; color: inherit; text-decoration: none; }
 .lobby-status { min-height: 1.5em; margin: 12px 0 0; font-size: 14px; color: var(--ink-soft); }
 .lobby h2 { margin: 24px 0 10px; font: 400 27px/1.2 var(--hand); text-align: left; }
 .lobby-count { margin-left: .4em; font: 14px/1 Arial, sans-serif; color: var(--ink-soft); }
@@ -70,4 +72,5 @@ a.quiet { color: #5c584f; } /* the same grey flow.css gives the "Explore sample 
   .lobby-share { flex-direction: column; }
   .lobby-link { flex: none; width: 100%; }
   .lobby-share .btn { width: 100%; }
+  .lobby-invite-menu { grid-template-columns: 1fr 1fr; }
 }

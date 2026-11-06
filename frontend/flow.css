@@ -93,6 +93,10 @@ h1{font:400 44px/1.15 var(--hand);margin:0}
 .finish-prompt{font:400 19px/1.4 var(--hand);margin:8px 0 0}
 .finish-art{width:min(680px,100%,calc((100dvh - 330px)*1.5));max-width:100%;min-width:220px;padding:0;border:var(--line);border-radius:6px;overflow:hidden;transform:none}
 .finish-side{gap:8px;align-items:center;width:min(600px,100%)}
+/* The Scrawdle name goes home from every other screen. */
+.wordmark[data-home]{cursor:pointer}
+.wordmark[data-home]:hover{opacity:.75}
+.wordmark[data-home]:focus-visible{outline:2.5px solid var(--ink);outline-offset:4px;border-radius:6px}
 /* A published drawing's button turns green, so it's clear publishing worked. */
 #finish .btn.published,#finish .btn.published:disabled{background:var(--sage);color:var(--sage-ink);border-color:transparent;box-shadow:none}
 /* The replay's play button, over the middle of the finished drawing. */
