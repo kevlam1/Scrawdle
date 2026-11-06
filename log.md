@@ -939,6 +939,26 @@ Artifact 4 is "For Someone Else," due Sunday, November 8. Our team of four (Kevi
 
 ---
 
+## 47. Reporting drawings: the database part (2026-11-05) — Zainab
+
+**What I asked for**
+- A Report button for the public gallery, which the team said I could add. A drawing should only be hidden once a few different players report it, not one.
+
+**What changed**
+- `backend/supabase/updates/003-reports.sql`, copied into `schema.sql` the same way votes were: a `reports` table nobody can read or write through the public key, and a `report_drawing` function that records one report per player per drawing and hides the drawing once 3 different players have reported it. The number 3 is set in that function, so it can't be changed from a browser. Only today's drawings can be reported. The daily wipe deletes a drawing's reports along with it.
+- It uses the drawings' existing `hidden` setting, which the gallery already leaves out, so no gallery query changed.
+- `CLAUDE.md` lists it under "Pending database updates" with steps for Kevin, and `backend/README.md` describes it, says it hasn't been run yet, and adds how to check it in the app.
+- The Report button itself comes in the next entry.
+
+**What I checked**
+- 32 checks against a real Postgres (PGlite), with Supabase's roles stubbed: on top of the current schema with the update run twice, and as part of a fresh `schema.sql`. One or two reports leave a drawing visible; the same player twice counts once; the third player hides it and the public key can no longer read it; a fourth report is fine; other drawings aren't affected; old drawings and reports with no reporter id are refused; the public key can't read reports, add them directly, or unhide a drawing; deleting a drawing deletes its reports; and votes still work.
+- Not checked against Kevin's real project, which only he can run it on.
+
+**Decisions**
+- Three players, as the team asked. There are no logins, so a reporter is the same random browser id votes use. Someone who keeps clearing their browser data could report one drawing three times alone. That stops accidents and casual misuse, not a determined person, and a teammate can bring a wrongly hidden drawing back from the dashboard.
+
+---
+
 ## Where AI misread me, or I had to correct course
 
 - Claude's first version of the start page put "What is this?" in the top right, where it collided with the "New set" button on the game screen. I caught it by running the page; Claude hadn't opened it in a browser.
