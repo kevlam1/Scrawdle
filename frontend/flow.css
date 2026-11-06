@@ -93,6 +93,14 @@ h1{font:400 44px/1.15 var(--hand);margin:0}
 .finish-prompt{font:400 19px/1.4 var(--hand);margin:8px 0 0}
 .finish-art{width:min(680px,100%,calc((100dvh - 330px)*1.5));max-width:100%;min-width:220px;padding:0;border:var(--line);border-radius:6px;overflow:hidden;transform:none}
 .finish-side{gap:8px;align-items:center;width:min(600px,100%)}
+/* The replay's play button, over the middle of the finished drawing. */
+.finish-art .play{position:absolute;left:50%;top:50%;width:76px;height:76px;margin:-38px 0 0 -38px;padding:0;display:grid;place-items:center;border:2px solid rgba(255,255,255,.85);border-radius:50%;background:rgba(44,42,40,.7);color:#fff;box-shadow:0 4px 16px rgba(44,42,40,.3);cursor:pointer;transition:transform .15s,background .15s,opacity .2s}
+.finish-art .play svg{width:34px;height:34px;fill:currentColor}
+.finish-art .play:hover{background:rgba(44,42,40,.85);transform:scale(1.06)}
+.finish-art .play:focus-visible{outline:3px solid var(--yellow);outline-offset:3px}
+.finish-art .play.playing{opacity:0;pointer-events:none}
+@media(max-width:640px){.finish-art .play{width:60px;height:60px;margin:-30px 0 0 -30px}.finish-art .play svg{width:28px;height:28px}}
+@media(prefers-reduced-motion:reduce){.finish-art .play{transition:none}.finish-art .play:hover{transform:none}}
 .finish-actions{display:flex;flex-direction:row;justify-content:center;gap:12px}
 .finish-actions .btn{min-width:170px}
 .finish-secondary{display:flex;gap:20px;justify-content:center;flex-wrap:wrap}

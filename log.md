@@ -990,6 +990,20 @@ Artifact 4 is "For Someone Else," due Sunday, November 8. Our team of four (Kevi
 
 ---
 
+## 50. A play button for Replay (2026-11-05) — Zainab
+
+**What I asked for**
+- Replay (entries 18 and 20) started from a "Watch it redraw" text link under the drawing. A play button on top of the drawing is clearer, so I swapped it.
+
+**What changed**
+- `frontend/drawing.js`: the finish screen has a round play button over the middle of the finished drawing instead of the text link. It fades away while the drawing redraws, then comes back as a "watch again" arrow. Reopening the finish screen shows play again. A blank drawing has no button, as before. Screen readers still hear "Watch it redraw" and "Watch it again". Replay itself didn't change.
+- `frontend/flow.css`: the button's look: a dark see-through circle with a white edge, slightly bigger on hover, smaller on phones, and no animation for players who turn motion off.
+
+**What I checked**
+- 77 logic tests pass. 13 checks in Chromium: the button is centered on the drawing, the old link is gone, it fades while redrawing and returns as "Watch it again", the replay still ends on an exact match of the drawing, it can play again, reopening shows play, reduced motion, no button for a blank drawing, and it fits on a phone and in dark mode. I looked at it before, during, and after a replay. The dark mode, Share, My drawings, and Report checks still pass.
+
+---
+
 ## Where AI misread me, or I had to correct course
 
 - Claude's first version of the start page put "What is this?" in the top right, where it collided with the "New set" button on the game screen. I caught it by running the page; Claude hadn't opened it in a browser.

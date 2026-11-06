@@ -1106,9 +1106,9 @@
       <div class="finish-art">
         <img alt="Your finished drawing">
         <canvas class="replay" hidden aria-label="Your drawing being redrawn"></canvas>
+        <button type="button" class="play" data-act="replay" aria-label="Watch it redraw"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l10.5-6.5z"/></svg></button>
       </div>
       <div class="finish-side">
-        <button type="button" class="quiet" data-act="replay">Watch it redraw</button>
         <div class="finish-actions">
           <button type="button" class="btn" data-act="publish">Publish drawing</button>
           <button type="button" class="btn" data-act="download">Download PNG</button>
@@ -1134,23 +1134,31 @@
     // this turns sharing off for that round only, and a new round can still be shared.
     const published = new Map();
     const roundKey = () => `${board.round.day}|${board.round.mode}`;
+    // A play button over the drawing. It steps aside while the drawing redraws, then comes back
+    // as "watch again".
+    const PLAY_ICON = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l10.5-6.5z"/></svg>';
+    const AGAIN_ICON = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5V2L7.5 6 12 10V7a5 5 0 1 1-5 5H5a7 7 0 1 0 7-7z"/></svg>';
+    const showPlay = (again) => {
+      replayBtn.innerHTML = again ? AGAIN_ICON : PLAY_ICON;
+      replayBtn.setAttribute("aria-label", again ? "Watch it again" : "Watch it redraw");
+      replayBtn.classList.remove("playing");
+    };
     let stopReplay = () => {};
     replayBtn.addEventListener("click", () => {
       stopReplay();
       img.hidden = true;
       replayCanvas.hidden = false;
-      replayBtn.disabled = true;
+      replayBtn.classList.add("playing");
       stopReplay = board.replay(replayCanvas, {
         instant: window.matchMedia("(prefers-reduced-motion: reduce)").matches,
-        onEnd: () => { replayBtn.disabled = false; replayBtn.textContent = "Watch again"; dialog.dataset.replayed = "true"; },
+        onEnd: () => { showPlay(true); dialog.dataset.replayed = "true"; },
       });
     });
     dialog.addEventListener("close", () => {
       stopReplay();
       img.hidden = false;
       replayCanvas.hidden = true;
-      replayBtn.disabled = false;
-      replayBtn.textContent = "Watch it redraw";
+      showPlay(false);
       delete dialog.dataset.replayed;
     });
     galleryBtn.addEventListener("click", () => {
