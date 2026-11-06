@@ -1,0 +1,71 @@
+/* Scrawdle Party (party.js): the lobby game's screens. The drawing screen copies the main game's
+ * layout (#game, #stage, #board, #brush-settings in drawing.css, studio.css, flow.css) under its own
+ * class names, because those rules are tied to the main screen's ids. The tool tray itself uses
+ * the shared classes (.tray, .tool, .swatch...), so it looks the same with no copying. */
+
+.party { min-height: 100dvh; display: flex; flex-direction: column; }
+.party-bar { display: flex; align-items: center; justify-content: space-between; gap: 12px; max-width: 1320px; width: 100%; margin: 0 auto; padding: 16px 24px 0; }
+.party-name { font: 400 26px/1.1 var(--hand); }
+.party-round { font-size: 13px; color: var(--ink-soft); }
+.party-screen { width: 100%; max-width: 960px; margin: 0 auto; padding: 16px 24px 40px; display: flex; flex-direction: column; align-items: center; gap: 16px; text-align: center; }
+.party-screen h2 { font: 400 37px/1.2 var(--hand); margin: 12px 0 0; }
+.party-screen h3 { font: 400 26px/1.2 var(--hand); margin: 8px 0 0; }
+.party-note { margin: 0; max-width: 560px; font-size: 14px; line-height: 1.6; color: var(--ink-soft); }
+.party-parts-big { margin: 0; max-width: 720px; font: 400 26px/1.4 var(--hand); }
+.party-players { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; }
+.party-players li { padding: 6px 12px; background: white; border: var(--line); border-radius: 999px; font-size: 14px; }
+
+/* Host's settings */
+.party-field { border: 0; margin: 0; padding: 0; display: flex; flex-direction: column; align-items: center; gap: 8px; }
+.party-field legend { padding: 0; margin-bottom: 8px; font-size: 13px; color: var(--ink-soft); }
+.party-choice { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; }
+.party-choice .chip { min-height: 44px; padding: 0 16px; border: var(--line); border-radius: 9px; background: white; font: 400 19px/1 var(--hand); color: var(--ink); cursor: pointer; }
+.party-choice .chip[aria-pressed="true"] { background: #fff0c4; border-color: #c59a2e; box-shadow: inset 0 0 0 1px #c59a2e; }
+
+/* Drawing: the same grid as the main drawing screen */
+.party-draw { display: grid; grid-template-columns: minmax(0, 1fr) 260px; grid-template-areas: "top top" "stage settings" "tools tools" "footer footer"; align-content: center; gap: 14px; width: 100%; max-width: 1380px; min-height: 100dvh; margin: 0 auto; padding: 16px 32px; }
+.party-top { grid-area: top; display: flex; align-items: center; justify-content: center; gap: 24px; }
+.party-parts { margin: 0; font: 400 24px/1.3 var(--hand); text-align: center; }
+.party-timer { margin: 0; min-width: 72px; padding: 4px 12px; border: var(--line); border-radius: 9px; background: white; font: 400 26px/1.2 var(--hand); text-align: center; font-variant-numeric: tabular-nums; }
+.party-timer.hurry { background: var(--alert); color: var(--alert-ink); }
+.party-stage { grid-area: stage; display: flex; align-items: center; justify-content: center; min-width: 0; }
+.party-board { display: block; width: min(100%, 1000px, calc((100dvh - 330px) * 1.5)); height: auto; aspect-ratio: 3 / 2; background: white; border: 1px solid #d8d0c0; border-radius: 10px; cursor: crosshair; touch-action: none; }
+.party-board[data-tool="bucket"] { cursor: cell; }
+.party-settings { grid-area: settings; align-self: stretch; display: flex; flex-direction: column; gap: 14px; padding: 20px 16px; background: #fffcf7; border: var(--line); border-radius: 10px; min-width: 0; }
+.party-settings .tray-sizes { border-left: 0; border-top: var(--line); padding: 14px 0 0; width: 100%; gap: 12px; margin-top: auto; flex-direction: column; align-items: stretch; flex: none; }
+#party-tool-size { accent-color: #d4ac42; min-height: 32px; }
+.party-tools { display: contents; }
+/* The board's save status means nothing here: a party drawing is never saved. */
+.party-draw .save-status { visibility: hidden; }
+
+/* Waiting, voting and results */
+.party-mine { width: min(100%, 450px); aspect-ratio: 3 / 2; object-fit: contain; background: white; border: var(--line); border-radius: 9px; }
+.party-grid { list-style: none; margin: 0; padding: 0; width: 100%; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; }
+.party-grid li { background: white; border: var(--line); border-radius: 9px; overflow: hidden; text-align: left; }
+.party-grid li.mine { background: #fff3d0; }
+.party-grid li.won { box-shadow: inset 0 0 0 2px var(--sage-ink); }
+.party-grid img, .party-missing { display: block; width: 100%; aspect-ratio: 3 / 2; object-fit: contain; background: white; }
+.party-missing { display: flex; align-items: center; justify-content: center; padding: 12px; font-size: 13px; color: var(--ink-soft); text-align: center; }
+.party-grid .vote-bar { margin: 12px; }
+.party-card-note, .party-card-name, .party-card-votes { margin: 10px 12px; font-size: 13px; }
+.party-card-name { margin-bottom: 0; font: 400 20px/1.2 var(--hand); }
+.party-card-votes { margin-top: 2px; color: var(--ink-soft); }
+.party-grid li.won .party-card-votes { color: var(--sage-ink); }
+.party-scores { list-style: none; margin: 0; padding: 0; width: min(100%, 420px); display: flex; flex-direction: column; gap: 6px; }
+.party-scores li { display: grid; grid-template-columns: 36px 1fr auto; align-items: center; gap: 8px; padding: 8px 14px; background: white; border: var(--line); border-radius: 9px; text-align: left; }
+.party-scores li.me { background: #fff3d0; }
+.party-scores .place { font: 400 20px/1 var(--hand); }
+.party-scores .points { font-size: 13px; color: var(--ink-soft); }
+
+@media (max-width: 999px) {
+  .party-draw { grid-template-columns: 1fr; grid-template-areas: "top" "stage" "tools" "settings" "footer"; padding: 12px; align-content: start; }
+  .party-board { width: 100%; }
+}
+@media (max-width: 640px) {
+  .party-bar { padding: 12px 16px 0; }
+  .party-screen { padding: 12px 16px 32px; }
+  .party-screen h2 { font-size: 30px; }
+  .party-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+  .party-top { flex-direction: column; gap: 8px; }
+  .party-parts { font-size: 19px; }
+}

@@ -199,7 +199,9 @@
   const draftImage = async (draft) => draft.blob || (await fetch(draft.dataUrl)).blob();
 
   /* ---------- The board ---------- */
-  function createBoard({ canvas, toolbar, settings }) {
+  // idPrefix keeps a second board's controls (a lobby game's, say) from repeating the main board's ids.
+  // A board that is never given a round (start or restore) never saves, so it can't touch the drafts.
+  function createBoard({ canvas, toolbar, settings, idPrefix = "" }) {
     let ctx = canvas.getContext("2d", { willReadFrequently: true });
     const W = canvas.width;
     const H = canvas.height;
@@ -255,7 +257,7 @@
     const picker = el("input", { type: "color", className: "picker", value: color, title: "Pick any color", oninput: (e) => setColor(e.target.value) });
     picker.setAttribute("aria-label", "Pick any color");
     const wheel = el("label", { className: "wheel" }, picker);
-    const sizeInput = el("input", { type: "range", min: 1, max: 60, value: 3, id: "tool-size", oninput: (e) => {
+    const sizeInput = el("input", { type: "range", min: 1, max: 60, value: 3, id: `${idPrefix}tool-size`, oninput: (e) => {
       if (sizes[tool] !== null) sizes[tool] = Number(e.target.value);
       refreshToolbar();
     } });
@@ -276,18 +278,18 @@
     const previewLine = preview.querySelector("path");
     const sizeGroup = el("div", { className: "tray-group tray-sizes" },
       el("div", { className: "size-top" }, ...presetButtons, preview), sizeInput);
-    const brushSelect = el("select", { id: "brush-kind", onchange: (e) => { brushKind = e.target.value; } },
+    const brushSelect = el("select", { id: `${idPrefix}brush-kind`, onchange: (e) => { brushKind = e.target.value; } },
       ...BRUSHES.map((b) => el("option", { value: b.id, textContent: b.label })));
-    const brushLabel = el("label", { className: "brush-kind", htmlFor: "brush-kind" }, el("span", { textContent: "Brush type" }), brushSelect);
+    const brushLabel = el("label", { className: "brush-kind", htmlFor: `${idPrefix}brush-kind` }, el("span", { textContent: "Brush type" }), brushSelect);
     const undoBtn = trayButton("undo", "Undo", undo);
     const redoBtn = trayButton("redo", "Redo", redo);
     const clearBtn = trayButton("clear", "Clear", clearAll);
     clearBtn.setAttribute("aria-label", "Clear canvas");
     const doneBtn = el("button", { type: "button", className: "btn primary done", textContent: "Done drawing", onclick: () => onDone() });
-    const brushPanel = el("div", { className: "brush-panel", hidden: true, id: "brush-panel" });
+    const brushPanel = el("div", { className: "brush-panel", hidden: true, id: `${idPrefix}brush-panel` });
     const wideSettings = window.matchMedia("(min-width: 1000px)");
     const brushToggle = el("button", {type: "button", className: "brush-toggle", textContent: "Round · brush settings"});
-    brushToggle.setAttribute("aria-controls", "brush-panel");
+    brushToggle.setAttribute("aria-controls", `${idPrefix}brush-panel`);
     brushToggle.setAttribute("aria-expanded", "false");
     const brushChoices = BRUSHES.map((b) => {
       const choice = el("button", {type: "button", className: "brush-choice", textContent: b.label, onclick: () => {
@@ -307,7 +309,7 @@
     });
     const brushControls = el("div", {className: "brush-controls"}, brushToggle, brushPanel);
     const sizeValue = el("output", {className: "size-value", textContent: "3 px"});
-    sizeValue.htmlFor = "tool-size";
+    sizeValue.htmlFor = `${idPrefix}tool-size`;
     sizeGroup.prepend(sizeValue);
     const custom = el("div", {className: "custom-color"}, wheel, el("span", {textContent: "Custom"}));
     toolbar.append(

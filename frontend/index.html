@@ -10,6 +10,7 @@
   <link rel="stylesheet" href="studio.css" />
   <link rel="stylesheet" href="flow.css" />
   <link rel="stylesheet" href="lobby.css" />
+  <link rel="stylesheet" href="party.css" />
 </head>
 <body>
   <template id="wordmark">
@@ -121,6 +122,9 @@
   <!-- Lobbies: adds the Lobby card to the home screen. Games register with ScrawdleLobby.registerGame
        (see the top of lobby.js), so load a game's script AFTER this line. -->
   <script src="lobby.js"></script>
+  <!-- Lobby games. party-rules.js is party.js's tested logic. -->
+  <script src="party-rules.js"></script>
+  <script src="party.js"></script>
   <script>
     const $ = (id) => document.getElementById(id);
     const setupEl = $("setup");
