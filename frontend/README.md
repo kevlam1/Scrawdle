@@ -7,7 +7,7 @@
 - `drawing.css`, `studio.css`, and `flow.css`: the look of the game, loaded in that order. Later files override earlier ones.
 - `fonts/`: Patrick Hand and Gochi Hand.
 - `assets/tools/`: the illustrated icons for the drawing tools.
-- `gallery.js`: today's gallery, with thumbs up/down buttons on other players' drawings and your result on your own. Its sample-drawings code and `assets/sample-strawberries.webp` are no longer reachable from the game.
+- `gallery.js`: today's gallery, with thumbs up/down buttons on other players' drawings and your result on your own.
 - `votes.js`: the vote rules, including the win condition (one thumbs up wins). Change the rule here; no database update needed. Tested in `../tests/votes.test.js`.
 - `sketchbook.js` and `sketchbook.css`: My drawings, the player's own drawings kept in this browser.
 - `supabase-config.js`: the Supabase project URL and anon key. Filled in with Kevin's real project; safe to commit (the key is meant to be public, see `../CLAUDE.md`). Running the page locally publishes to that same real project.

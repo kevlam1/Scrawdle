@@ -1,4 +1,4 @@
-/* Real community results and a clearly separate sample gallery.
+/* Today's gallery: other players' published drawings, with votes, and your own result.
  * publish.js connects the real drawings and votes by setting:
  *   window.scrawdleGallery = async ({ day, mode, prompts }) => [{ id, imageUrl, caption, mine, votes }];
  *   window.scrawdleVote = async ({ drawingId, value }) => {};  // 1, -1, or 0 to take it back
@@ -11,11 +11,10 @@
     const dialog = document.createElement("dialog");
     dialog.id = "gallery";
     dialog.setAttribute("aria-labelledby", "gallery-title");
-    dialog.innerHTML = '<header class="app-header"><span class="wordmark">Scrawdle</span><button class="quiet" type="button">Back</button></header><div class="gallery-heading"><span class="sample-tag" hidden>Sample drawings</span><h2 id="gallery-title"></h2></div><p class="gallery-note" role="status"></p><ul class="gallery-grid"></ul>';
+    dialog.innerHTML = '<header class="app-header"><span class="wordmark">Scrawdle</span><button class="quiet" type="button">Back</button></header><div class="gallery-heading"><h2 id="gallery-title"></h2></div><p class="gallery-note" role="status"></p><ul class="gallery-grid"></ul>';
     const closeBtn = dialog.querySelector("button");
     closeBtn.addEventListener("click", () => dialog.close());
     const title = dialog.querySelector("h2");
-    const tag = dialog.querySelector(".sample-tag");
     const note = dialog.querySelector(".gallery-note");
     const grid = dialog.querySelector(".gallery-grid");
     let request = 0;
@@ -78,31 +77,9 @@
       render();
       li.append(bar);
     }
-    function showSamples() {
-      request++;
-      grid.replaceChildren();
-      tag.hidden = false;
-      title.textContent = "A bowl of strawberries";
-      note.textContent = "Six sample interpretations. These are examples, not drawings posted by players.";
-      const captions = ["Colored pencil", "Graphite", "Blue ceramic", "Watercolor", "Bold shapes", "Crayon"];
-      for (let i = 0; i < captions.length; i++) {
-        const li = document.createElement("li");
-        const art = document.createElement("div");
-        art.className = "sample-art";
-        art.setAttribute("role", "img");
-        art.setAttribute("aria-label", `${captions[i]} sample of a bowl of strawberries`);
-        art.style.setProperty("--sample-position", `${(i % 3) * 50}% ${Math.floor(i / 3) * 100}%`);
-        const caption = document.createElement("p");
-        caption.textContent = captions[i];
-        li.append(art, caption);
-        grid.append(li);
-      }
-      dialog.showModal();
-    }
     async function show(myImageUrl) {
       const round = board.round;
       const token = ++request;
-      tag.hidden = true;
       title.textContent = "Today's drawings";
       grid.replaceChildren();
       const myCard = addCard(myImageUrl, "Your drawing · saved locally", true);
@@ -132,7 +109,7 @@
         if (token === request && dialog.open) note.textContent = "Couldn't load today's drawings. Close and reopen the gallery to try again.";
       }
     }
-    return { show, showSamples };
+    return { show };
   }
   if (typeof module === "undefined" || !module.exports) root.ScrawdleGallery = { createGallery };
 })(typeof window !== "undefined" ? window : globalThis);

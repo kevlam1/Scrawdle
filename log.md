@@ -888,6 +888,22 @@ Artifact 4 is "For Someone Else," due Sunday, November 8. Our team of four (Kevi
 
 ---
 
+## 44. The leftover sample-drawing code is gone (2026-11-05) — Zainab
+
+**What I asked for**
+- Finish removing the sample drawings, now that Trenten's gallery changes are merged and the lines can change without a conflict (see entry 41).
+
+**What changed**
+- `frontend/gallery.js`: the samples function, its "Sample drawings" tag, and the samples mention in the top comment are gone. The gallery itself is unchanged.
+- `frontend/flow.css` and `frontend/theme.css`: the two sample styles are gone.
+- `frontend/assets/sample-strawberries.webp` (196 KB) is deleted. `frontend/README.md` no longer mentions it.
+- Left alone: a comment in Kevin's `frontend/lobby.css` still mentions the old "Explore sample drawings" button. It's only a comment, and lobby files are Kevin's to change.
+
+**What I checked**
+- 74 logic tests pass, and `flow.css` still has matching braces. The checks from entries 38, 40, 41, and 43 pass again in Chromium, including opening today's gallery and dark mode on every screen.
+
+---
+
 ## Where AI misread me, or I had to correct course
 
 - Claude's first version of the start page put "What is this?" in the top right, where it collided with the "New set" button on the game screen. I caught it by running the page; Claude hadn't opened it in a browser.
