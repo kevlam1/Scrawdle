@@ -64,7 +64,6 @@
         </section>
       </div>
       <button class="quiet" id="my-drawings" type="button">My drawings</button>
-      <button class="quiet" id="sample-gallery" type="button">Explore sample drawings</button>
       <a class="quiet" href="/logs/">Read our build log</a>
       <p class="home-storage">Your drafts save in this browser.</p>
       <p id="setup-error" role="alert" hidden></p>
@@ -427,7 +426,6 @@
     /* ---------- Drawing board (see drawing.js) ---------- */
     const board = ScrawdleDrawing.createBoard({ canvas: $("board"), toolbar: $("tools"), settings: $("brush-settings") });
     const gallery = ScrawdleGallery.createGallery(board);
-    $("sample-gallery").addEventListener("click", () => gallery.showSamples());
     const sketchbook = ScrawdleSketchbook.create(board, { onContinue: openSaved });
     $("my-drawings").addEventListener("click", () => sketchbook.show());
     ScrawdleDrawing.createFinishScreen(board, gallery, {

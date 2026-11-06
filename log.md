@@ -733,6 +733,25 @@ Artifact 4 is "For Someone Else," due Sunday, November 8. Our team of four (Kevi
 
 ---
 
+## 37. The sample drawings are gone (2026-11-05) — Zainab
+
+**What I asked for**
+- The team didn't like the strawberry sample drawings, so I took them out.
+
+**What changed**
+- `frontend/index.html`: the home screen's "Explore sample drawings" button is gone. "My drawings" takes its place and its spacing.
+- `frontend/drawing.js`: the finish screen's "View sample gallery" button is gone. When publishing isn't connected, the finish screen just has no gallery button.
+- Not removed yet: the samples code in `frontend/gallery.js`, its two CSS rules in `flow.css`, and `assets/sample-strawberries.webp`. Nothing in the game reaches them now, and the image only loads when that code runs. Trenten's unmerged gallery changes edit the same lines, so I'll remove them after his work is merged instead of causing a conflict.
+- `README.md` and `frontend/README.md` say the same.
+
+**What I checked**
+- 47 logic tests pass. 12 checks in Chromium, with publishing connected and with it turned off: no sample drawings on the home or finish screen, My drawings still there, the gallery button only when publishing is on, Download and Replay still there, and no page errors. The checks from entries 34, 35, and 36 still pass.
+
+**Decisions**
+- Left the leftover code for one more merge instead of editing lines Trenten is changing.
+
+---
+
 ## Where AI misread me, or I had to correct course
 
 - Claude's first version of the start page put "What is this?" in the top right, where it collided with the "New set" button on the game screen. I caught it by running the page; Claude hadn't opened it in a browser.

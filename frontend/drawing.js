@@ -1072,7 +1072,6 @@
         <div class="finish-secondary">
           <button type="button" class="quiet" data-act="keep">Keep drawing</button>
           <button type="button" class="quiet" data-act="gallery">See today’s drawings</button>
-          <button type="button" class="quiet" data-act="samples">View sample gallery</button>
         </div>
       </div>`;
     document.body.appendChild(dialog);
@@ -1111,7 +1110,6 @@
       dialog.close();
       gallery.show(shown);
     });
-    dialog.querySelector('[data-act="samples"]').addEventListener("click", () => gallery.showSamples());
     let viewUrl = null; // the drawing on its own, for the screen
     let exportUrl = null; // the drawing with its prompt and date, for the download
 
@@ -1161,7 +1159,6 @@
       const empty = board.isEmpty;
       const ready = daily && !empty && typeof window.scrawdlePublish === "function";
       dialog.querySelector(".publish-disclosure").hidden = !ready;
-      dialog.querySelector('[data-act="samples"]').hidden = !daily || typeof window.scrawdleGallery === "function";
       publishBtn.hidden = !ready;
       const publishedNote = published.get(roundKey());
       publishBtn.disabled = Boolean(publishedNote);

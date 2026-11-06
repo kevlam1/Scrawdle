@@ -7,7 +7,8 @@
 - `drawing.css`, `studio.css`, and `flow.css`: the look of the game, loaded in that order. Later files override earlier ones.
 - `fonts/`: Patrick Hand and Gochi Hand.
 - `assets/tools/`: the illustrated icons for the drawing tools.
-- `gallery.js` and `assets/sample-strawberries.webp`: the gallery, with labeled sample drawings until real drawings are connected.
+- `gallery.js`: today's gallery of published drawings. Its sample-drawings code and `assets/sample-strawberries.webp` are no longer reachable from the game and will be removed once Trenten's gallery changes are merged.
+- `sketchbook.js` and `sketchbook.css`: My drawings, the player's own drawings kept in this browser.
 - `supabase-config.js`: the Supabase project URL and anon key. Filled in with Kevin's real project; safe to commit (the key is meant to be public, see `../CLAUDE.md`). Running the page locally publishes to that same real project.
 - `publish.js`: wires `window.scrawdlePublish` and `window.scrawdleGallery` to Supabase. Does nothing until `supabase-config.js` has real values, so the Publish button and gallery stay hidden exactly as before.
 - `lobby.js` and `lobby.css`: lobbies, joined with a 5-letter code or a link like `/?BCDFG`: the Lobby card on the home screen, the lobby room, and the contract games plug into (`ScrawdleLobby.registerGame`). Read the comment at the top of `lobby.js` before building a multiplayer game, and the "Lobbies and adding a multiplayer game" section of `../CLAUDE.md`. Does nothing if `supabase-config.js` is empty. Its pure logic is tested in `../tests/lobby.test.js`.

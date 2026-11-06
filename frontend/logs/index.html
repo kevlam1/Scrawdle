@@ -583,7 +583,7 @@
         <h1>Scrawdle: build log</h1>
         <p class="intro">
           A daily drawing game, built by a team of four with Claude Code: a new set of parts to draw each day, a gallery of what
-          other people drew, and private lobbies. Here are the 36 entries of our log with one sentence on each and the name of
+          other people drew, and private lobbies. Here are the 37 entries of our log with one sentence on each and the name of
           whoever wrote it. Open an entry to read everything they wrote for it.
         </p>
         <ul class="facts" aria-label="Project facts">
@@ -673,11 +673,12 @@
   </ul></div>
 </div>
 <div class="toc-group is-open">
-  <button class="toc-head" type="button" aria-expanded="true">Thursday 5 November <span class="count">3</span></button>
+  <button class="toc-head" type="button" aria-expanded="true">Thursday 5 November <span class="count">4</span></button>
   <div class="toc-list-wrap"><ul class="toc-list">
     <li><a href="#entry-34"><span class="n">34</span><span>The browser's Back button stays in the game</span></a></li>
     <li><a href="#entry-35"><span class="n">35</span><span>Color names, for colorblind players and screen readers</span></a></li>
     <li><a href="#entry-36"><span class="n">36</span><span>My drawings: keeping drawings after their day ends</span></a></li>
+    <li><a href="#entry-37"><span class="n">37</span><span>The sample drawings are gone</span></a></li>
   </ul></div>
 </div>
 <div class="toc-group is-open">
@@ -1310,6 +1311,23 @@
 <ul><li>47 logic tests pass. 21 checks in Chromium: the empty page, an in-progress drawing with Continue and Download, the downloaded PNG's size, a replaced Free play drawing, a day ending (by changing a saved drawing's date to an earlier day), Daily Free Play, switching Basic to Detailed, Start over, a blank round, Delete surviving a refresh, a phone-size page with nothing running off the side, and no page errors. The Back button and color checks from entries 34 and 35 still pass. I looked at the page on a laptop and a phone.</li><li>Not checked: Safari or Firefox, a real phone, or what happens when a browser runs out of storage.</li></ul>
 <p class="sub"><strong>Decisions</strong></p>
 <ul><li>Drawings stay only in that browser and are never uploaded. Clearing the browser's data deletes them, and Safari deletes a site's saved data after about 7 days without a visit. The page says so.</li></ul>
+  </div></div></div>
+</article>
+<article class="entry" id="entry-37">
+  <h3 class="entry-head"><button type="button" aria-expanded="false" aria-controls="entry-37-body">
+    <span class="num">37</span>
+    <span><span class="title">The sample drawings are gone<span class="by">by Zainab</span></span><span class="sum">Zainab removed the strawberry sample drawings from the home and finish screens because the team didn't like them, leaving their unused code to clear out after Trenten's gallery changes merge.</span></span>
+    <span class="caret" aria-hidden="true"></span>
+  </button></h3>
+  <div class="body" id="entry-37-body"><div class="body-in"><div class="body-pad">
+<p class="sub"><strong>What I asked for</strong></p>
+<ul><li>The team didn't like the strawberry sample drawings, so I took them out.</li></ul>
+<p class="sub"><strong>What changed</strong></p>
+<ul><li><code>frontend/index.html</code>: the home screen's &quot;Explore sample drawings&quot; button is gone. &quot;My drawings&quot; takes its place and its spacing.</li><li><code>frontend/drawing.js</code>: the finish screen's &quot;View sample gallery&quot; button is gone. When publishing isn't connected, the finish screen just has no gallery button.</li><li>Not removed yet: the samples code in <code>frontend/gallery.js</code>, its two CSS rules in <code>flow.css</code>, and <code>assets/sample-strawberries.webp</code>. Nothing in the game reaches them now, and the image only loads when that code runs. Trenten's unmerged gallery changes edit the same lines, so I'll remove them after his work is merged instead of causing a conflict.</li><li><code>README.md</code> and <code>frontend/README.md</code> say the same.</li></ul>
+<p class="sub"><strong>What I checked</strong></p>
+<ul><li>47 logic tests pass. 12 checks in Chromium, with publishing connected and with it turned off: no sample drawings on the home or finish screen, My drawings still there, the gallery button only when publishing is on, Download and Replay still there, and no page errors. The checks from entries 34, 35, and 36 still pass.</li></ul>
+<p class="sub"><strong>Decisions</strong></p>
+<ul><li>Left the leftover code for one more merge instead of editing lines Trenten is changing.</li></ul>
   </div></div></div>
 </article>
       </section>

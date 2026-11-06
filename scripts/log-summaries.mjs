@@ -42,6 +42,7 @@ export const SUMMARIES = {
   34: "Zainab made the browser's Back button return to the home screen from a drawing instead of leaving the site, closing the finish screen, gallery, or help first.",
   35: 'Zainab gave the 12 colors plain names, shown on hover, read by screen readers, and written beside the tool name for touch screens, so nobody has to tell colors apart by sight.',
   36: 'Zainab added My drawings, which keeps a player\'s drawings in their browser after the day ends or a new round replaces them, with Download and Delete for each.',
+  37: "Zainab removed the strawberry sample drawings from the home and finish screens because the team didn't like them, leaving their unused code to clear out after Trenten's gallery changes merge.",
   misread: 'Where the AI got something wrong or we had to correct course, and what happened next.',
   decisions: 'What we decided and what we dropped along the way.',
 }

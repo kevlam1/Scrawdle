@@ -26,7 +26,7 @@ h1{font:400 44px/1.15 var(--hand);margin:0}
 .home-choice h2{font:400 27px/1.2 var(--hand);margin:0}
 .home-choice p{font-size:13px;line-height:1.6;color:var(--ink-soft);margin:12px 0 24px;flex:1}
 .home-choice .btn{font-size:13px;padding:0 12px;width:100%}
-#sample-gallery{margin:20px auto 0;color:#5c584f}
+#my-drawings{margin:20px auto 0;color:#5c584f}
 .home-storage{font-size:12px;color:#736e63;margin:8px 0 0}
 #setup.has-saved .home-actions{grid-template-columns:1fr}
 #setup.has-saved .home-choice{flex-direction:row;align-items:center;flex-wrap:wrap;column-gap:15px;padding:18px 22px}
