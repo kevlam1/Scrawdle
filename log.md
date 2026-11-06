@@ -673,6 +673,25 @@ Artifact 4 is "For Someone Else," due Sunday, November 8. Our team of four (Kevi
 
 ---
 
+## 34. The browser's Back button stays in the game (2026-11-05) — Zainab
+
+**What I asked for**
+- Pressing the browser's Back button while drawing left Scrawdle completely. It's the home-page navigation bug on the team's list, and I took it.
+
+**What changed**
+- `frontend/index.html`: opening a drawing adds one entry to the browser's history. Back now closes the finish screen, the gallery, or help first, then returns to the home screen, where the drawing is offered under "Continue drawing". Forward reopens it. One more Back from the home screen leaves the site, as before.
+- The "Back to home" buttons on the game and finish screens, and Start over, go through the same history, so the browser's Back afterwards doesn't need an extra press.
+- The lobby's invite links already change the address with `replaceState`. This keeps whatever state is there and only adds its own key.
+
+**What I checked**
+- All 42 logic tests pass. 29 checks in Chromium: Back and Forward from Basic, Daily Free Play, and Free play; Back during the Detailed reveal; Back from the finish screen, the gallery, and help; the in-page Back to home buttons; after a refresh; after Start over; with two saved drawings; and no page errors. One check failed at first because it compared a label without noticing the page shows it in capitals. The page was right.
+- Not checked: Safari, Firefox, a phone's back gesture, or the lobby, because joining one would create a real lobby in Kevin's project.
+
+**Decisions**
+- Back never throws a drawing away. It stays saved and shows on the home screen.
+
+---
+
 ## Where AI misread me, or I had to correct course
 
 - Claude's first version of the start page put "What is this?" in the top right, where it collided with the "New set" button on the game screen. I caught it by running the page; Claude hadn't opened it in a browser.

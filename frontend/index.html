@@ -274,6 +274,7 @@
       sessionStorage.setItem(OPEN_KEY, slotFor(round));
       setupEl.hidden = true;
       gameEl.hidden = false;
+      markGameEntry();
     }
 
     async function start(mode, daily = true) {
@@ -373,7 +374,7 @@
       if (!round.daily) return startFreePlay(!board.isEmpty);
       if (!board.isEmpty && !confirm("Start over? Your current drawing will be lost.")) return;
       await board.discard();
-      showHome();
+      goHome();
     }
 
     $("mode-basic").addEventListener("click", () => startDaily("basic"));
@@ -382,14 +383,50 @@
     $("free-play").addEventListener("click", () => startFreePlay(Boolean(saved.free && saved.free.marked)));
     $("restart").addEventListener("click", restartRound);
     $("slot-new").addEventListener("click", () => { slotEl.hidden = true; start("basic", false); });
-    $("back-home").addEventListener("click", async () => { await board.flush(); showHome(); });
+    $("back-home").addEventListener("click", goHome);
+
+    /* ---------- The browser's Back button ---------- */
+    // The game is one page, so the browser can't tell when a drawing opens, and Back used to leave the
+    // site. Opening a drawing now adds one history entry: Back closes the finish screen, gallery, or help
+    // first, then returns home, and Forward reopens the drawing. The lobby's invite links use the same
+    // history (replaceState in lobby.js), so this only adds its own key to whatever state is there.
+    const GAME_ENTRY = "scrawdleGame";
+    let lastSlot = null; // the drawing Back left, so Forward can reopen it
+    const onGameEntry = () => Boolean(history.state && history.state[GAME_ENTRY]);
+    function markGameEntry() {
+      if (!onGameEntry()) history.pushState({ ...(history.state || {}), [GAME_ENTRY]: true }, "", location.href);
+    }
+    // The in-page "Back to home" buttons go through history too, so the browser's Back afterwards leaves.
+    async function goHome() {
+      if (onGameEntry()) { history.back(); return; }
+      await board.flush();
+      showHome();
+    }
+    window.addEventListener("popstate", async () => {
+      const open = ["finish", "gallery", "help"].map((id) => document.getElementById(id)).find((d) => d && d.open);
+      if (open) {
+        open.close();
+        if (!gameEl.hidden) markGameEntry(); // still drawing, so the next Back goes home
+        return;
+      }
+      if (onGameEntry()) { // Forward, back into the drawing
+        if (gameEl.hidden && lastSlot) openSaved(lastSlot);
+        else if (gameEl.hidden) history.back();
+        return;
+      }
+      if (!gameEl.hidden || !slotEl.hidden) {
+        lastSlot = board.round ? slotFor(board.round) : null;
+        await board.flush();
+        showHome();
+      }
+    });
 
     /* ---------- Drawing board (see drawing.js) ---------- */
     const board = ScrawdleDrawing.createBoard({ canvas: $("board"), toolbar: $("tools"), settings: $("brush-settings") });
     const gallery = ScrawdleGallery.createGallery(board);
     $("sample-gallery").addEventListener("click", () => gallery.showSamples());
     ScrawdleDrawing.createFinishScreen(board, gallery, {
-      onHome: async () => { await board.flush(); showHome(); },
+      onHome: goHome,
     });
 
     /* ---------- Self-judgement (the player decides if they won) ---------- */

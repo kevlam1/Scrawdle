@@ -583,11 +583,11 @@
         <h1>Scrawdle: build log</h1>
         <p class="intro">
           A daily drawing game, built by a team of four with Claude Code: a new set of parts to draw each day, a gallery of what
-          other people drew, and private lobbies. Here are the 33 entries of our log with one sentence on each and the name of
+          other people drew, and private lobbies. Here are the 34 entries of our log with one sentence on each and the name of
           whoever wrote it. Open an entry to read everything they wrote for it.
         </p>
         <ul class="facts" aria-label="Project facts">
-          <li>28 October to 4 November 2026</li>
+          <li>28 October to 5 November 2026</li>
           <li>Team of four</li>
           <li>Claude Code</li>
           <li>Plain canvas + Supabase</li>
@@ -670,6 +670,12 @@
     <li><a href="#entry-31"><span class="n">31</span><span>A logs page at /logs</span></a></li>
     <li><a href="#entry-32"><span class="n">32</span><span>A link to the build log from the game</span></a></li>
     <li><a href="#entry-33"><span class="n">33</span><span>Renaming Daily Scrawl to Daily Free Play</span></a></li>
+  </ul></div>
+</div>
+<div class="toc-group is-open">
+  <button class="toc-head" type="button" aria-expanded="true">Thursday 5 November <span class="count">1</span></button>
+  <div class="toc-list-wrap"><ul class="toc-list">
+    <li><a href="#entry-34"><span class="n">34</span><span>The browser's Back button stays in the game</span></a></li>
   </ul></div>
 </div>
 <div class="toc-group is-open">
@@ -1250,6 +1256,24 @@
 <ul><li>All 42 tests pass.</li><li>Claude drove headless Chrome at desktop and phone width: the home card says Daily Free Play, the game screen says Daily Free Play with &quot;Draw anything&quot;, the judge buttons are still hidden, nothing scrolls sideways, and I looked at the screenshots. The first phone &quot;home&quot; screenshot was really the game screen (see below), so it was retaken.</li><li>Not checked: the live site (nothing pushed), the finished PNG, the gallery, or the &quot;Continue drawing&quot; card. A drawing someone has already saved today probably still carries the old &quot;Daily Scrawl&quot; label inside it until the day rolls over; that comes from reading the code, not from a test.</li></ul>
 <p class="sub"><strong>Decisions</strong></p>
 <ul><li>Kept the id <code>scrawl</code> and the filename <code>001-lobbies-and-daily-scrawl.sql</code> as they are, rather than renaming them for tidiness; the old entries in this log also still say &quot;Daily Scrawl&quot;, since they describe what was true then.</li><li>The merged mode will need its own new id (for example <code>daily</code>), not <code>scrawl</code>, so a player's saved free draw isn't opened as the merged mode.</li></ul>
+  </div></div></div>
+</article>
+<h3 class="day">Thursday 5 November</h3>
+<article class="entry" id="entry-34">
+  <h3 class="entry-head"><button type="button" aria-expanded="false" aria-controls="entry-34-body">
+    <span class="num">34</span>
+    <span><span class="title">The browser's Back button stays in the game<span class="by">by Zainab</span></span><span class="sum">Zainab made the browser's Back button return to the home screen from a drawing instead of leaving the site, closing the finish screen, gallery, or help first.</span></span>
+    <span class="caret" aria-hidden="true"></span>
+  </button></h3>
+  <div class="body" id="entry-34-body"><div class="body-in"><div class="body-pad">
+<p class="sub"><strong>What I asked for</strong></p>
+<ul><li>Pressing the browser's Back button while drawing left Scrawdle completely. It's the home-page navigation bug on the team's list, and I took it.</li></ul>
+<p class="sub"><strong>What changed</strong></p>
+<ul><li><code>frontend/index.html</code>: opening a drawing adds one entry to the browser's history. Back now closes the finish screen, the gallery, or help first, then returns to the home screen, where the drawing is offered under &quot;Continue drawing&quot;. Forward reopens it. One more Back from the home screen leaves the site, as before.</li><li>The &quot;Back to home&quot; buttons on the game and finish screens, and Start over, go through the same history, so the browser's Back afterwards doesn't need an extra press.</li><li>The lobby's invite links already change the address with <code>replaceState</code>. This keeps whatever state is there and only adds its own key.</li></ul>
+<p class="sub"><strong>What I checked</strong></p>
+<ul><li>All 42 logic tests pass. 29 checks in Chromium: Back and Forward from Basic, Daily Free Play, and Free play; Back during the Detailed reveal; Back from the finish screen, the gallery, and help; the in-page Back to home buttons; after a refresh; after Start over; with two saved drawings; and no page errors. One check failed at first because it compared a label without noticing the page shows it in capitals. The page was right.</li><li>Not checked: Safari, Firefox, a phone's back gesture, or the lobby, because joining one would create a real lobby in Kevin's project.</li></ul>
+<p class="sub"><strong>Decisions</strong></p>
+<ul><li>Back never throws a drawing away. It stays saved and shows on the home screen.</li></ul>
   </div></div></div>
 </article>
       </section>
