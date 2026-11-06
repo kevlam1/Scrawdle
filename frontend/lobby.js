@@ -189,15 +189,19 @@
       <p class="eyebrow">Private lobby</p>
       <h1 id="lobby-code" class="lobby-title">Invite your friends</h1>
       <div class="lobby-share">
-        <input class="lobby-link" readonly aria-label="Invite link">
-        <button type="button" class="btn primary" data-act="invite" aria-expanded="false">Invite friends</button>
-        <button type="button" class="btn" data-act="copy">Copy link</button>
-      </div>
-      <div class="lobby-invite-menu" hidden>
-        <a class="btn" data-invite="sms">Text message</a>
-        <a class="btn" data-invite="whatsapp" target="_blank" rel="noopener">WhatsApp</a>
-        <a class="btn" data-invite="email">Email</a>
-        <button type="button" class="btn" data-invite="copy">Copy invite</button>
+        <div class="lobby-link-box">
+          <input class="lobby-link" readonly aria-label="Invite link">
+          <button type="button" class="lobby-copy" data-act="copy" aria-label="Copy link" title="Copy link"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V6a2 2 0 0 1 2-2h8"/></svg></button>
+        </div>
+        <div class="lobby-invite">
+          <button type="button" class="btn primary" data-act="invite" aria-expanded="false" aria-haspopup="menu">Invite friends</button>
+          <div class="lobby-invite-menu" role="menu" hidden>
+            <a role="menuitem" data-invite="sms"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v11H9l-5 4z"/></svg>Text message</a>
+            <a role="menuitem" data-invite="whatsapp" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 12a8 8 0 0 1-11.6 7.1L4 20l1-4.2A8 8 0 1 1 20 12z"/></svg>WhatsApp</a>
+            <a role="menuitem" data-invite="email"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg>Email</a>
+            <button type="button" role="menuitem" data-invite="copy"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V6a2 2 0 0 1 2-2h8"/></svg><span>Copy invite</span></button>
+          </div>
+        </div>
       </div>
       <p class="lobby-status" role="status"></p>
       <h2>Players <span class="lobby-count"></span></h2>
@@ -378,7 +382,7 @@
     linkEl.value = lobbyLink(location.origin, location.pathname, code);
     nameEl.value = me.name;
     setStatus("Connecting…");
-    copyBtn.textContent = "Copy link";
+    showCopied(false);
     renderPlayers();
     renderGames();
     history.replaceState(null, "", `${location.pathname}?${code}`);
@@ -476,13 +480,25 @@
   createBtn.addEventListener("click", createLobby);
 
   $(room, '[data-act="leave"]').addEventListener("click", leave);
+  // A copy icon at the end of the link box, like GitHub's. It turns into a check for a moment once copied.
+  const COPY_ICON = copyBtn.innerHTML;
+  const CHECK_ICON = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 5 5 9-10"/></svg>';
+  let copiedTimer = 0;
+  function showCopied(on, label = "Copied!") {
+    clearTimeout(copiedTimer);
+    copyBtn.innerHTML = on ? CHECK_ICON : COPY_ICON;
+    copyBtn.classList.toggle("copied", on);
+    copyBtn.title = on ? label : "Copy link";
+    copyBtn.setAttribute("aria-label", on ? label : "Copy link");
+    if (on) copiedTimer = setTimeout(() => showCopied(false), 2000);
+  }
   copyBtn.addEventListener("click", async () => {
     try {
       await navigator.clipboard.writeText(linkEl.value);
-      copyBtn.textContent = "Copied!";
+      showCopied(true);
     } catch (err) {
       linkEl.select();
-      copyBtn.textContent = "Press Ctrl+C";
+      showCopied(true, "Press Ctrl+C to copy");
     }
   });
   linkEl.addEventListener("focus", () => linkEl.select());
@@ -493,10 +509,19 @@
   const inviteBtn = $(room, '[data-act="invite"]');
   const inviteMenu = $(room, ".lobby-invite-menu");
   const inviteText = () => `Join my Scrawdle lobby! ${linkEl.value}`; // the link is enough; no code to type
+  // A small pop-up under the button. It closes when an option is picked, on a click outside it, or on Esc.
   const showInviteMenu = (open) => {
     inviteMenu.hidden = !open;
     inviteBtn.setAttribute("aria-expanded", String(open));
+    if (open) inviteMenu.querySelector("[role=menuitem]").focus();
   };
+  document.addEventListener("pointerdown", (e) => {
+    if (!inviteMenu.hidden && !e.target.closest(".lobby-invite")) showInviteMenu(false);
+  });
+  room.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && !inviteMenu.hidden) { showInviteMenu(false); inviteBtn.focus(); }
+  });
+  for (const link of inviteMenu.querySelectorAll("a")) link.addEventListener("click", () => setTimeout(() => showInviteMenu(false), 0));
   inviteBtn.addEventListener("click", async () => {
     if (typeof navigator.share === "function") {
       try {
@@ -513,16 +538,18 @@
     showInviteMenu(inviteMenu.hidden);
   });
   const copyInviteBtn = $(inviteMenu, '[data-invite="copy"]');
+  const copyInviteLabel = $(copyInviteBtn, "span");
   copyInviteBtn.addEventListener("click", async () => {
     try {
       await navigator.clipboard.writeText(inviteText());
-      copyInviteBtn.textContent = "Copied!";
+      copyInviteLabel.textContent = "Copied!";
+      setTimeout(() => { showInviteMenu(false); copyInviteLabel.textContent = "Copy invite"; }, 700);
     } catch (err) {
       linkEl.select();
-      copyInviteBtn.textContent = "Press Ctrl+C";
+      copyInviteLabel.textContent = "Press Ctrl+C";
     }
   });
-  room.addEventListener("close", () => { showInviteMenu(false); copyInviteBtn.textContent = "Copy invite"; });
+  room.addEventListener("close", () => { inviteMenu.hidden = true; inviteBtn.setAttribute("aria-expanded", "false"); copyInviteLabel.textContent = "Copy invite"; });
   nameEl.addEventListener("change", () => {
     const name = cleanName(nameEl.value) || me.name;
     nameEl.value = name;

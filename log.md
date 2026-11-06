@@ -1065,6 +1065,21 @@ Artifact 4 is "For Someone Else," due Sunday, November 8. Our team of four (Kevi
 
 ---
 
+## 55. A copy icon and an invite pop-up in the lobby (2026-11-05) — Zainab
+
+**What I asked for**
+- Copy link should be a small copy sign right next to the link, like GitHub's, and the invite options should be a little pop-up instead of a row of big buttons.
+
+**What changed**
+- `frontend/lobby.js` and `lobby.css` (Kevin's files, with the team's OK): the Copy link button is now a copy icon inside the right end of the link box. It copies the link and turns into a check that says "Copied!" for two seconds. Its hover hint and screen-reader name are "Copy link".
+- Invite friends opens a small pop-up list just under it, with an icon for each option: Text message, WhatsApp, Email, and Copy invite. It closes when an option is picked, on a click outside it, or on Esc, which also returns focus to the button. On a phone it spans the width under the button. Phones with a share menu still open that instead.
+- `frontend/theme.css`: the pop-up and icon in dark mode.
+
+**What I checked**
+- 77 logic tests pass. 20 checks in Chromium with a stand-in for Supabase, so no real lobby was created: the icon sits inside the link box and there's no separate Copy link button, its hint and name, copying the link, the check and its return to the copy icon, the pop-up's four options right under the button, focus moving into it, the written invite, closing by clicking outside, Esc, picking an option, and Copy invite, a phone with a share menu, a phone without one, and dark mode. The lobby (10), name-goes-home (13), and dark mode (51) checks still pass.
+
+---
+
 ## Where AI misread me, or I had to correct course
 
 - Claude's first version of the start page put "What is this?" in the top right, where it collided with the "New set" button on the game screen. I caught it by running the page; Claude hadn't opened it in a browser.

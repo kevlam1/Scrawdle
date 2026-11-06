@@ -91,3 +91,7 @@ html[data-theme="dark"] .art-tool { filter: drop-shadow(0 0 1px rgba(255, 250, 2
 /* Edges of things you click or type in reach at least 3:1 against what's around them (WCAG 1.4.11),
  * so a text box or a plain button is easy to find. Cards and dividers stay soft. */
 html[data-theme="dark"] :is(.btn:not(.primary), input:not([type="range"]):not([type="color"]), select, .history-actions .tool, .vote, .round-btn, .brush-choice:not([aria-pressed="true"])) { border-color: #857d70; }
+
+/* The lobby's copy icon and invite pop-up. */
+html[data-theme="dark"] :is(.lobby-copy, .lobby-invite-menu a, .lobby-invite-menu button):is(:hover, :focus-visible) { background: var(--hover); }
+html[data-theme="dark"] .lobby-invite-menu { background: var(--surface); box-shadow: 0 10px 28px rgba(0, 0, 0, .5); }
