@@ -277,7 +277,9 @@
   }
 
   /* ---------- The board ---------- */
-  function createBoard({ canvas, toolbar, settings }) {
+  // idPrefix keeps a second board's controls (a lobby game's, say) from repeating the main board's ids.
+  // A board that is never given a round (start or restore) never saves, so it can't touch the drafts.
+  function createBoard({ canvas, toolbar, settings, idPrefix = "" }) {
     let ctx = canvas.getContext("2d", { willReadFrequently: true });
     const W = canvas.width;
     const H = canvas.height;
@@ -297,7 +299,7 @@
     let ops = [];
     let opsAt = 0;
     let canReplay = true;
-    let locked = false; // a judged drawing can't change
+    let locked = false; // set by setLocked; nothing locks the board since votes replaced self-judging
     let onDone = () => {};
 
     const rgba = (hex) => [parseInt(hex.slice(1, 3), 16), parseInt(hex.slice(3, 5), 16), parseInt(hex.slice(5, 7), 16), 255];
@@ -333,7 +335,7 @@
     const picker = el("input", { type: "color", className: "picker", value: color, title: "Pick any color", oninput: (e) => setColor(e.target.value) });
     picker.setAttribute("aria-label", "Pick any color");
     const wheel = el("label", { className: "wheel" }, picker);
-    const sizeInput = el("input", { type: "range", min: 1, max: 60, value: 3, id: "tool-size", oninput: (e) => {
+    const sizeInput = el("input", { type: "range", min: 1, max: 60, value: 3, id: `${idPrefix}tool-size`, oninput: (e) => {
       if (sizes[tool] !== null) sizes[tool] = Number(e.target.value);
       refreshToolbar();
     } });
@@ -354,18 +356,18 @@
     const previewLine = preview.querySelector("path");
     const sizeGroup = el("div", { className: "tray-group tray-sizes" },
       el("div", { className: "size-top" }, ...presetButtons, preview), sizeInput);
-    const brushSelect = el("select", { id: "brush-kind", onchange: (e) => { brushKind = e.target.value; } },
+    const brushSelect = el("select", { id: `${idPrefix}brush-kind`, onchange: (e) => { brushKind = e.target.value; } },
       ...BRUSHES.map((b) => el("option", { value: b.id, textContent: b.label })));
-    const brushLabel = el("label", { className: "brush-kind", htmlFor: "brush-kind" }, el("span", { textContent: "Brush type" }), brushSelect);
+    const brushLabel = el("label", { className: "brush-kind", htmlFor: `${idPrefix}brush-kind` }, el("span", { textContent: "Brush type" }), brushSelect);
     const undoBtn = trayButton("undo", "Undo", undo);
     const redoBtn = trayButton("redo", "Redo", redo);
     const clearBtn = trayButton("clear", "Clear", clearAll);
     clearBtn.setAttribute("aria-label", "Clear canvas");
     const doneBtn = el("button", { type: "button", className: "btn primary done", textContent: "Done drawing", onclick: () => onDone() });
-    const brushPanel = el("div", { className: "brush-panel", hidden: true, id: "brush-panel" });
+    const brushPanel = el("div", { className: "brush-panel", hidden: true, id: `${idPrefix}brush-panel` });
     const wideSettings = window.matchMedia("(min-width: 1000px)");
     const brushToggle = el("button", {type: "button", className: "brush-toggle", textContent: "Round · brush settings"});
-    brushToggle.setAttribute("aria-controls", "brush-panel");
+    brushToggle.setAttribute("aria-controls", `${idPrefix}brush-panel`);
     brushToggle.setAttribute("aria-expanded", "false");
     const brushChoices = BRUSHES.map((b) => {
       const choice = el("button", {type: "button", className: "brush-choice", textContent: b.label, onclick: () => {
@@ -385,7 +387,7 @@
     });
     const brushControls = el("div", {className: "brush-controls"}, brushToggle, brushPanel);
     const sizeValue = el("output", {className: "size-value", textContent: "3 px"});
-    sizeValue.htmlFor = "tool-size";
+    sizeValue.htmlFor = `${idPrefix}tool-size`;
     sizeGroup.prepend(sizeValue);
     const custom = el("div", {className: "custom-color"}, wheel, el("span", {textContent: "Custom"}));
     toolbar.append(
@@ -512,8 +514,13 @@
     function showLayer() {
       const s = stroke;
       const look = LAYERED[s.kind];
-      ctx.putImageData(s.base, 0, 0);
+      // Only the stroke's own area changes, so only that area is put back and redrawn.
+      const r = boxRect(s.box);
+      ctx.putImageData(s.base, 0, 0, r.x, r.y, r.w, r.h);
       ctx.save();
+      ctx.beginPath();
+      ctx.rect(r.x, r.y, r.w, r.h);
+      ctx.clip();
       ctx.globalAlpha = look.alpha;
       // White can't show through "multiply", so it paints normally.
       if (look.blend && paintColorOf(s) !== "#ffffff") ctx.globalCompositeOperation = look.blend;
@@ -579,7 +586,7 @@
         s.mid = mid;
         grow(p.x, p.y, s.width * 1.5);
         grow(s.last.x, s.last.y, s.width * 1.5);
-        if (!s.quiet) showLayer(); // a replay shows the layer once per frame instead
+        if (!s.quiet) paintSoon(s); // a replay shows the layer once per frame itself
       },
       calligraphy(p) { // a slanted nib: thick one way, thin the other
         const s = stroke;
@@ -756,25 +763,51 @@
       else if (strokeTool !== "line") dab(p.x, p.y, width / 2);
     }
     function addPoint(p) {
-      stroke.op.points.push(p);
+      // A line only needs its two ends, so it doesn't keep every point the mouse passed through.
+      if (stroke.tool === "line") stroke.op.points = [stroke.op.points[0], p];
+      else stroke.op.points.push(p);
       extend(p);
     }
     function extend(p) {
       const s = stroke;
       if (s.tool === "line") {
-        ctx.putImageData(s.base, 0, 0);
-        ctx.lineWidth = s.width;
-        ctx.lineCap = "round";
-        ctx.beginPath();
-        ctx.moveTo(s.start.x, s.start.y);
-        ctx.lineTo(p.x, p.y);
-        ctx.stroke();
         grow(p.x, p.y, s.width);
+        s.last = p;
+        s.moved = true;
+        if (s.quiet) drawLine(s); else paintSoon(s);
+        return;
       } else if (s.tool === "pencil") draw.pencil(p);
       else if (s.tool === "brush") draw.brush(p);
       else draw.smooth(p);
       s.last = p;
       s.moved = true;
+    }
+    // Puts back only where the last preview was, then draws the line to the newest point.
+    function drawLine(s) {
+      if (s.drawn) ctx.putImageData(s.base, 0, 0, s.drawn.x, s.drawn.y, s.drawn.w, s.drawn.h);
+      ctx.strokeStyle = s.color;
+      ctx.lineWidth = s.width;
+      ctx.lineCap = "round";
+      ctx.beginPath();
+      ctx.moveTo(s.start.x, s.start.y);
+      ctx.lineTo(s.last.x, s.last.y);
+      ctx.stroke();
+      const pad = s.width + 2;
+      s.drawn = boxRect({ minX: Math.min(s.start.x, s.last.x) - pad, maxX: Math.max(s.start.x, s.last.x) + pad, minY: Math.min(s.start.y, s.last.y) - pad, maxY: Math.max(s.start.y, s.last.y) + pad });
+    }
+    // Mice and pens can send many points per frame, so the line and layered brushes redraw at
+    // most once per frame instead of once per point.
+    function paintSoon(s) {
+      s.dirty = true;
+      if (s.frame) return;
+      s.frame = requestAnimationFrame(() => {
+        s.frame = 0;
+        if (stroke === s) paint(s);
+      });
+    }
+    function paint(s) {
+      s.dirty = false;
+      if (s.tool === "line") drawLine(s); else showLayer();
     }
     function move(e) {
       if (!stroke || e.pointerId !== stroke.id) return;
@@ -798,6 +831,8 @@
         ctx.lineTo(s.last.x, s.last.y);
         ctx.stroke();
       }
+      cancelAnimationFrame(s.frame);
+      if (s.tool === "line" && s.dirty) paint(s);
       if (s.tool === "line" && !s.moved) dab(s.start.x, s.start.y, s.width / 2);
       if (s.layer) {
         s.layer.lineWidth = s.width;

@@ -673,7 +673,105 @@ Artifact 4 is "For Someone Else," due Sunday, November 8. Our team of four (Kevi
 
 ---
 
-## 34. The browser's Back button stays in the game (2026-11-05) — Zainab
+## 34. Fixed lag in the line tool and the marker and watercolor brushes (2026-11-05) — Trenten
+
+**What I asked for**
+- The line tool lags badly when I draw more than a few lines in quick succession, and the brushes lag too. I asked Claude to find out why, then to fix both the line tool and the layered brushes (marker and watercolor).
+
+**What changed**
+- `frontend/drawing.js`:
+- The line tool used to put back the whole 1800×1200 canvas and redraw its preview for every point the mouse sent, which can be many per frame. Now it redraws at most once per frame, and only puts back the area the previous preview covered.
+- Marker and watercolor did the same full-canvas redraw for every point. Now they redraw at most once per frame, and only inside the stroke's own area.
+- A line now saves just its start and end points instead of every point the mouse passed through (about 67 per line in a test), so saves are smaller and replay has less to redo. Lines saved before this still replay, since replay draws whatever points a line has.
+- Letting go always finishes the drawing right away, even if no frame was drawn since the last move, so a quick flick still leaves its line.
+
+**What I checked**
+- Claude timed the strokes in a browser before and after, on the same 1800×1200 canvas. Letting go of a line went from 60–120 ms to about 4 ms; marker and watercolor from about 240–260 ms to about 12–13 ms. Each mouse movement went from 1.4–5.5 ms to about the same as the pen (under 0.1 ms). A long line drag with 120 mouse points used to put back about 260 million pixels; now it's about 16 million in total, roughly 0.6 ms per frame.
+- A replay of a drawing with lines, marker, watercolor, a marker crossing a line, and pen came out pixel-for-pixel the same as the live drawing. Undo after a line that wandered across the canvas restored it exactly. The line's preview disappears from where it was once the line moves on.
+- I installed Node so the team's tests could run. All 42 pass, both on `main` before this change and with it. Those tests cover helper functions (the paint bucket, undo history, save slots), not the stroke drawing itself, so the browser checks above are what cover this change. Regenerated the `/logs` page with `node scripts/make-logs-page.mjs`.
+- Not checked: timings came from the app's built-in browser running in the background, with a timer standing in for screen frames, so the numbers are rough; I haven't felt it with a real mouse, a stylus, or on a phone.
+
+**Decisions**
+- Kept everything inside `drawing.js` rather than adding a second see-through canvas on top of the board for the line preview. Redrawing just the line's area once per frame was enough, and it doesn't touch the page's layout.
+- Every new stroke still copies the whole canvas once when it starts (about 10–15 ms), for undo. That's the same for every tool, so I left it for now.
+- `drawing.js` is Zainab's code; she gave me permission to work on it.
+
+---
+
+## 35. Votes replace the self-judged win (2026-11-05) — Trenten
+
+**What I asked for**
+- A real win-lose condition: other players vote on shared drawings with a thumbs up or thumbs down, and one thumbs up from anyone means you've won that drawing. I asked Claude to plan it first, since the system will be built on and changed later, then to build it with the choices it recommended: remove my Accurate/Inaccurate buttons, let anyone vote with an id kept in their browser, hide the buttons on your own drawing, and allow votes in every mode, Daily Free Play included.
+
+**What changed**
+- `backend/supabase/updates/002-votes.sql` (new) and `backend/supabase/schema.sql`: a `votes` table (drawing, voter, up or down) that the public key can't read or write directly, like Kevin's lobby codes, plus two functions it may call: `cast_vote` (vote, change your vote, or take it back) and `vote_counts` (thumbs up and down for a list of drawings, plus your own vote). Votes are deleted with their drawing, so the daily wipe clears them with no new schedule. Only drawings the gallery can show (today's, not hidden) take votes.
+- `frontend/votes.js` (new): the rules on their own, so they're easy to change: one thumbs up wins, pressing your vote again takes it back, pressing the other button switches it.
+- `frontend/publish.js`: a published drawing's id is now made in the browser and remembered, so the game knows which drawing is yours. The gallery's cards now carry their id and votes, and `window.scrawdleVote` saves a vote. Each browser gets a random voter id. If the database doesn't have update 002 yet, the gallery still loads, just without vote buttons.
+- `frontend/gallery.js` and `flow.css`: 👍 and 👎 buttons with counts on other players' drawings, showing the new vote straight away and putting the old one back with a message if saving fails. Your own card says "You won!" with the tally, "Waiting for votes.", or "Publish it to get votes."
+- `frontend/index.html` and `flow.css`: removed the Accurate/Inaccurate buttons and their styles, and updated How to play.
+- `tests/votes.test.js` and `tests/publish-votes.test.js` (new). The second runs the real `publish.js` against an in-memory stand-in for Supabase.
+- `README.md`, `frontend/README.md`, `backend/README.md`, `CLAUDE.md`: what was built, the new test files, and that Kevin needs to run update 002.
+
+**What I checked**
+- All 58 Node tests pass: the 42 from before, 9 for the vote rules, and 7 for `publish.js` (publishing marks the drawing as yours, someone else's thumbs up is a win, changing and taking back a vote, your drawing's result still showing when it's older than the 24 the gallery lists, a drawing published before votes existed, and the gallery still loading before update 002 is run).
+- In a browser, with stand-ins in place of Supabase so nothing reached the live project: the vote buttons, counts, taking a vote back, switching it, a failed save putting the old vote back, the "You won!", "Waiting for votes." and "Publish it to get votes." results, and no buttons when voting isn't set up. Looked at it at desktop and phone width (buttons stay 44 px tall, nothing scrolls sideways), and the drawing screen without the judge row.
+- The SQL, in PGlite (real Postgres in WebAssembly, what Kevin used for update 001), with stand-ins for Supabase's public role, storage schema and `cron.schedule`: 16 of 16 checks pass. Update 002 runs on top of Kevin's original schema plus update 001, and runs a second time without an error; a fresh project's `schema.sql` runs on its own. As the public role: publishing with an id the game made, counting, one vote per voter, switching and taking back a vote, refusing bad votes and votes on hidden, old or missing drawings, no way to read or write the `votes` table directly, and votes deleted with their drawing. To check the checks, Claude broke the SQL two ways in a copy (dropped the hidden-drawing rule, and the table's Row Level Security), and 4 checks failed as they should. The test script and PGlite stayed in a temporary folder, not in the repo, so no new dependency was added.
+- Not checked: nothing has been tried against the live project.
+
+**Decisions**
+- Votes are the win condition for every mode. In Daily Free Play, which has no parts, a thumbs up just means another player liked it.
+- There's still no login, so a determined player can vote twice (by clearing browser data) or vote for their own drawing (by calling the database directly). Supabase's anonymous sign-in would fix the first; recording who published each drawing would fix the second. Both are left for later.
+- The win rule lives in `votes.js` rather than the database, so it can change without asking Kevin to run another update.
+- Kevin has to run `002-votes.sql` on the live project before this reaches `main`.
+
+---
+
+## 36. A to-do list for database updates in `CLAUDE.md` (2026-11-05) — Trenten
+
+**What I asked for**
+- Kevin will probably have his AI run the votes update, so I asked Claude to make sure there's a note it will find, with what to run and what to update afterwards.
+
+**What changed**
+- `CLAUDE.md`: a new section near the top, "Pending database updates", which every session reads first. It lists `002-votes.sql` with steps: read it, run it once, stop and report the raw error if it fails, two SQL queries and an in-app check to confirm it worked, and which notes to update afterwards. Whoever runs an update removes its entry, so the list shows what's still waiting.
+- `backend/supabase/updates/002-votes.sql` and `backend/README.md`: both point to that section.
+
+**What I checked**
+- The steps match what was tested in entry 35 (running it twice is harmless). Nobody has followed them on the live project yet.
+
+**Decisions**
+- Put the note in `CLAUDE.md` rather than only in the SQL file, because every teammate's session reads `CLAUDE.md` first, and Kevin's session won't necessarily open the updates folder. It only reaches Kevin's session once this branch is merged into `main`, or if his session reads the `Trent` branch.
+
+---
+
+## 37. Scrawdle Party, the first lobby game (2026-11-05) — Trenten
+
+**What I asked for**
+- A checklist for the features we're keeping (a lobby game, a streak, a daily leaderboard that resets each day, yesterday's winner, a time challenge, and guess the parts), starting with the lobby game: plan it fully before any code, then build it. I asked whether drawings could be sent at 900 by 600 instead of the 600 by 400 in the plan, and Claude measured it first (see Decisions).
+
+**What changed**
+- `frontend/party.js`, `party-rules.js`, `party.css` (new), loaded after `lobby.js` in `index.html`. The host picks Basic or Detailed parts, 1, 3 or 5 rounds, and 60, 90 or 120 seconds. Each round: everyone sees the same random parts, draws with the full set of tools against a timer, then gives every other drawing a thumbs up or down with names hidden. The results show who drew what, the votes, "Won the round" for anyone with a thumbs up (the daily gallery's rule) and "Top drawing" for the most thumbs up. Each thumbs up is a point; the last screen shows the final standings.
+- The host's page runs the game (rolls the parts, ends each phase, counts votes) and every page draws from the messages, so everyone sees the same result. A round ends as soon as everyone is done, or when the timer runs out (drawings send themselves, spread over about a second so they don't all hit Supabase at once). Players who join mid-round sit it out; players who leave keep their points and aren't waited for; if the host leaves, the game ends.
+- Nothing is stored and there's no database update: drawings and votes only travel as lobby messages, as the lobby rules in `CLAUDE.md` ask.
+- `frontend/drawing.js`: `createBoard` takes an optional `idPrefix`, so a second board's controls don't repeat the main board's ids. The party reuses Zainab's board this way, and never gives it a round, so it never saves over a player's own drawings.
+- `tests/party-rules.test.js` (new); `README.md`, `frontend/README.md`, `CLAUDE.md` updated.
+
+**What I checked**
+- 11 new Node tests for the rules (scoring, winners, ties, self-votes not counting, a phase ending without waiting for players who left, settings, rolling parts from the real `prompts.json`). All 69 Node tests pass.
+- Before building: a second board on the page draws, undoes, has no repeated ids, and left the saved drafts exactly as they were.
+- In a browser with a stand-in lobby (each player is the real page in its own frame; messages are passed between them as JSON with small random delays): a full 3-round game with Ana, Ben and Cal: same parts for everyone, Cal's blank canvas left out of voting, no buttons on your own drawing, a switched vote counted once, correct scores and tied places. Round 2: Cal left mid-drawing and the round went on without her (her points stayed); Dan joined mid-round, was told he'd join next round, and played round 3. Round 3: nobody pressed Done, and the drawings sent themselves when the timer hit 0:00, and voting ended by itself after 30 seconds. Final scores, "Back to lobby", and the host leaving mid-round (everyone sees "The host left" and the new host ends it). Layout measured at 1280 by 800 and 375 by 812: nothing overlaps or scrolls sideways; on a phone the drawing screen scrolls down to "Done drawing", like the main one.
+- On the live lobby, with two tabs of the local page as two players (lobby `CLCPM`, made for the test and deleted by the daily job): both got the same parts over Supabase Realtime, both drawings arrived (WebP, about 12 to 13 KB each), the votes counted on both sides, the results and "Ben wins!" final screen showed in both tabs, "Back to lobby" returned both to the lobby room, and both left cleanly. No errors in either tab's console.
+- Not checked: more than two real players, players on different computers or networks, Safari or Firefox, a real phone, and a close look at the screens (the preview pane was too small for useful screenshots, so the layout was checked by measuring).
+
+**Decisions**
+- 900 by 600 drawings: Claude drew test pictures on the real board and measured them at that size. A simple drawing was 21 KB as WebP, a busy one 49 KB, and one loaded with spray, watercolor, crayon and paint-bucket fills 113 KB (136 KB as JPEG), all under the 256 KB message limit even after the third added by sending it as text. PNG was too big (up to 636 KB). So it's WebP where the browser can make it, JPEG otherwise, with lower quality and then a smaller size only as a fallback.
+- Names are hidden while voting, so votes go to the drawing. Thumbs down don't take points away.
+- The parts are random each round (not the daily ones), so a party doesn't spoil today's.
+- A short "Your parts" screen replaces the slot machine from the main game, to keep the game's code separate from `index.html`.
+- If the host leaves, the game ends rather than passing a half-finished round to someone else.
+
+---
+
+## 38. The browser's Back button stays in the game (2026-11-05) — Zainab
 
 **What I asked for**
 - Pressing the browser's Back button while drawing left Scrawdle completely. It's the home-page navigation bug on the team's list, and I took it.
@@ -692,7 +790,7 @@ Artifact 4 is "For Someone Else," due Sunday, November 8. Our team of four (Kevi
 
 ---
 
-## 35. Color names, for colorblind players and screen readers (2026-11-05) — Zainab
+## 39. Color names, for colorblind players and screen readers (2026-11-05) — Zainab
 
 **What I asked for**
 - The color buttons only had codes like "#da382e" as their names, so a screen reader read the code out and nothing helped anyone who can't tell two colors apart. A colorblind color tooltip is on the team's list, and I took it.
@@ -711,7 +809,7 @@ Artifact 4 is "For Someone Else," due Sunday, November 8. Our team of four (Kevi
 
 ---
 
-## 36. My drawings: keeping drawings after their day ends (2026-11-05) — Zainab
+## 40. My drawings: keeping drawings after their day ends (2026-11-05) — Zainab
 
 **What I asked for**
 - The team asked me to add saving. Drawings already saved in the browser, but today's was thrown away when the day ended, and a Free play drawing was lost when a new set replaced it. I wanted players to keep what they make.
@@ -725,7 +823,7 @@ Artifact 4 is "For Someone Else," due Sunday, November 8. Our team of four (Kevi
 - `tests/my-drawings.test.js`: kept drawings sort oldest first, only the oldest go past the limit, and drafts are never dropped.
 
 **What I checked**
-- 47 logic tests pass. 21 checks in Chromium: the empty page, an in-progress drawing with Continue and Download, the downloaded PNG's size, a replaced Free play drawing, a day ending (by changing a saved drawing's date to an earlier day), Daily Free Play, switching Basic to Detailed, Start over, a blank round, Delete surviving a refresh, a phone-size page with nothing running off the side, and no page errors. The Back button and color checks from entries 34 and 35 still pass. I looked at the page on a laptop and a phone.
+- 47 logic tests pass. 21 checks in Chromium: the empty page, an in-progress drawing with Continue and Download, the downloaded PNG's size, a replaced Free play drawing, a day ending (by changing a saved drawing's date to an earlier day), Daily Free Play, switching Basic to Detailed, Start over, a blank round, Delete surviving a refresh, a phone-size page with nothing running off the side, and no page errors. The Back button and color checks from entries 38 and 39 still pass. I looked at the page on a laptop and a phone.
 - Not checked: Safari or Firefox, a real phone, or what happens when a browser runs out of storage.
 
 **Decisions**
@@ -733,7 +831,7 @@ Artifact 4 is "For Someone Else," due Sunday, November 8. Our team of four (Kevi
 
 ---
 
-## 37. The sample drawings are gone (2026-11-05) — Zainab
+## 41. The sample drawings are gone (2026-11-05) — Zainab
 
 **What I asked for**
 - The team didn't like the strawberry sample drawings, so I took them out.
@@ -745,7 +843,7 @@ Artifact 4 is "For Someone Else," due Sunday, November 8. Our team of four (Kevi
 - `README.md` and `frontend/README.md` say the same.
 
 **What I checked**
-- 47 logic tests pass. 12 checks in Chromium, with publishing connected and with it turned off: no sample drawings on the home or finish screen, My drawings still there, the gallery button only when publishing is on, Download and Replay still there, and no page errors. The checks from entries 34, 35, and 36 still pass.
+- 47 logic tests pass. 12 checks in Chromium, with publishing connected and with it turned off: no sample drawings on the home or finish screen, My drawings still there, the gallery button only when publishing is on, Download and Replay still there, and no page errors. The checks from entries 38, 39, and 40 still pass.
 
 **Decisions**
 - Left the leftover code for one more merge instead of editing lines Trenten is changing.
@@ -763,6 +861,7 @@ Artifact 4 is "For Someone Else," due Sunday, November 8. Our team of four (Kevi
 - **A layout that passed every check and was visibly broken (Claude's slip, entry 29):** the Lobby card's Join button overflowed the card whenever a saved drawing was showing, because an existing rule in `flow.css` forces every home button to full width with an id selector. All 65 browser checks passed anyway, because the checks tested values, not how it looked; only the screenshot showed it. Fixed by matching that rule's specificity, after printing what the browser actually computed instead of guessing.
 - **Weak or wrong tests of my own (Claude's slips, entry 29):** a lobby test compared two different random names (nonsense, fixed to check that every generated name survives cleaning); a cleanup test expected a file three folders deep to be found, which our code never makes (fixed the test, not the code); and one broken copy of the host ordering survived because the test's ids happened to be alphabetical in join order, so it passed with the join-time sort deleted (added a case where they differ). I also wrote "54 logic tests" in `CLAUDE.md` from memory and recounted to find 41.
 - **Four faults in my own checks while building the logs page, none in the page (Claude's slips, entry 31):** (1) A "break it on purpose" test changed a phrase that isn't in `log.md`, so nothing changed and it reported "survived"; I only noticed because it should have failed. (2) Another one read a file from `/tmp`, which Node on Windows resolves to a different folder than Git Bash does. (3) The browser script waited forever for a page-load event that never comes when only the `#hash` of a page changes, and hung until it was stopped. (4) A link check searched the whole page for "midi-companion", which the log text legitimately mentions twice, so it failed on correct output. Each was fixed in the check, and the page's real links were read directly to confirm they were right.
+- **A party round that would have stalled (Claude's slip, entry 37, caught by the stand-in lobby test):** the host counted everyone in the lobby as a voter, including a player who joined mid-round and never got the drawings, so the round would have waited the full 30 seconds plus grace for a vote that couldn't come. Fixed so only the round's players are waited for. Claude's helper in that test also first grabbed the real lobby's empty game area instead of the test's, which looked like a missing button until it checked what was on the page.
 - **The generator would have stopped on our own headings (found before running it, entry 31):** the copied script only accepted `## N. Title (date)`, and every heading here now ends with `— Name`. Reading the script first caught it; running it unchanged would have failed with "Unexpected section".
 - **Backticks in a shell command, the exact mistake our shared notes warn about (Claude's slip, entry 32):** a one-line script that edited four docs had backticks inside a single-quoted shell string, so the shell refused to run it. Nothing was changed, but it was a mistake the notes list by name. The edits were made with the editing tool instead. Separately, Claude's first check of the new link's colour failed because it expected the link to match the "Explore sample drawings" button, which turns out to have its own softer grey set in `flow.css`; the link was changed to match.
 

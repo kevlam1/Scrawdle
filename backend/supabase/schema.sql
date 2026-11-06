@@ -57,6 +57,64 @@ create policy "public can upload drawings"
    to anon
    with check (bucket_id = 'drawings');
 
+-- Votes: thumbs up / thumbs down on published drawings. Same objects as updates/002-votes.sql;
+-- the reasoning is in the comments there. A drawing with at least one thumbs up has won (that rule
+-- lives in frontend/votes.js). RLS is on with no policies, like lobbies below: visitors go through
+-- cast_vote and vote_counts, so nobody can read voter ids or vote in someone else's name.
+create table if not exists public.votes (
+  drawing_id uuid not null references public.drawings (id) on delete cascade,
+  voter_id uuid not null,
+  value smallint not null check (value in (1, -1)), -- 1 = thumbs up, -1 = thumbs down
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  primary key (drawing_id, voter_id)
+);
+alter table public.votes enable row level security;
+
+create or replace function public.cast_vote(target_drawing uuid, voter uuid, vote int)
+returns void
+language plpgsql
+security definer
+set search_path = ''
+as $$
+begin
+  if voter is null or vote is null or vote not in (1, 0, -1) then
+    raise exception 'a vote is 1 (thumbs up), -1 (thumbs down) or 0 (clear)';
+  end if;
+  if not exists (
+    select 1 from public.drawings
+    where id = target_drawing and not hidden and day between current_date - 1 and current_date + 1
+  ) then
+    raise exception 'that drawing is not open for votes';
+  end if;
+  if vote = 0 then
+    delete from public.votes where drawing_id = target_drawing and voter_id = voter;
+  else
+    insert into public.votes (drawing_id, voter_id, value) values (target_drawing, voter, vote)
+    on conflict (drawing_id, voter_id) do update set value = excluded.value, updated_at = now();
+  end if;
+end;
+$$;
+
+create or replace function public.vote_counts(drawing_ids uuid[], voter uuid)
+returns table (drawing_id uuid, up int, down int, my_vote int)
+language sql
+security definer
+set search_path = ''
+stable
+as $$
+  select d.id,
+         (count(*) filter (where v.value = 1))::int,
+         (count(*) filter (where v.value = -1))::int,
+         coalesce(max(v.value) filter (where v.voter_id = voter), 0)::int
+  from unnest(drawing_ids) as d(id)
+  left join public.votes v on v.drawing_id = d.id
+  group by d.id;
+$$;
+
+grant execute on function public.cast_vote(uuid, uuid, int) to anon;
+grant execute on function public.vote_counts(uuid[], uuid) to anon;
+
 -- Lobbies: private rooms joined by a 5-letter code (https://scrawdle.vercel.app/?ABCDE).
 -- The table only records that a code exists, so a mistyped code can be told apart from a real
 -- lobby. RLS is on with NO policies, so the public key can't read or write the table directly
