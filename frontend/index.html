@@ -4,6 +4,8 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Scrawdle</title>
+  <!-- Dark mode is set before anything draws, so the page doesn't flash light first. -->
+  <script>try { if (localStorage.getItem("scrawdle-theme") === "dark") document.documentElement.dataset.theme = "dark"; } catch (err) {}</script>
   <link rel="preload" href="fonts/patrick-hand.woff2" as="font" type="font/woff2" crossorigin />
   <link rel="preload" href="fonts/gochi-hand.woff2" as="font" type="font/woff2" crossorigin />
   <link rel="stylesheet" href="drawing.css" />
@@ -12,6 +14,7 @@
   <link rel="stylesheet" href="lobby.css" />
   <link rel="stylesheet" href="party.css" />
   <link rel="stylesheet" href="sketchbook.css" />
+  <link rel="stylesheet" href="theme.css" />
 </head>
 <body>
   <template id="wordmark">
@@ -37,7 +40,7 @@
   </dialog>
 
   <main id="setup">
-    <header class="app-header"><span class="wm-slot"></span><button class="help-open quiet" type="button">How to play</button></header>
+    <header class="app-header"><span class="wm-slot"></span><div class="header-actions"><button class="quiet" id="theme-toggle" type="button">Dark mode</button><button class="help-open quiet" type="button">How to play</button></div></header>
     <div class="home-body">
       <p class="eyebrow" id="home-date"></p>
       <h1>Ready to draw?</h1>
@@ -146,6 +149,22 @@
     // The finished PNG is lettered on a canvas, so these fonts must be ready before anyone gets there.
     document.fonts.load('32px "Patrick Hand"');
     document.fonts.load('36px "Gochi Hand"');
+
+    /* ---------- Light and dark mode ---------- */
+    // Light unless the player picks dark. The choice is remembered in this browser (see theme.css).
+    const THEME_KEY = "scrawdle-theme";
+    const themeBtn = $("theme-toggle");
+    function showTheme() {
+      themeBtn.textContent = document.documentElement.dataset.theme === "dark" ? "Light mode" : "Dark mode";
+    }
+    themeBtn.addEventListener("click", () => {
+      const dark = document.documentElement.dataset.theme !== "dark";
+      if (dark) document.documentElement.dataset.theme = "dark";
+      else delete document.documentElement.dataset.theme;
+      try { localStorage.setItem(THEME_KEY, dark ? "dark" : "light"); } catch (err) { /* private browsing: it just isn't remembered */ }
+      showTheme();
+    });
+    showTheme();
 
     /* ---------- Prompt data ---------- */
     let promptData = null;

@@ -583,7 +583,7 @@
         <h1>Scrawdle: build log</h1>
         <p class="intro">
           A daily drawing game, built by a team of four with Claude Code: a new set of parts to draw each day, a gallery of what
-          other people drew, and private lobbies. Here are the 42 entries of our log with one sentence on each and the name of
+          other people drew, and private lobbies. Here are the 43 entries of our log with one sentence on each and the name of
           whoever wrote it. Open an entry to read everything they wrote for it.
         </p>
         <ul class="facts" aria-label="Project facts">
@@ -673,7 +673,7 @@
   </ul></div>
 </div>
 <div class="toc-group is-open">
-  <button class="toc-head" type="button" aria-expanded="true">Thursday 5 November <span class="count">9</span></button>
+  <button class="toc-head" type="button" aria-expanded="true">Thursday 5 November <span class="count">10</span></button>
   <div class="toc-list-wrap"><ul class="toc-list">
     <li><a href="#entry-34"><span class="n">34</span><span>Fixed lag in the line tool and the marker and watercolor brushes</span></a></li>
     <li><a href="#entry-35"><span class="n">35</span><span>Votes replace the self-judged win</span></a></li>
@@ -684,6 +684,7 @@
     <li><a href="#entry-40"><span class="n">40</span><span>My drawings: keeping drawings after their day ends</span></a></li>
     <li><a href="#entry-41"><span class="n">41</span><span>The sample drawings are gone</span></a></li>
     <li><a href="#entry-42"><span class="n">42</span><span>Old Free play drawings move to My drawings</span></a></li>
+    <li><a href="#entry-43"><span class="n">43</span><span>Dark mode</span></a></li>
   </ul></div>
 </div>
 <div class="toc-group is-open">
@@ -1418,6 +1419,23 @@
 <ul><li>74 logic tests pass. 25 My drawings checks in Chromium pass, including new ones: today's Free play is offered to continue, and one from an earlier day leaves the home screen and shows in My drawings with its date. The Back button checks still pass.</li></ul>
 <p class="sub"><strong>Decisions</strong></p>
 <ul><li>Someone mid-way through a Free play drawing at midnight can't keep drawing on it the next day. That matches the daily drawings, and nothing is lost.</li></ul>
+  </div></div></div>
+</article>
+<article class="entry" id="entry-43">
+  <h3 class="entry-head"><button type="button" aria-expanded="false" aria-controls="entry-43-body">
+    <span class="num">43</span>
+    <span><span class="title">Dark mode<span class="by">by Zainab</span></span><span class="sum">Zainab added an optional dark mode, following Material Design and Apple guidance and checked for contrast on every screen, with the canvas and drawings kept white.</span></span>
+    <span class="caret" aria-hidden="true"></span>
+  </button></h3>
+  <div class="body" id="entry-43-body"><div class="body-in"><div class="body-pad">
+<p class="sub"><strong>What I asked for</strong></p>
+<ul><li>Light and dark settings are on the team's list, and I took them. I asked for the colors to follow what designers recommend for dark mode, not guesses.</li></ul>
+<p class="sub"><strong>What changed</strong></p>
+<ul><li><code>frontend/theme.css</code>: dark mode, applied only when the page has <code>data-theme=&quot;dark&quot;</code>, so the light look is the other style files exactly as they were. It changes colors only. The canvas, every drawing, the finished picture, and the drawings in the gallery and My drawings stay white, so a drawing looks the same in both modes.</li><li><code>frontend/index.html</code>: a &quot;Dark mode&quot; button beside &quot;How to play&quot; on the home screen (it says &quot;Light mode&quot; while dark is on). The choice is remembered in this browser and set before the page draws, so it doesn't flash light first. Light is the default, so nobody's game changes unless they pick dark.</li><li>The colors follow Material Design's dark theme and Apple's dark mode guidance: a warm dark gray instead of pure black (Material's own is #121212), raised cards a little lighter than the page, off-white text instead of pure white, a calmer yellow, and WCAG AA contrast (4.5:1 for text, 3:1 for the edges of buttons and text boxes). Yellow buttons keep dark text. Brush previews sit on a strip of white so they show in any color, and the color dots have a light ring so black, dark blue, and purple don't disappear.</li></ul>
+<p class="sub"><strong>What I checked</strong></p>
+<ul><li>74 logic tests pass. 60 checks in Chromium at 1440x900 and 390x844: on the home, help, reveal, drawing, brush, finish, gallery, and My drawings screens in dark mode, every piece of text measured at least 4.5:1 (3:1 for large text) and every visible button and text-box edge at least 3:1; the canvas stays white; nothing runs off the side. Light mode, compared pixel by pixel with the version before this change, is identical except for the new button. The choice is remembered after a refresh, in both directions. I looked at each dark screen.</li><li>The automatic checks caught problems I then fixed: two of my style rules were accidentally stronger than the ones meant to win, which turned the yellow buttons gray with dark text and kept some grey text too faint; black, dark blue, and purple color dots almost disappeared; and button and text-box edges were too faint. Two checks of mine were also too strict at first (faint anti-aliasing in a screenshot comparison, and buttons that have no border at all, which are known by their words and pictures).</li><li>Not checked: the lobby room and Scrawdle Party screens in dark mode, because opening them creates a real lobby in Kevin's project; the /logs page, which has its own style and stays light; Safari, Firefox, and real phones.</li></ul>
+<p class="sub"><strong>Decisions</strong></p>
+<ul><li>Light by default instead of following the computer's own dark setting, so the team doesn't see the game change without choosing it. Following the system setting is a one-line change if the team wants it.</li><li>Kept in its own file instead of editing the existing style files, so the light look can't change by accident.</li></ul>
   </div></div></div>
 </article>
       </section>

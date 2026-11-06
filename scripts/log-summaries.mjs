@@ -48,6 +48,7 @@ export const SUMMARIES = {
   40: 'Zainab added My drawings, which keeps a player\'s drawings in their browser after the day ends or a new round replaces them, with Download and Delete for each.',
   41: "Zainab removed the strawberry sample drawings from the home and finish screens because the team didn't like them, leaving their unused code to clear out after Trenten's gallery changes merge.",
   42: 'Zainab made an old Free play drawing move to My drawings when the day changes, so the home screen only offers today\'s drawings.',
+  43: 'Zainab added an optional dark mode, following Material Design and Apple guidance and checked for contrast on every screen, with the canvas and drawings kept white.',
   misread: 'Where the AI got something wrong or we had to correct course, and what happened next.',
   decisions: 'What we decided and what we dropped along the way.',
 }

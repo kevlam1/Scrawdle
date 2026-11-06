@@ -867,6 +867,27 @@ Artifact 4 is "For Someone Else," due Sunday, November 8. Our team of four (Kevi
 
 ---
 
+## 43. Dark mode (2026-11-05) — Zainab
+
+**What I asked for**
+- Light and dark settings are on the team's list, and I took them. I asked for the colors to follow what designers recommend for dark mode, not guesses.
+
+**What changed**
+- `frontend/theme.css`: dark mode, applied only when the page has `data-theme="dark"`, so the light look is the other style files exactly as they were. It changes colors only. The canvas, every drawing, the finished picture, and the drawings in the gallery and My drawings stay white, so a drawing looks the same in both modes.
+- `frontend/index.html`: a "Dark mode" button beside "How to play" on the home screen (it says "Light mode" while dark is on). The choice is remembered in this browser and set before the page draws, so it doesn't flash light first. Light is the default, so nobody's game changes unless they pick dark.
+- The colors follow Material Design's dark theme and Apple's dark mode guidance: a warm dark gray instead of pure black (Material's own is #121212), raised cards a little lighter than the page, off-white text instead of pure white, a calmer yellow, and WCAG AA contrast (4.5:1 for text, 3:1 for the edges of buttons and text boxes). Yellow buttons keep dark text. Brush previews sit on a strip of white so they show in any color, and the color dots have a light ring so black, dark blue, and purple don't disappear.
+
+**What I checked**
+- 74 logic tests pass. 60 checks in Chromium at 1440x900 and 390x844: on the home, help, reveal, drawing, brush, finish, gallery, and My drawings screens in dark mode, every piece of text measured at least 4.5:1 (3:1 for large text) and every visible button and text-box edge at least 3:1; the canvas stays white; nothing runs off the side. Light mode, compared pixel by pixel with the version before this change, is identical except for the new button. The choice is remembered after a refresh, in both directions. I looked at each dark screen.
+- The automatic checks caught problems I then fixed: two of my style rules were accidentally stronger than the ones meant to win, which turned the yellow buttons gray with dark text and kept some grey text too faint; black, dark blue, and purple color dots almost disappeared; and button and text-box edges were too faint. Two checks of mine were also too strict at first (faint anti-aliasing in a screenshot comparison, and buttons that have no border at all, which are known by their words and pictures).
+- Not checked: the lobby room and Scrawdle Party screens in dark mode, because opening them creates a real lobby in Kevin's project; the /logs page, which has its own style and stays light; Safari, Firefox, and real phones.
+
+**Decisions**
+- Light by default instead of following the computer's own dark setting, so the team doesn't see the game change without choosing it. Following the system setting is a one-line change if the team wants it.
+- Kept in its own file instead of editing the existing style files, so the light look can't change by accident.
+
+---
+
 ## Where AI misread me, or I had to correct course
 
 - Claude's first version of the start page put "What is this?" in the top right, where it collided with the "New set" button on the game screen. I caught it by running the page; Claude hadn't opened it in a browser.

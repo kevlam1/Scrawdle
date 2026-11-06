@@ -1,0 +1,93 @@
+/* Dark mode, switched on from the home screen and remembered in this browser (see index.html).
+ * Only colors change. The canvas, every drawing, and the downloaded picture stay white, so a drawing
+ * looks the same in both modes. Light mode is the other style files exactly as they are; this file
+ * changes nothing until <html> has data-theme="dark". */
+html[data-theme="dark"] {
+  color-scheme: dark;
+  --paper: #1f1e1b;
+  --cream: #2a2824;
+  --tan: #3b3730;
+  --ink: #ede7db;
+  --ink-soft: #b9b1a2;
+  --yellow: #e3b53c;
+  --yellow-dark: #cfa12d;
+  --sage: #2d3b2a;
+  --sage-ink: #b8d5ad;
+  --alert: #4a2c24;
+  --alert-ink: #f3b9a7;
+  --line: 1px solid #4b463e;
+  --raise: 0 2px 5px #00000040;
+  --grain: none;
+  --surface: #292723;     /* cards, trays, panels */
+  --picked: #463c22;      /* a selected tool, brush, or your own card */
+  --picked-edge: #a8842a;
+  --soft-text: #aaa292;
+  --hover: rgba(255, 250, 240, .08);
+}
+
+/* Yellow buttons keep dark text, which reads better on yellow than the light text used elsewhere. */
+html[data-theme="dark"] .btn.primary,
+html[data-theme="dark"] .btn.primary:hover:not(:disabled) { color: #1f1e1b; }
+
+/* Hover and pressed shades were dark-on-light; they become light-on-dark. */
+html[data-theme="dark"] :is(.quiet, dialog .close, .tool:not(:disabled), .size-dot:not(:disabled)):hover { background: var(--hover); }
+html[data-theme="dark"] .btn:active:not(:disabled) { box-shadow: 0 1px 0 #00000080; }
+html[data-theme="dark"] dialog::backdrop { background: rgba(0, 0, 0, .55); }
+html[data-theme="dark"] .btn:disabled { color: #8a8478; }
+html[data-theme="dark"] .tool:disabled { color: #6f6a61; }
+
+/* Surfaces that were near-white. */
+html[data-theme="dark"] #brush-settings { background: var(--surface); }
+html[data-theme="dark"] :is(.btn, .home-choice, .reel, .tray, .history-actions .tool, .brush-panel,
+  .brush-choice, .gallery-grid li, .vote, .finish-art, .lobby-join input, .lobby-name input, .lobby-link,
+  .lobby-players li, .lobby-games li, .party-players li, .party-choice .chip, .party-timer, .party-settings,
+  .party-mine, .party-grid li, .party-scores li) { background: var(--surface); }
+html[data-theme="dark"] .vote:hover { background: var(--tan); }
+/* Listed after the surfaces, with at least their weight, so yellow buttons stay yellow. */
+html[data-theme="dark"] .btn.primary.primary { background: var(--yellow); }
+html[data-theme="dark"] .btn.primary.primary:hover:not(:disabled) { background: var(--yellow-dark); }
+
+/* Selected things, and the player's own cards, were pale yellow. */
+html[data-theme="dark"] :is(.tool[aria-pressed="true"], .tool[aria-pressed="true"]:hover, .brush-choice[aria-pressed="true"],
+  .party-choice .chip[aria-pressed="true"], .gallery-grid li.mine, .party-grid li.mine, .party-scores li.me, .continue, .brush-toggle) {
+  background: var(--picked); border-color: var(--picked-edge);
+}
+html[data-theme="dark"] .tool[aria-pressed="true"] { box-shadow: inset 0 0 0 2px #5c4e28; }
+html[data-theme="dark"] :is(.brush-choice[aria-pressed="true"], .party-choice .chip[aria-pressed="true"]) { box-shadow: inset 0 0 0 1px var(--picked-edge); }
+
+/* Lines and borders. */
+html[data-theme="dark"] :is(.round-btn, .brush-choice, .party-board) { border-color: #4b463e; }
+html[data-theme="dark"] :is(.tray-colors, .tray-sizes) { border-color: #4b463e; }
+html[data-theme="dark"] .tray-group { border-left-color: #4b463e; }
+html[data-theme="dark"] #board { border-color: #4b463e; box-shadow: none; }
+
+/* Grey text. */
+html[data-theme="dark"] :is(.eyebrow, .publish-disclosure, .sample-tag, .reel-label, .gallery-grid p, .home-storage, a.quiet) { color: var(--soft-text); }
+html[data-theme="dark"] #prompt-label, html[data-theme="dark"] #my-drawings { color: var(--soft-text); }
+html[data-theme="dark"] .save-status { color: var(--soft-text) !important; }
+html[data-theme="dark"] .save-status[data-state="saved"] { color: var(--sage-ink) !important; }
+html[data-theme="dark"] .part small { color: var(--soft-text); }
+
+/* Color swatches sit in a ring the color of the tray, and the chosen one gets a light outline. */
+/* The ring is bright enough that black, dark blue, and purple still stand out from the dark tray. */
+html[data-theme="dark"] .swatch { border-color: var(--surface); box-shadow: inset 0 0 0 1.5px rgba(255, 250, 240, .6); }
+html[data-theme="dark"] .swatch[aria-pressed="true"] { outline-color: var(--ink); box-shadow: inset 0 0 0 1.5px rgba(255, 250, 240, .6); }
+html[data-theme="dark"] :is(#tool-size, #party-tool-size) { accent-color: var(--yellow); }
+
+/* The canvas and drawings stay white in dark mode, so drawings look the same. */
+html[data-theme="dark"] :is(#board, .party-board, .gallery-grid img, .continue img, .finish-art img, .finish-art canvas, .party-grid img, .party-missing) { background: #fff; }
+
+/* The switch on the home screen sits beside "How to play". */
+.header-actions { display: flex; align-items: center; gap: 4px; }
+
+/* Grey text on your own cards needs to be a little lighter to read on the darker yellow. */
+html[data-theme="dark"] :is(.gallery-grid li.mine, .party-grid li.mine, .party-scores li.me) :is(p, small) { color: #d3cbbc; }
+
+/* Brush previews are drawn in the chosen color, so they sit on a strip of white paper to stay visible,
+ * and the dark parts of the tool pictures (the pen, the bucket's rim) get a faint light edge. */
+html[data-theme="dark"] .brush-choice canvas { background: #fff; border-radius: 4px; }
+html[data-theme="dark"] .art-tool { filter: drop-shadow(0 0 1px rgba(255, 250, 240, .55)); }
+
+/* Edges of things you click or type in reach at least 3:1 against what's around them (WCAG 1.4.11),
+ * so a text box or a plain button is easy to find. Cards and dividers stay soft. */
+html[data-theme="dark"] :is(.btn:not(.primary), input:not([type="range"]):not([type="color"]), select, .history-actions .tool, .vote, .round-btn, .brush-choice:not([aria-pressed="true"])) { border-color: #857d70; }
