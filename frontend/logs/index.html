@@ -583,7 +583,7 @@
         <h1>Scrawdle: build log</h1>
         <p class="intro">
           A daily drawing game, built by a team of four with Claude Code: a new set of parts to draw each day, a gallery of what
-          other people drew, and private lobbies. Here are the 34 entries of our log with one sentence on each and the name of
+          other people drew, and private lobbies. Here are the 35 entries of our log with one sentence on each and the name of
           whoever wrote it. Open an entry to read everything they wrote for it.
         </p>
         <ul class="facts" aria-label="Project facts">
@@ -673,9 +673,10 @@
   </ul></div>
 </div>
 <div class="toc-group is-open">
-  <button class="toc-head" type="button" aria-expanded="true">Thursday 5 November <span class="count">1</span></button>
+  <button class="toc-head" type="button" aria-expanded="true">Thursday 5 November <span class="count">2</span></button>
   <div class="toc-list-wrap"><ul class="toc-list">
     <li><a href="#entry-34"><span class="n">34</span><span>The browser's Back button stays in the game</span></a></li>
+    <li><a href="#entry-35"><span class="n">35</span><span>Color names, for colorblind players and screen readers</span></a></li>
   </ul></div>
 </div>
 <div class="toc-group is-open">
@@ -1274,6 +1275,23 @@
 <ul><li>All 42 logic tests pass. 29 checks in Chromium: Back and Forward from Basic, Daily Free Play, and Free play; Back during the Detailed reveal; Back from the finish screen, the gallery, and help; the in-page Back to home buttons; after a refresh; after Start over; with two saved drawings; and no page errors. One check failed at first because it compared a label without noticing the page shows it in capitals. The page was right.</li><li>Not checked: Safari, Firefox, a phone's back gesture, or the lobby, because joining one would create a real lobby in Kevin's project.</li></ul>
 <p class="sub"><strong>Decisions</strong></p>
 <ul><li>Back never throws a drawing away. It stays saved and shows on the home screen.</li></ul>
+  </div></div></div>
+</article>
+<article class="entry" id="entry-35">
+  <h3 class="entry-head"><button type="button" aria-expanded="false" aria-controls="entry-35-body">
+    <span class="num">35</span>
+    <span><span class="title">Color names, for colorblind players and screen readers<span class="by">by Zainab</span></span><span class="sum">Zainab gave the 12 colors plain names, shown on hover, read by screen readers, and written beside the tool name for touch screens, so nobody has to tell colors apart by sight.</span></span>
+    <span class="caret" aria-hidden="true"></span>
+  </button></h3>
+  <div class="body" id="entry-35-body"><div class="body-in"><div class="body-pad">
+<p class="sub"><strong>What I asked for</strong></p>
+<ul><li>The color buttons only had codes like &quot;#da382e&quot; as their names, so a screen reader read the code out and nothing helped anyone who can't tell two colors apart. A colorblind color tooltip is on the team's list, and I took it.</li></ul>
+<p class="sub"><strong>What changed</strong></p>
+<ul><li><code>frontend/drawing.js</code>: each of the 12 colors has a plain name (Black, Gray, White, Red, Orange, Yellow, Green, Teal, Light blue, Dark blue, Purple, Pink). Hovering shows it, and screen readers read it instead of the code.</li><li>Hovering doesn't work on touch screens, so the settings panel's title now names the color too: &quot;Pen · Red&quot;, &quot;Brushes · Red&quot;, &quot;Bucket · Red&quot;. The eraser just says &quot;Eraser&quot;. A color from the color wheel says &quot;Custom color&quot;.</li><li><code>tests/colors.test.js</code>: every color has a name, no two share one, and no name is a code.</li></ul>
+<p class="sub"><strong>What I checked</strong></p>
+<ul><li>44 logic tests pass. 23 checks in Chromium: the names on hover and for screen readers match, the title follows the tool and color, the eraser and custom color, and that the title fits on one line without overlapping the size at 1440x900, 1280x800, 390x844, and 320x740. I looked at the panel at the widest and narrowest sizes.</li><li>Not checked with a real screen reader, or by a colorblind player.</li></ul>
+<p class="sub"><strong>Decisions</strong></p>
+<ul><li>The names are short, everyday words rather than exact shade names, so they're quick to read.</li></ul>
   </div></div></div>
 </article>
       </section>

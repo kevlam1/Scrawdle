@@ -15,6 +15,13 @@
   const SCALE = 2;
   const HISTORY_BYTES = 96 * 1024 * 1024;
   const COLORS = ["#292b2c", "#99938a", "#ffffff", "#da382e", "#e67732", "#f4c735", "#3f854d", "#198d8c", "#78b4d9", "#2c507e", "#855087", "#d984ab"];
+  // Names for the colors, so nobody has to tell them apart by sight: shown on hover, read by screen
+  // readers, and shown beside the tool's name for touch screens, where hovering isn't possible.
+  const COLOR_NAMES = {
+    "#292b2c": "Black", "#99938a": "Gray", "#ffffff": "White", "#da382e": "Red", "#e67732": "Orange", "#f4c735": "Yellow",
+    "#3f854d": "Green", "#198d8c": "Teal", "#78b4d9": "Light blue", "#2c507e": "Dark blue", "#855087": "Purple", "#d984ab": "Pink",
+  };
+  const colorName = (hex) => COLOR_NAMES[hex] || "Custom color";
   const TOOLS = [
     { id: "pen", label: "Pen", size: 3 },
     { id: "pencil", label: "Pencil", size: 4 },
@@ -246,10 +253,10 @@
     const toolButtons = {};
     for (const t of TOOLS) toolButtons[t.id] = trayButton(t.id, t.label, () => setTool(t.id));
     const swatches = COLORS.map((c) => {
-      const b = el("button", { type: "button", className: "swatch", title: c, onclick: () => setColor(c) });
+      const b = el("button", { type: "button", className: "swatch", title: colorName(c), onclick: () => setColor(c) });
       b.style.setProperty("--swatch", c);
       b.dataset.color = c;
-      b.setAttribute("aria-label", `Color ${c}`);
+      b.setAttribute("aria-label", colorName(c));
       return b;
     });
     const picker = el("input", { type: "color", className: "picker", value: color, title: "Pick any color", oninput: (e) => setColor(e.target.value) });
@@ -337,7 +344,8 @@
       sizeInput.disabled = noSize;
       for (const b of presetButtons) b.disabled = noSize;
       sizeGroup.classList.toggle("off", noSize);
-      settingsTitle.textContent = tool === "brush" ? "Brushes" : TOOLS.find(t => t.id === tool).label;
+      const toolName = tool === "brush" ? "Brushes" : TOOLS.find(t => t.id === tool).label;
+      settingsTitle.textContent = tool === "eraser" ? toolName : `${toolName} · ${colorName(color)}`;
       brushLabel.hidden = tool !== "brush";
       brushControls.hidden = tool !== "brush";
       brushToggle.textContent = `${BRUSHES.find(b => b.id === brushKind).label} · brush settings`;
@@ -1122,7 +1130,7 @@
     };
   }
 
-  const api = { floodFill, History, dayKey, brushWidthFactor, slotOf };
+  const api = { floodFill, History, dayKey, brushWidthFactor, slotOf, COLORS, COLOR_NAMES };
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   else root.ScrawdleDrawing = { ...api, createBoard, createFinishScreen, HISTORY_BYTES };
 })(typeof window !== "undefined" ? window : globalThis);

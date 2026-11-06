@@ -692,6 +692,25 @@ Artifact 4 is "For Someone Else," due Sunday, November 8. Our team of four (Kevi
 
 ---
 
+## 35. Color names, for colorblind players and screen readers (2026-11-05) — Zainab
+
+**What I asked for**
+- The color buttons only had codes like "#da382e" as their names, so a screen reader read the code out and nothing helped anyone who can't tell two colors apart. A colorblind color tooltip is on the team's list, and I took it.
+
+**What changed**
+- `frontend/drawing.js`: each of the 12 colors has a plain name (Black, Gray, White, Red, Orange, Yellow, Green, Teal, Light blue, Dark blue, Purple, Pink). Hovering shows it, and screen readers read it instead of the code.
+- Hovering doesn't work on touch screens, so the settings panel's title now names the color too: "Pen · Red", "Brushes · Red", "Bucket · Red". The eraser just says "Eraser". A color from the color wheel says "Custom color".
+- `tests/colors.test.js`: every color has a name, no two share one, and no name is a code.
+
+**What I checked**
+- 44 logic tests pass. 23 checks in Chromium: the names on hover and for screen readers match, the title follows the tool and color, the eraser and custom color, and that the title fits on one line without overlapping the size at 1440x900, 1280x800, 390x844, and 320x740. I looked at the panel at the widest and narrowest sizes.
+- Not checked with a real screen reader, or by a colorblind player.
+
+**Decisions**
+- The names are short, everyday words rather than exact shade names, so they're quick to read.
+
+---
+
 ## Where AI misread me, or I had to correct course
 
 - Claude's first version of the start page put "What is this?" in the top right, where it collided with the "New set" button on the game screen. I caught it by running the page; Claude hadn't opened it in a browser.
