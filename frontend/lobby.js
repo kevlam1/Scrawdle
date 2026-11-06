@@ -189,8 +189,14 @@
       <h1 id="lobby-code" class="lobby-code"></h1>
       <div class="lobby-share">
         <input class="lobby-link" readonly aria-label="Invite link">
-        <button type="button" class="btn primary" data-act="invite" hidden>Invite friends</button>
-        <button type="button" class="btn primary" data-act="copy">Copy link</button>
+        <button type="button" class="btn primary" data-act="invite" aria-expanded="false">Invite friends</button>
+        <button type="button" class="btn" data-act="copy">Copy link</button>
+      </div>
+      <div class="lobby-invite-menu" hidden>
+        <a class="btn" data-invite="sms">Text message</a>
+        <a class="btn" data-invite="whatsapp" target="_blank" rel="noopener">WhatsApp</a>
+        <a class="btn" data-invite="email">Email</a>
+        <button type="button" class="btn" data-invite="copy">Copy invite</button>
       </div>
       <p class="lobby-status" role="status"></p>
       <h2>Players <span class="lobby-count"></span></h2>
@@ -492,19 +498,43 @@
     }
   });
   linkEl.addEventListener("focus", () => linkEl.select());
-  // Where the browser has a share menu (phones, and some laptop browsers), Invite friends opens it with
-  // the invite filled in, so a friend can be picked in Messages, WhatsApp, and so on without copying
-  // anything. No phone numbers ever reach the game. Elsewhere it stays hidden and Copy link does the job.
+  // Invite friends, with the invite already written. Where the browser has a share menu (phones, and
+  // some laptop browsers), it opens that, so a friend can be picked in Messages, WhatsApp, and so on.
+  // Elsewhere it opens a small menu of its own: a text message, WhatsApp, email, or copying the invite.
+  // No phone numbers or addresses ever reach the game; the player's own apps handle who it goes to.
   const inviteBtn = $(room, '[data-act="invite"]');
-  if (typeof navigator.share === "function") {
-    inviteBtn.hidden = false;
-    copyBtn.classList.remove("primary");
-    inviteBtn.addEventListener("click", async () => {
+  const inviteMenu = $(room, ".lobby-invite-menu");
+  const inviteText = () => `Join my Scrawdle lobby! ${linkEl.value}`; // the link is enough; no code to type
+  const showInviteMenu = (open) => {
+    inviteMenu.hidden = !open;
+    inviteBtn.setAttribute("aria-expanded", String(open));
+  };
+  inviteBtn.addEventListener("click", async () => {
+    if (typeof navigator.share === "function") {
       try {
-        await navigator.share({ title: "Join my Scrawdle lobby", text: `Join my Scrawdle lobby! Code ${lobby.code}`, url: linkEl.value });
-      } catch (err) { /* they closed the menu; the link and Copy link are still right there */ }
-    });
-  }
+        await navigator.share({ title: "Join my Scrawdle lobby", text: "Join my Scrawdle lobby!", url: linkEl.value });
+        return;
+      } catch (err) {
+        if (err.name === "AbortError") return; // they closed the share menu
+      }
+    }
+    const text = encodeURIComponent(inviteText());
+    $(inviteMenu, '[data-invite="sms"]').href = `sms:?&body=${text}`; // "?&" works on both iPhone and Android
+    $(inviteMenu, '[data-invite="whatsapp"]').href = `https://wa.me/?text=${text}`;
+    $(inviteMenu, '[data-invite="email"]').href = `mailto:?subject=${encodeURIComponent("Join my Scrawdle lobby")}&body=${text}`;
+    showInviteMenu(inviteMenu.hidden);
+  });
+  const copyInviteBtn = $(inviteMenu, '[data-invite="copy"]');
+  copyInviteBtn.addEventListener("click", async () => {
+    try {
+      await navigator.clipboard.writeText(inviteText());
+      copyInviteBtn.textContent = "Copied!";
+    } catch (err) {
+      linkEl.select();
+      copyInviteBtn.textContent = "Press Ctrl+C";
+    }
+  });
+  room.addEventListener("close", () => { showInviteMenu(false); copyInviteBtn.textContent = "Copy invite"; });
   nameEl.addEventListener("change", () => {
     const name = cleanName(nameEl.value) || me.name;
     nameEl.value = name;

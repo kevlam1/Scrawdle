@@ -1018,6 +1018,21 @@ Artifact 4 is "For Someone Else," due Sunday, November 8. Our team of four (Kevi
 
 ---
 
+## 52. Invite friends everywhere, with the message already written (2026-11-05) — Zainab
+
+**What I asked for**
+- Inviting friends should never mean copying and pasting. On my laptop, Invite friends (entry 46) didn't show at all, because it only appeared where the browser has a share menu, so it looked like it had never been built. I also didn't want the invite to be about the code.
+
+**What changed**
+- `frontend/lobby.js` (Kevin's file, with the team's OK): Invite friends always shows and is the main button. Where the browser has a share menu, it opens that, as before. Elsewhere, or if the share menu fails, it opens a small menu: Text message (opens Messages with the invite written, so you just pick who it goes to), WhatsApp, Email (with a subject), and Copy invite. The invite is now "Join my Scrawdle lobby!" and the link, with no code to type. The menu closes when the lobby closes. Copy link stays.
+- `frontend/lobby.css`: the menu, four across on a laptop and two on a phone.
+
+**What I checked**
+- 77 logic tests pass. 16 checks in Chromium with a stand-in for Supabase, so no real lobby was created: the button shows without a share menu, the menu opens and closes, each option's message is exactly "Join my Scrawdle lobby!" and the link, Copy invite and Copy link copy the right things, a new lobby starts with the menu closed, a phone with a share menu opens that instead, closing the share menu does nothing, a failed share menu falls back to ours, and phone and dark-mode layouts.
+- Not checked: that Messages, WhatsApp, and email apps open on a real phone or Mac. The links use their standard formats.
+
+---
+
 ## Where AI misread me, or I had to correct course
 
 - Claude's first version of the start page put "What is this?" in the top right, where it collided with the "New set" button on the game screen. I caught it by running the page; Claude hadn't opened it in a browser.

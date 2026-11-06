@@ -583,7 +583,7 @@
         <h1>Scrawdle: build log</h1>
         <p class="intro">
           A daily drawing game, built by a team of four with Claude Code: a new set of parts to draw each day, a gallery of what
-          other people drew, and private lobbies. Here are the 51 entries of our log with one sentence on each and the name of
+          other people drew, and private lobbies. Here are the 52 entries of our log with one sentence on each and the name of
           whoever wrote it. Open an entry to read everything they wrote for it.
         </p>
         <ul class="facts" aria-label="Project facts">
@@ -673,7 +673,7 @@
   </ul></div>
 </div>
 <div class="toc-group is-open">
-  <button class="toc-head" type="button" aria-expanded="true">Thursday 5 November <span class="count">18</span></button>
+  <button class="toc-head" type="button" aria-expanded="true">Thursday 5 November <span class="count">19</span></button>
   <div class="toc-list-wrap"><ul class="toc-list">
     <li><a href="#entry-34"><span class="n">34</span><span>Fixed lag in the line tool and the marker and watercolor brushes</span></a></li>
     <li><a href="#entry-35"><span class="n">35</span><span>Votes replace the self-judged win</span></a></li>
@@ -693,6 +693,7 @@
     <li><a href="#entry-49"><span class="n">49</span><span>The Report button</span></a></li>
     <li><a href="#entry-50"><span class="n">50</span><span>A play button for Replay</span></a></li>
     <li><a href="#entry-51"><span class="n">51</span><span>The Publish button shows that publishing worked</span></a></li>
+    <li><a href="#entry-52"><span class="n">52</span><span>Invite friends everywhere, with the message already written</span></a></li>
   </ul></div>
 </div>
 <div class="toc-group is-open">
@@ -1568,6 +1569,21 @@
 <ul><li><code>frontend/drawing.js</code>: the button now shows where publishing is up to. It says &quot;Publishing…&quot; while sending, then turns green as &quot;Published ✓&quot;. If publishing fails, it goes back to &quot;Publish drawing&quot; so it can be tried again. Coming back to the finish screen, or trying again after a refresh (which says it's already published), shows &quot;Published ✓&quot; too. The line under it now says &quot;Your drawing is published. See it in today's drawings.&quot;</li><li><code>frontend/flow.css</code>: the green published style, which also works in dark mode.</li></ul>
 <p class="sub"><strong>What I checked</strong></p>
 <ul><li>77 logic tests pass. 10 checks in Chromium with a stand-in for Supabase whose upload waits, so each step could be seen: &quot;Publishing…&quot; while sending, &quot;Published ✓&quot; in green with the new line, still published when the finish screen reopens, a failed publish going back to &quot;Publish drawing&quot;, already published after a refresh, and dark mode. Nothing reached Kevin's project. The dark mode, Share, play button, and Report checks still pass.</li></ul>
+  </div></div></div>
+</article>
+<article class="entry" id="entry-52">
+  <h3 class="entry-head"><button type="button" aria-expanded="false" aria-controls="entry-52-body">
+    <span class="num">52</span>
+    <span><span class="title">Invite friends everywhere, with the message already written<span class="by">by Zainab</span></span><span class="sum">Zainab made Invite friends show everywhere, opening the share menu on phones and a menu of Text message, WhatsApp, Email, and Copy invite elsewhere, with the link already written in.</span></span>
+    <span class="caret" aria-hidden="true"></span>
+  </button></h3>
+  <div class="body" id="entry-52-body"><div class="body-in"><div class="body-pad">
+<p class="sub"><strong>What I asked for</strong></p>
+<ul><li>Inviting friends should never mean copying and pasting. On my laptop, Invite friends (entry 46) didn't show at all, because it only appeared where the browser has a share menu, so it looked like it had never been built. I also didn't want the invite to be about the code.</li></ul>
+<p class="sub"><strong>What changed</strong></p>
+<ul><li><code>frontend/lobby.js</code> (Kevin's file, with the team's OK): Invite friends always shows and is the main button. Where the browser has a share menu, it opens that, as before. Elsewhere, or if the share menu fails, it opens a small menu: Text message (opens Messages with the invite written, so you just pick who it goes to), WhatsApp, Email (with a subject), and Copy invite. The invite is now &quot;Join my Scrawdle lobby!&quot; and the link, with no code to type. The menu closes when the lobby closes. Copy link stays.</li><li><code>frontend/lobby.css</code>: the menu, four across on a laptop and two on a phone.</li></ul>
+<p class="sub"><strong>What I checked</strong></p>
+<ul><li>77 logic tests pass. 16 checks in Chromium with a stand-in for Supabase, so no real lobby was created: the button shows without a share menu, the menu opens and closes, each option's message is exactly &quot;Join my Scrawdle lobby!&quot; and the link, Copy invite and Copy link copy the right things, a new lobby starts with the menu closed, a phone with a share menu opens that instead, closing the share menu does nothing, a failed share menu falls back to ours, and phone and dark-mode layouts.</li><li>Not checked: that Messages, WhatsApp, and email apps open on a real phone or Mac. The links use their standard formats.</li></ul>
   </div></div></div>
 </article>
       </section>
