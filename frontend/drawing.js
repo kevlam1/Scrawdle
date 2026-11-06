@@ -239,6 +239,8 @@
       return out;
     },
     forget(key) { return String(key).startsWith(BOOK) ? draftStore.remove(key) : Promise.resolve(); },
+    // How many are kept, without loading the pictures.
+    async count() { return (await draftStore.keys()).filter((k) => String(k).startsWith(BOOK)).length; },
   };
 
   /* ---------- Sharing: the line that goes with a shared drawing, like a daily puzzle's ---------- */

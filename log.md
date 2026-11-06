@@ -959,6 +959,21 @@ Artifact 4 is "For Someone Else," due Sunday, November 8. Our team of four (Kevi
 
 ---
 
+## 48. A tidier home screen: My drawings appears when there's something in it (2026-11-05) — Zainab
+
+**What I asked for**
+- Hide the My drawings link until someone has actually drawn something, since drawings go there by themselves. And drop "Your drafts save in this browser." from the home screen, because saving just happens.
+
+**What changed**
+- `frontend/index.html`: the My drawings link is hidden until there's a drawing in progress (one the home screen offers to continue) or a kept one. Deleting the last kept drawing hides it again as soon as My drawings closes. A round opened and left blank doesn't count. The "Your drafts save in this browser." line is gone.
+- `frontend/drawing.js`: My drawings can count its drawings without loading their pictures, so the home screen stays quick.
+- `frontend/theme.css`: dropped the dark-mode color for the removed line.
+
+**What I checked**
+- 77 logic tests pass. In Chromium: 30 My drawings checks, including the link hidden on a first visit and after a blank round, showing once there's a drawing or only a kept one, and hiding right after the last one is deleted. The Back button (29), dark mode (51), and sample-drawing (12) checks pass.
+
+---
+
 ## Where AI misread me, or I had to correct course
 
 - Claude's first version of the start page put "What is this?" in the top right, where it collided with the "New set" button on the game screen. I caught it by running the page; Claude hadn't opened it in a browser.

@@ -583,7 +583,7 @@
         <h1>Scrawdle: build log</h1>
         <p class="intro">
           A daily drawing game, built by a team of four with Claude Code: a new set of parts to draw each day, a gallery of what
-          other people drew, and private lobbies. Here are the 47 entries of our log with one sentence on each and the name of
+          other people drew, and private lobbies. Here are the 48 entries of our log with one sentence on each and the name of
           whoever wrote it. Open an entry to read everything they wrote for it.
         </p>
         <ul class="facts" aria-label="Project facts">
@@ -673,7 +673,7 @@
   </ul></div>
 </div>
 <div class="toc-group is-open">
-  <button class="toc-head" type="button" aria-expanded="true">Thursday 5 November <span class="count">14</span></button>
+  <button class="toc-head" type="button" aria-expanded="true">Thursday 5 November <span class="count">15</span></button>
   <div class="toc-list-wrap"><ul class="toc-list">
     <li><a href="#entry-34"><span class="n">34</span><span>Fixed lag in the line tool and the marker and watercolor brushes</span></a></li>
     <li><a href="#entry-35"><span class="n">35</span><span>Votes replace the self-judged win</span></a></li>
@@ -689,6 +689,7 @@
     <li><a href="#entry-45"><span class="n">45</span><span>A Share button for finished drawings</span></a></li>
     <li><a href="#entry-46"><span class="n">46</span><span>Invite friends to a lobby in one tap</span></a></li>
     <li><a href="#entry-47"><span class="n">47</span><span>Reporting drawings: the database part</span></a></li>
+    <li><a href="#entry-48"><span class="n">48</span><span>A tidier home screen: My drawings appears when there's something in it</span></a></li>
   </ul></div>
 </div>
 <div class="toc-group is-open">
@@ -1504,6 +1505,21 @@
 <ul><li>32 checks against a real Postgres (PGlite), with Supabase's roles stubbed: on top of the current schema with the update run twice, and as part of a fresh <code>schema.sql</code>. One or two reports leave a drawing visible; the same player twice counts once; the third player hides it and the public key can no longer read it; a fourth report is fine; other drawings aren't affected; old drawings and reports with no reporter id are refused; the public key can't read reports, add them directly, or unhide a drawing; deleting a drawing deletes its reports; and votes still work.</li><li>Not checked against Kevin's real project, which only he can run it on.</li></ul>
 <p class="sub"><strong>Decisions</strong></p>
 <ul><li>Three players, as the team asked. There are no logins, so a reporter is the same random browser id votes use. Someone who keeps clearing their browser data could report one drawing three times alone. That stops accidents and casual misuse, not a determined person, and a teammate can bring a wrongly hidden drawing back from the dashboard.</li></ul>
+  </div></div></div>
+</article>
+<article class="entry" id="entry-48">
+  <h3 class="entry-head"><button type="button" aria-expanded="false" aria-controls="entry-48-body">
+    <span class="num">48</span>
+    <span><span class="title">A tidier home screen: My drawings appears when there's something in it<span class="by">by Zainab</span></span><span class="sum">Zainab made the My drawings link appear only once a player has a drawing, and removed the line saying drafts save in the browser.</span></span>
+    <span class="caret" aria-hidden="true"></span>
+  </button></h3>
+  <div class="body" id="entry-48-body"><div class="body-in"><div class="body-pad">
+<p class="sub"><strong>What I asked for</strong></p>
+<ul><li>Hide the My drawings link until someone has actually drawn something, since drawings go there by themselves. And drop &quot;Your drafts save in this browser.&quot; from the home screen, because saving just happens.</li></ul>
+<p class="sub"><strong>What changed</strong></p>
+<ul><li><code>frontend/index.html</code>: the My drawings link is hidden until there's a drawing in progress (one the home screen offers to continue) or a kept one. Deleting the last kept drawing hides it again as soon as My drawings closes. A round opened and left blank doesn't count. The &quot;Your drafts save in this browser.&quot; line is gone.</li><li><code>frontend/drawing.js</code>: My drawings can count its drawings without loading their pictures, so the home screen stays quick.</li><li><code>frontend/theme.css</code>: dropped the dark-mode color for the removed line.</li></ul>
+<p class="sub"><strong>What I checked</strong></p>
+<ul><li>77 logic tests pass. In Chromium: 30 My drawings checks, including the link hidden on a first visit and after a blank round, showing once there's a drawing or only a kept one, and hiding right after the last one is deleted. The Back button (29), dark mode (51), and sample-drawing (12) checks pass.</li></ul>
   </div></div></div>
 </article>
       </section>
