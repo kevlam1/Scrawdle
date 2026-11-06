@@ -904,6 +904,26 @@ Artifact 4 is "For Someone Else," due Sunday, November 8. Our team of four (Kevi
 
 ---
 
+## 45. A Share button for finished drawings (2026-11-05) — Zainab
+
+**What I asked for**
+- A quick way to share a finished drawing, the way daily puzzles like Wordle spread: one button that opens the phone's own share menu.
+
+**What changed**
+- `frontend/drawing.js`: the finish screen has a Share button next to Download PNG. It shares the same picture as the download, with the parts and date written under it, plus a short line such as "My Scrawdle Basic drawing for November 5: Parrot, T-rex arms, ... Draw yours:" and the game's link. Free play leaves out the date, and Daily Free Play leaves out its "Draw anything" placeholder.
+- Where there's no share menu (many laptop browsers), it copies the picture to paste into a message or post. Where that isn't possible either, it downloads the picture and says why. Closing the share menu does nothing. A blank drawing has no Share button.
+- The finish screen's fallback message when publishing fails now says "Couldn't publish" instead of "Couldn't share", so the two buttons don't get mixed up.
+- `tests/share.test.js`: the share line for Basic, Detailed, Free play, and Daily Free Play.
+
+**What I checked**
+- 77 logic tests pass. 17 checks in Chromium with a stand-in share menu that records what it receives: one PNG file with the parts and date (1880 pixels wide), the right text and link, "Shared." afterwards, nothing when the menu is closed, the copy fallback (the clipboard really holds a PNG), the download fallback, no button for a blank drawing, and all three buttons fitting at 1280x800, 390x844, and 320x740. Dark mode, the Back button, My drawings, and the color checks still pass.
+- Not checked: a real phone's share menu, Safari, or Firefox. The stand-in only shows the game hands the right things to the browser.
+
+**Decisions**
+- Inviting friends to a lobby the same way ("Invite friends" opening the share menu with the code and link) would help too, but the lobby is Kevin's, so I'm asking him first.
+
+---
+
 ## Where AI misread me, or I had to correct course
 
 - Claude's first version of the start page put "What is this?" in the top right, where it collided with the "New set" button on the game screen. I caught it by running the page; Claude hadn't opened it in a browser.

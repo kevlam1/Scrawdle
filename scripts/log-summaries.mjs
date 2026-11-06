@@ -50,6 +50,7 @@ export const SUMMARIES = {
   42: 'Zainab made an old Free play drawing move to My drawings when the day changes, so the home screen only offers today\'s drawings.',
   43: 'Zainab added an optional dark mode, following Material Design and Apple guidance and checked for contrast on every screen, with the canvas and drawings kept white.',
   44: 'Zainab removed the leftover sample-drawing code, styles, and image once Trenten\'s gallery changes were merged.',
+  45: 'Zainab added a Share button to the finish screen that opens the phone\'s share menu with the drawing and a link to the game, copying or downloading it where that menu isn\'t available.',
   misread: 'Where the AI got something wrong or we had to correct course, and what happened next.',
   decisions: 'What we decided and what we dropped along the way.',
 }

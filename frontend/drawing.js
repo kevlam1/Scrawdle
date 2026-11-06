@@ -241,6 +241,15 @@
     forget(key) { return String(key).startsWith(BOOK) ? draftStore.remove(key) : Promise.resolve(); },
   };
 
+  /* ---------- Sharing: the line that goes with a shared drawing, like a daily puzzle's ---------- */
+  function shareLine({ mode, daily, prompts, day }, url) {
+    const date = new Date(`${day}T12:00:00`).toLocaleDateString(undefined, { month: "long", day: "numeric" });
+    if (mode === "scrawl") return `My Scrawdle Daily Free Play drawing for ${date}. Draw yours: ${url}`;
+    const parts = prompts.map((p) => p.value).join(", ");
+    if (daily === false) return `My Scrawdle Free play drawing: ${parts}. Draw yours: ${url}`;
+    return `My Scrawdle ${mode === "detailed" ? "Detailed" : "Basic"} drawing for ${date}: ${parts}. Draw yours: ${url}`;
+  }
+
   /* ---------- The finished image: the drawing with its prompts and date underneath ---------- */
   function letterDrawing(source, { prompts, day }) {
     const W = source.width;
@@ -1101,6 +1110,7 @@
         <div class="finish-actions">
           <button type="button" class="btn" data-act="publish">Publish drawing</button>
           <button type="button" class="btn" data-act="download">Download PNG</button>
+          <button type="button" class="btn" data-act="share">Share</button>
         </div>
         <p class="publish-disclosure" hidden>Publishing shares your drawing with today’s gallery.</p>
         <p class="finish-note" role="status"></p>
@@ -1114,6 +1124,7 @@
     const note = dialog.querySelector(".finish-note");
     const publishBtn = dialog.querySelector('[data-act="publish"]');
     const downloadBtn = dialog.querySelector('[data-act="download"]');
+    const shareBtn = dialog.querySelector('[data-act="share"]');
     const galleryBtn = dialog.querySelector('[data-act="gallery"]');
     const replayBtn = dialog.querySelector('[data-act="replay"]');
     const replayCanvas = dialog.querySelector(".replay");
@@ -1147,11 +1158,12 @@
     });
     let viewUrl = null; // the drawing on its own, for the screen
     let exportUrl = null; // the drawing with its prompt and date, for the download
+    let exportBlob = null; // the same picture, for sharing
 
     const release = () => {
       if (viewUrl) URL.revokeObjectURL(viewUrl);
       if (exportUrl) URL.revokeObjectURL(exportUrl);
-      viewUrl = exportUrl = null;
+      viewUrl = exportUrl = exportBlob = null;
     };
     const close = () => { dialog.close(); release(); };
     const keepBtn = dialog.querySelector('[data-act="keep"]');
@@ -1165,6 +1177,29 @@
       a.click();
       note.textContent = "Downloaded.";
     });
+    // Phones (and some laptop browsers) open their own share menu with the picture attached. Where that
+    // isn't available, the picture is copied to paste anywhere, and as a last resort it downloads.
+    shareBtn.addEventListener("click", async () => {
+      const round = board.round;
+      const file = new File([exportBlob], `scrawdle-${round.day}.png`, { type: "image/png" });
+      const text = shareLine(round, `${location.origin}${location.pathname}`);
+      if (navigator.canShare && navigator.canShare({ files: [file] })) {
+        try {
+          await navigator.share({ files: [file], title: "My Scrawdle drawing", text });
+          note.textContent = "Shared.";
+          return;
+        } catch (err) {
+          if (err.name === "AbortError") return; // they closed the share menu
+        }
+      }
+      try {
+        await navigator.clipboard.write([new ClipboardItem({ "image/png": exportBlob })]);
+        note.textContent = "Picture copied. Paste it into a message or post.";
+        return;
+      } catch (err) { /* no image clipboard here, so download instead */ }
+      downloadBtn.click();
+      note.textContent = "Sharing isn't available in this browser, so it downloaded instead. Attach the file to share it.";
+    });
     publishBtn.addEventListener("click", async () => {
       const key = roundKey();
       publishBtn.disabled = true;
@@ -1175,7 +1210,7 @@
         note.textContent = "Your drawing is published.";
         published.set(key, note.textContent);
       } catch (err) {
-        note.textContent = err.userMessage || "Couldn't share. Your drawing is still saved here, so try again.";
+        note.textContent = err.userMessage || "Couldn't publish. Your drawing is still saved here, so try again.";
         if (err.alreadyPublished) published.set(key, note.textContent);
         else publishBtn.disabled = false;
       }
@@ -1189,6 +1224,7 @@
       release();
       viewUrl = URL.createObjectURL(view);
       exportUrl = URL.createObjectURL(full);
+      exportBlob = full;
       img.src = viewUrl;
       const { daily, day, prompts } = board.round;
       const empty = board.isEmpty;
@@ -1201,6 +1237,7 @@
       downloadBtn.classList.toggle("primary", !ready);
       galleryBtn.hidden = !daily || empty || typeof window.scrawdleGallery !== "function";
       replayBtn.hidden = empty || !board.canReplay;
+      shareBtn.hidden = empty;
       keepBtn.textContent = board.locked ? "Back" : "Keep drawing";
       dialog.querySelector(".finish-prompt").textContent = prompts.map((p) => p.value).join(", ");
       dialog.querySelector(".finish-date").textContent = new Date(`${day}T12:00:00`).toLocaleDateString(undefined, { weekday: "long", year: "numeric", month: "long", day: "numeric" });
@@ -1209,7 +1246,7 @@
     };
   }
 
-  const api = { floodFill, History, dayKey, brushWidthFactor, slotOf, COLORS, COLOR_NAMES, bookKey, keysToDrop, BOOK_MAX };
+  const api = { floodFill, History, dayKey, brushWidthFactor, slotOf, COLORS, COLOR_NAMES, bookKey, keysToDrop, BOOK_MAX, shareLine };
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   else root.ScrawdleDrawing = { ...api, createBoard, createFinishScreen, HISTORY_BYTES, myDrawings, letterDrawing };
 })(typeof window !== "undefined" ? window : globalThis);

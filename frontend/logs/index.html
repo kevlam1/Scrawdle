@@ -583,7 +583,7 @@
         <h1>Scrawdle: build log</h1>
         <p class="intro">
           A daily drawing game, built by a team of four with Claude Code: a new set of parts to draw each day, a gallery of what
-          other people drew, and private lobbies. Here are the 44 entries of our log with one sentence on each and the name of
+          other people drew, and private lobbies. Here are the 45 entries of our log with one sentence on each and the name of
           whoever wrote it. Open an entry to read everything they wrote for it.
         </p>
         <ul class="facts" aria-label="Project facts">
@@ -673,7 +673,7 @@
   </ul></div>
 </div>
 <div class="toc-group is-open">
-  <button class="toc-head" type="button" aria-expanded="true">Thursday 5 November <span class="count">11</span></button>
+  <button class="toc-head" type="button" aria-expanded="true">Thursday 5 November <span class="count">12</span></button>
   <div class="toc-list-wrap"><ul class="toc-list">
     <li><a href="#entry-34"><span class="n">34</span><span>Fixed lag in the line tool and the marker and watercolor brushes</span></a></li>
     <li><a href="#entry-35"><span class="n">35</span><span>Votes replace the self-judged win</span></a></li>
@@ -686,6 +686,7 @@
     <li><a href="#entry-42"><span class="n">42</span><span>Old Free play drawings move to My drawings</span></a></li>
     <li><a href="#entry-43"><span class="n">43</span><span>Dark mode</span></a></li>
     <li><a href="#entry-44"><span class="n">44</span><span>The leftover sample-drawing code is gone</span></a></li>
+    <li><a href="#entry-45"><span class="n">45</span><span>A Share button for finished drawings</span></a></li>
   </ul></div>
 </div>
 <div class="toc-group is-open">
@@ -1452,6 +1453,23 @@
 <ul><li><code>frontend/gallery.js</code>: the samples function, its &quot;Sample drawings&quot; tag, and the samples mention in the top comment are gone. The gallery itself is unchanged.</li><li><code>frontend/flow.css</code> and <code>frontend/theme.css</code>: the two sample styles are gone.</li><li><code>frontend/assets/sample-strawberries.webp</code> (196 KB) is deleted. <code>frontend/README.md</code> no longer mentions it.</li><li>Left alone: a comment in Kevin's <code>frontend/lobby.css</code> still mentions the old &quot;Explore sample drawings&quot; button. It's only a comment, and lobby files are Kevin's to change.</li></ul>
 <p class="sub"><strong>What I checked</strong></p>
 <ul><li>74 logic tests pass, and <code>flow.css</code> still has matching braces. The checks from entries 38, 40, 41, and 43 pass again in Chromium, including opening today's gallery and dark mode on every screen.</li></ul>
+  </div></div></div>
+</article>
+<article class="entry" id="entry-45">
+  <h3 class="entry-head"><button type="button" aria-expanded="false" aria-controls="entry-45-body">
+    <span class="num">45</span>
+    <span><span class="title">A Share button for finished drawings<span class="by">by Zainab</span></span><span class="sum">Zainab added a Share button to the finish screen that opens the phone's share menu with the drawing and a link to the game, copying or downloading it where that menu isn't available.</span></span>
+    <span class="caret" aria-hidden="true"></span>
+  </button></h3>
+  <div class="body" id="entry-45-body"><div class="body-in"><div class="body-pad">
+<p class="sub"><strong>What I asked for</strong></p>
+<ul><li>A quick way to share a finished drawing, the way daily puzzles like Wordle spread: one button that opens the phone's own share menu.</li></ul>
+<p class="sub"><strong>What changed</strong></p>
+<ul><li><code>frontend/drawing.js</code>: the finish screen has a Share button next to Download PNG. It shares the same picture as the download, with the parts and date written under it, plus a short line such as &quot;My Scrawdle Basic drawing for November 5: Parrot, T-rex arms, ... Draw yours:&quot; and the game's link. Free play leaves out the date, and Daily Free Play leaves out its &quot;Draw anything&quot; placeholder.</li><li>Where there's no share menu (many laptop browsers), it copies the picture to paste into a message or post. Where that isn't possible either, it downloads the picture and says why. Closing the share menu does nothing. A blank drawing has no Share button.</li><li>The finish screen's fallback message when publishing fails now says &quot;Couldn't publish&quot; instead of &quot;Couldn't share&quot;, so the two buttons don't get mixed up.</li><li><code>tests/share.test.js</code>: the share line for Basic, Detailed, Free play, and Daily Free Play.</li></ul>
+<p class="sub"><strong>What I checked</strong></p>
+<ul><li>77 logic tests pass. 17 checks in Chromium with a stand-in share menu that records what it receives: one PNG file with the parts and date (1880 pixels wide), the right text and link, &quot;Shared.&quot; afterwards, nothing when the menu is closed, the copy fallback (the clipboard really holds a PNG), the download fallback, no button for a blank drawing, and all three buttons fitting at 1280x800, 390x844, and 320x740. Dark mode, the Back button, My drawings, and the color checks still pass.</li><li>Not checked: a real phone's share menu, Safari, or Firefox. The stand-in only shows the game hands the right things to the browser.</li></ul>
+<p class="sub"><strong>Decisions</strong></p>
+<ul><li>Inviting friends to a lobby the same way (&quot;Invite friends&quot; opening the share menu with the code and link) would help too, but the lobby is Kevin's, so I'm asking him first.</li></ul>
   </div></div></div>
 </article>
       </section>
