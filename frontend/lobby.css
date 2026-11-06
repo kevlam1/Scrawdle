@@ -36,7 +36,7 @@ a.quiet { color: #5c584f; } /* the same grey flow.css gives the "Explore sample 
 #lobby[open] { display: flex; flex-direction: column; align-items: center; }
 #lobby .app-header { max-width: 1320px; }
 .lobby-body { width: min(560px, 100%); margin: auto; padding: 24px 0; text-align: center; }
-.lobby-code { margin: 8px 0 20px; font: 400 clamp(44px, 12vw, 84px)/1 var(--marker); letter-spacing: .04em; }
+.lobby-title { margin: 8px 0 20px; font: 400 clamp(32px, 7vw, 46px)/1.1 var(--marker); }
 .lobby-share { display: flex; gap: 8px; }
 .lobby-link { flex: 1; }
 .lobby-share .btn { flex: none; font-size: 14px; }

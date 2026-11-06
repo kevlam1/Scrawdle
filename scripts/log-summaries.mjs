@@ -59,6 +59,7 @@ export const SUMMARIES = {
   51: "Zainab made the Publish button say 'Publishing…' and then turn green as 'Published ✓', because publishing worked but looked stuck.",
   52: 'Zainab made Invite friends show everywhere, opening the share menu on phones and a menu of Text message, WhatsApp, Email, and Copy invite elsewhere, with the link already written in.',
   53: 'Zainab made the Scrawdle name in the top-left go home from every screen, closing what is open and leaving a lobby first.',
+  54: 'Zainab took the lobby code off the screen and the code box off the home screen, so friends join only by tapping the invite link.',
   misread: 'Where the AI got something wrong or we had to correct course, and what happened next.',
   decisions: 'What we decided and what we dropped along the way.',
 }
