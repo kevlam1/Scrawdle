@@ -1,0 +1,12 @@
+/* My drawings: the same full page as the gallery, with a row of actions under each drawing. */
+#sketchbook { width: 100vw; max-width: none; height: 100dvh; max-height: none; margin: 0; border: 0; border-radius: 0; box-shadow: none; background: var(--paper); padding: 20px 32px 32px; overflow: auto; }
+#sketchbook .app-header { max-width: 1320px; margin: 0 auto 20px; }
+#sketchbook h2 { font: 400 37px/1.2 var(--hand); margin: 6px 0 12px; }
+#sketchbook .gallery-grid p { margin: 12px 12px 4px; }
+#sketchbook .gallery-grid b { font-weight: 600; color: var(--ink); }
+.book-actions { display: flex; flex-wrap: wrap; gap: 0 4px; padding: 0 6px 6px; }
+.book-actions .quiet { min-height: 40px; font-size: 13px; }
+@media (max-width: 640px) {
+  #sketchbook { padding: 12px 16px 24px; }
+  #sketchbook h2 { font-size: 30px; }
+}

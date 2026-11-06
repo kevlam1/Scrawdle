@@ -711,6 +711,28 @@ Artifact 4 is "For Someone Else," due Sunday, November 8. Our team of four (Kevi
 
 ---
 
+## 36. My drawings: keeping drawings after their day ends (2026-11-05) — Zainab
+
+**What I asked for**
+- The team asked me to add saving. Drawings already saved in the browser, but today's was thrown away when the day ended, and a Free play drawing was lost when a new set replaced it. I wanted players to keep what they make.
+
+**What changed**
+- `frontend/drawing.js`: when a day ends, that day's Basic, Detailed, or Daily Free Play drawing is kept instead of thrown away. So is a Free play drawing, or today's in the other mode, when a new round replaces it. A drawing cleared with Start over isn't kept, because that button already says it will be lost, and blank rounds aren't kept either. The 60 most recent are kept, and the oldest go first.
+- They're stored in the same browser storage as the drafts, under their own keys, so the storage didn't need a new version. A page still open on the old code keeps saving normally.
+- The download with the parts and date written under the drawing is now one shared function, used by the finish screen and by My drawings.
+- `frontend/sketchbook.js` and `sketchbook.css`: a "My drawings" link on the home screen opens a page in the gallery's style. Today's drawings show as "in progress" with Continue and Download, and kept ones show their mode, date, and parts with Download and Delete.
+- The two confirmations that replace a drawing now say the old one is kept in My drawings.
+- `tests/my-drawings.test.js`: kept drawings sort oldest first, only the oldest go past the limit, and drafts are never dropped.
+
+**What I checked**
+- 47 logic tests pass. 21 checks in Chromium: the empty page, an in-progress drawing with Continue and Download, the downloaded PNG's size, a replaced Free play drawing, a day ending (by changing a saved drawing's date to an earlier day), Daily Free Play, switching Basic to Detailed, Start over, a blank round, Delete surviving a refresh, a phone-size page with nothing running off the side, and no page errors. The Back button and color checks from entries 34 and 35 still pass. I looked at the page on a laptop and a phone.
+- Not checked: Safari or Firefox, a real phone, or what happens when a browser runs out of storage.
+
+**Decisions**
+- Drawings stay only in that browser and are never uploaded. Clearing the browser's data deletes them, and Safari deletes a site's saved data after about 7 days without a visit. The page says so.
+
+---
+
 ## Where AI misread me, or I had to correct course
 
 - Claude's first version of the start page put "What is this?" in the top right, where it collided with the "New set" button on the game screen. I caught it by running the page; Claude hadn't opened it in a browser.

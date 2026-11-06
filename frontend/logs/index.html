@@ -583,7 +583,7 @@
         <h1>Scrawdle: build log</h1>
         <p class="intro">
           A daily drawing game, built by a team of four with Claude Code: a new set of parts to draw each day, a gallery of what
-          other people drew, and private lobbies. Here are the 35 entries of our log with one sentence on each and the name of
+          other people drew, and private lobbies. Here are the 36 entries of our log with one sentence on each and the name of
           whoever wrote it. Open an entry to read everything they wrote for it.
         </p>
         <ul class="facts" aria-label="Project facts">
@@ -673,10 +673,11 @@
   </ul></div>
 </div>
 <div class="toc-group is-open">
-  <button class="toc-head" type="button" aria-expanded="true">Thursday 5 November <span class="count">2</span></button>
+  <button class="toc-head" type="button" aria-expanded="true">Thursday 5 November <span class="count">3</span></button>
   <div class="toc-list-wrap"><ul class="toc-list">
     <li><a href="#entry-34"><span class="n">34</span><span>The browser's Back button stays in the game</span></a></li>
     <li><a href="#entry-35"><span class="n">35</span><span>Color names, for colorblind players and screen readers</span></a></li>
+    <li><a href="#entry-36"><span class="n">36</span><span>My drawings: keeping drawings after their day ends</span></a></li>
   </ul></div>
 </div>
 <div class="toc-group is-open">
@@ -1292,6 +1293,23 @@
 <ul><li>44 logic tests pass. 23 checks in Chromium: the names on hover and for screen readers match, the title follows the tool and color, the eraser and custom color, and that the title fits on one line without overlapping the size at 1440x900, 1280x800, 390x844, and 320x740. I looked at the panel at the widest and narrowest sizes.</li><li>Not checked with a real screen reader, or by a colorblind player.</li></ul>
 <p class="sub"><strong>Decisions</strong></p>
 <ul><li>The names are short, everyday words rather than exact shade names, so they're quick to read.</li></ul>
+  </div></div></div>
+</article>
+<article class="entry" id="entry-36">
+  <h3 class="entry-head"><button type="button" aria-expanded="false" aria-controls="entry-36-body">
+    <span class="num">36</span>
+    <span><span class="title">My drawings: keeping drawings after their day ends<span class="by">by Zainab</span></span><span class="sum">Zainab added My drawings, which keeps a player's drawings in their browser after the day ends or a new round replaces them, with Download and Delete for each.</span></span>
+    <span class="caret" aria-hidden="true"></span>
+  </button></h3>
+  <div class="body" id="entry-36-body"><div class="body-in"><div class="body-pad">
+<p class="sub"><strong>What I asked for</strong></p>
+<ul><li>The team asked me to add saving. Drawings already saved in the browser, but today's was thrown away when the day ended, and a Free play drawing was lost when a new set replaced it. I wanted players to keep what they make.</li></ul>
+<p class="sub"><strong>What changed</strong></p>
+<ul><li><code>frontend/drawing.js</code>: when a day ends, that day's Basic, Detailed, or Daily Free Play drawing is kept instead of thrown away. So is a Free play drawing, or today's in the other mode, when a new round replaces it. A drawing cleared with Start over isn't kept, because that button already says it will be lost, and blank rounds aren't kept either. The 60 most recent are kept, and the oldest go first.</li><li>They're stored in the same browser storage as the drafts, under their own keys, so the storage didn't need a new version. A page still open on the old code keeps saving normally.</li><li>The download with the parts and date written under the drawing is now one shared function, used by the finish screen and by My drawings.</li><li><code>frontend/sketchbook.js</code> and <code>sketchbook.css</code>: a &quot;My drawings&quot; link on the home screen opens a page in the gallery's style. Today's drawings show as &quot;in progress&quot; with Continue and Download, and kept ones show their mode, date, and parts with Download and Delete.</li><li>The two confirmations that replace a drawing now say the old one is kept in My drawings.</li><li><code>tests/my-drawings.test.js</code>: kept drawings sort oldest first, only the oldest go past the limit, and drafts are never dropped.</li></ul>
+<p class="sub"><strong>What I checked</strong></p>
+<ul><li>47 logic tests pass. 21 checks in Chromium: the empty page, an in-progress drawing with Continue and Download, the downloaded PNG's size, a replaced Free play drawing, a day ending (by changing a saved drawing's date to an earlier day), Daily Free Play, switching Basic to Detailed, Start over, a blank round, Delete surviving a refresh, a phone-size page with nothing running off the side, and no page errors. The Back button and color checks from entries 34 and 35 still pass. I looked at the page on a laptop and a phone.</li><li>Not checked: Safari or Firefox, a real phone, or what happens when a browser runs out of storage.</li></ul>
+<p class="sub"><strong>Decisions</strong></p>
+<ul><li>Drawings stay only in that browser and are never uploaded. Clearing the browser's data deletes them, and Safari deletes a site's saved data after about 7 days without a visit. The page says so.</li></ul>
   </div></div></div>
 </article>
       </section>

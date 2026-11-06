@@ -10,6 +10,7 @@
   <link rel="stylesheet" href="studio.css" />
   <link rel="stylesheet" href="flow.css" />
   <link rel="stylesheet" href="lobby.css" />
+  <link rel="stylesheet" href="sketchbook.css" />
 </head>
 <body>
   <template id="wordmark">
@@ -62,6 +63,7 @@
           <button class="btn" id="free-play" type="button">Start free play</button>
         </section>
       </div>
+      <button class="quiet" id="my-drawings" type="button">My drawings</button>
       <button class="quiet" id="sample-gallery" type="button">Explore sample drawings</button>
       <a class="quiet" href="/logs/">Read our build log</a>
       <p class="home-storage">Your drafts save in this browser.</p>
@@ -121,6 +123,7 @@
   <script src="daily.js"></script>
   <script src="drawing.js"></script>
   <script src="gallery.js"></script>
+  <script src="sketchbook.js"></script>
   <!-- Publishing: no-ops until supabase-config.js has a real project (see backend/README.md). -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="supabase-config.js"></script>
@@ -301,7 +304,7 @@
       const today = saved.today;
       if (today && today.marked) {
         if (today.mode === mode) return openSaved("today");
-        if (!confirm("Start over with this mode? Your drawing for today will be replaced.")) return;
+        if (!confirm("Start over with this mode? Your drawing for today will be replaced, and kept in My drawings.")) return;
       }
       start(mode);
     }
@@ -317,7 +320,7 @@
 
     // Free play has one save, so a new set replaces whatever is on it.
     function startFreePlay(hasDrawing) {
-      if (hasDrawing && !confirm("Replace your Free play drawing with a new set of parts?")) return;
+      if (hasDrawing && !confirm("Replace your Free play drawing with a new set of parts? The old one is kept in My drawings.")) return;
       start("basic", false);
     }
 
@@ -425,6 +428,8 @@
     const board = ScrawdleDrawing.createBoard({ canvas: $("board"), toolbar: $("tools"), settings: $("brush-settings") });
     const gallery = ScrawdleGallery.createGallery(board);
     $("sample-gallery").addEventListener("click", () => gallery.showSamples());
+    const sketchbook = ScrawdleSketchbook.create(board, { onContinue: openSaved });
+    $("my-drawings").addEventListener("click", () => sketchbook.show());
     ScrawdleDrawing.createFinishScreen(board, gallery, {
       onHome: goHome,
     });
