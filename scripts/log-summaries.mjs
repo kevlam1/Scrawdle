@@ -41,6 +41,7 @@ export const SUMMARIES = {
   33: 'Kevin renamed the free-draw mode from Daily Scrawl to Daily Free Play on screen, kept its internal id so the database did not need to change, and left a note in CLAUDE.md for whoever merges Basic and Detailed into the new Daily Scrawl.',
   34: 'Trenten had Claude find and fix lag in the line tool and the marker and watercolor brushes, which were redrawing the whole canvas for every mouse point; they now redraw once per frame and only where the stroke is.',
   35: "Trenten replaced the self-judged Accurate/Inaccurate buttons with votes: other players give a shared drawing a thumbs up or down in today's gallery, and one thumbs up means that drawing has won.",
+  36: "Trenten added a \"Pending database updates\" list to the top of CLAUDE.md, so Kevin's session finds the votes update with steps to run it, check it, and update the notes afterwards.",
   misread: 'Where the AI got something wrong or we had to correct course, and what happened next.',
   decisions: 'What we decided and what we dropped along the way.',
 }

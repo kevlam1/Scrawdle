@@ -4,6 +4,9 @@
 -- (that's Kevin's project). A brand-new project doesn't need this file: schema.sql already
 -- includes everything here.
 --
+-- Step-by-step instructions, including how to check it worked and what to update afterwards, are
+-- under "Pending database updates" at the top of ../../../CLAUDE.md.
+--
 -- Run this BEFORE the frontend that calls cast_vote / vote_counts reaches main. If the frontend
 -- ships first, the gallery still loads but shows no vote buttons (publish.js treats a missing
 -- function as "voting isn't set up yet").

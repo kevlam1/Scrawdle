@@ -726,6 +726,23 @@ Artifact 4 is "For Someone Else," due Sunday, November 8. Our team of four (Kevi
 
 ---
 
+## 36. A to-do list for database updates in `CLAUDE.md` (2026-11-05) — Trenten
+
+**What I asked for**
+- Kevin will probably have his AI run the votes update, so I asked Claude to make sure there's a note it will find, with what to run and what to update afterwards.
+
+**What changed**
+- `CLAUDE.md`: a new section near the top, "Pending database updates", which every session reads first. It lists `002-votes.sql` with steps: read it, run it once, stop and report the raw error if it fails, two SQL queries and an in-app check to confirm it worked, and which notes to update afterwards. Whoever runs an update removes its entry, so the list shows what's still waiting.
+- `backend/supabase/updates/002-votes.sql` and `backend/README.md`: both point to that section.
+
+**What I checked**
+- The steps match what was tested in entry 35 (running it twice is harmless). Nobody has followed them on the live project yet.
+
+**Decisions**
+- Put the note in `CLAUDE.md` rather than only in the SQL file, because every teammate's session reads `CLAUDE.md` first, and Kevin's session won't necessarily open the updates folder. It only reaches Kevin's session once this branch is merged into `main`, or if his session reads the `Trent` branch.
+
+---
+
 ## Where AI misread me, or I had to correct course
 
 - Claude's first version of the start page put "What is this?" in the top right, where it collided with the "New set" button on the game screen. I caught it by running the page; Claude hadn't opened it in a browser.

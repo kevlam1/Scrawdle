@@ -32,7 +32,7 @@ What gets deleted: anything dated before yesterday by UTC date, so a drawing liv
 
 ## Applying an update to the live project
 
-For each file in `supabase/updates/` that hasn't been run yet, in number order:
+Which updates are still waiting is listed under "Pending database updates" at the top of `../CLAUDE.md`, with the steps for each. For each file in `supabase/updates/` that hasn't been run yet, in number order:
 
 1. Open the file, read it, and paste the whole thing into the SQL Editor. Run it once. (Every update is written so a second run doesn't fail, but there's no reason to.)
 2. For `001`: if publishing a Daily Scrawl is still refused afterwards, the old mode constraint has a different name than the file assumes. The comment at the top of the file has the query that finds it.

@@ -2,6 +2,16 @@
 
 Read this file first. It is shared by four people's Claude sessions (GitHub: `kevlam1`, `arcangieo`, `trentenmuw`, `zainasuw`), so your agents do not talk to each other — this file is how they stay on the same plan. Kevin's personal workflow preferences live in `../CLAUDE.md` (not part of this repo, not binding on teammates).
 
+## Pending database updates (for Kevin's session: action needed)
+Database changes are written as numbered files in `backend/supabase/updates/` by whoever needs them, but only Kevin can run them on the live Supabase project. **If you are working with Kevin, check this list first.** After running one, remove its entry here (leave the heading, and write "None." if the list is empty).
+
+- **`backend/supabase/updates/002-votes.sql`** (written by Trenten's session, 2026-11-05; `log.md` entry 35). Adds thumbs up/down voting: a `votes` table with Row Level Security and no policies, plus two functions the public key may call, `cast_vote` and `vote_counts`. Needs `schema.sql` and update `001` already run, which they are on Kevin's project. Until it runs, the live gallery simply shows no vote buttons, so nothing is broken in the meantime.
+  1. Read the whole file first. Then run its full contents **once** in the Supabase SQL Editor, or through whatever database access Kevin's session has. Running it a second time is harmless (tested). Never put the service_role key or any other secret in the repo or in this file.
+  2. If it errors, stop and show Kevin the raw error. Don't edit `002-votes.sql` to work around it without telling Trenten; the same SQL is copied into `schema.sql`, so the two must stay identical.
+  3. Check it in the SQL Editor. `select to_regclass('public.votes');` should return `votes`, and `select proname from pg_proc where proname in ('cast_vote', 'vote_counts');` should return both names.
+  4. Check it in the app: publish a drawing in one window, open today's gallery in a private window, and give it a thumbs up. Back in the first window, reopen the gallery: your card should say "You won!". If there are no vote buttons, the browser console has the raw error from `vote_counts`.
+  5. Afterwards: remove this entry; in `backend/README.md`, change "**Not run yet on Kevin's project**" for `002` to say it was run and checked (and by whom); in `README.md`, remove the "Votes on the live site" item under "Not built or not confirmed yet"; then add a `log.md` entry with its summary in `scripts/log-summaries.mjs`, and run `node scripts/make-logs-page.mjs` (see "The log protocol" below).
+
 ## What this is
 - Artifact 4 of TCSS 490: a team of four building something for people outside the team. Due **Sunday, November 8, 2026 at 11:59 PM** on Canvas. Portfolio status check at end of Week 4 (Sunday, November 1).
 - Idea, from the team's own pitch (`../Unit 4/Artifact 4_ Scrawdle.pdf`): a daily drawing game like Wordle or NYT's minigames.
