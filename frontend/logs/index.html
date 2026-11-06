@@ -583,7 +583,7 @@
         <h1>Scrawdle: build log</h1>
         <p class="intro">
           A daily drawing game, built by a team of four with Claude Code: a new set of parts to draw each day, a gallery of what
-          other people drew, and private lobbies. Here are the 54 entries of our log with one sentence on each and the name of
+          other people drew, and private lobbies. Here are the 55 entries of our log with one sentence on each and the name of
           whoever wrote it. Open an entry to read everything they wrote for it.
         </p>
         <ul class="facts" aria-label="Project facts">
@@ -673,7 +673,7 @@
   </ul></div>
 </div>
 <div class="toc-group is-open">
-  <button class="toc-head" type="button" aria-expanded="true">Thursday 5 November <span class="count">21</span></button>
+  <button class="toc-head" type="button" aria-expanded="true">Thursday 5 November <span class="count">22</span></button>
   <div class="toc-list-wrap"><ul class="toc-list">
     <li><a href="#entry-34"><span class="n">34</span><span>Fixed lag in the line tool and the marker and watercolor brushes</span></a></li>
     <li><a href="#entry-35"><span class="n">35</span><span>Votes replace the self-judged win</span></a></li>
@@ -696,6 +696,7 @@
     <li><a href="#entry-52"><span class="n">52</span><span>Invite friends everywhere, with the message already written</span></a></li>
     <li><a href="#entry-53"><span class="n">53</span><span>The Scrawdle name goes home</span></a></li>
     <li><a href="#entry-54"><span class="n">54</span><span>No more lobby codes on screen</span></a></li>
+    <li><a href="#entry-55"><span class="n">55</span><span>A copy icon and an invite pop-up in the lobby</span></a></li>
   </ul></div>
 </div>
 <div class="toc-group is-open">
@@ -1618,6 +1619,21 @@
 <ul><li>77 logic tests pass. 10 checks in Chromium with a stand-in for Supabase, so no real lobby was created: no code box or Join button on the home card, no code in the lobby, the new heading (which still names the lobby for screen readers), Invite friends under it, joining by opening an invite link, no errors, and phone and dark-mode layouts. The Invite friends (16), name-goes-home (13), and dark mode (51) checks still pass.</li></ul>
 <p class="sub"><strong>Decisions</strong></p>
 <ul><li>Someone who only knows a code, with no link, can't join any more. The invite link is the way in.</li></ul>
+  </div></div></div>
+</article>
+<article class="entry" id="entry-55">
+  <h3 class="entry-head"><button type="button" aria-expanded="false" aria-controls="entry-55-body">
+    <span class="num">55</span>
+    <span><span class="title">A copy icon and an invite pop-up in the lobby<span class="by">by Zainab</span></span><span class="sum">Zainab made Copy link a small copy icon inside the lobby's link box and turned the invite options into a small pop-up list.</span></span>
+    <span class="caret" aria-hidden="true"></span>
+  </button></h3>
+  <div class="body" id="entry-55-body"><div class="body-in"><div class="body-pad">
+<p class="sub"><strong>What I asked for</strong></p>
+<ul><li>Copy link should be a small copy sign right next to the link, like GitHub's, and the invite options should be a little pop-up instead of a row of big buttons.</li></ul>
+<p class="sub"><strong>What changed</strong></p>
+<ul><li><code>frontend/lobby.js</code> and <code>lobby.css</code> (Kevin's files, with the team's OK): the Copy link button is now a copy icon inside the right end of the link box. It copies the link and turns into a check that says &quot;Copied!&quot; for two seconds. Its hover hint and screen-reader name are &quot;Copy link&quot;.</li><li>Invite friends opens a small pop-up list just under it, with an icon for each option: Text message, WhatsApp, Email, and Copy invite. It closes when an option is picked, on a click outside it, or on Esc, which also returns focus to the button. On a phone it spans the width under the button. Phones with a share menu still open that instead.</li><li><code>frontend/theme.css</code>: the pop-up and icon in dark mode.</li></ul>
+<p class="sub"><strong>What I checked</strong></p>
+<ul><li>77 logic tests pass. 20 checks in Chromium with a stand-in for Supabase, so no real lobby was created: the icon sits inside the link box and there's no separate Copy link button, its hint and name, copying the link, the check and its return to the copy icon, the pop-up's four options right under the button, focus moving into it, the written invite, closing by clicking outside, Esc, picking an option, and Copy invite, a phone with a share menu, a phone without one, and dark mode. The lobby (10), name-goes-home (13), and dark mode (51) checks still pass.</li></ul>
   </div></div></div>
 </article>
       </section>
