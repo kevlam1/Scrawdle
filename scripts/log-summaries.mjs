@@ -51,6 +51,7 @@ export const SUMMARIES = {
   43: 'Zainab added an optional dark mode, following Material Design and Apple guidance and checked for contrast on every screen, with the canvas and drawings kept white.',
   44: 'Zainab removed the leftover sample-drawing code, styles, and image once Trenten\'s gallery changes were merged.',
   45: 'Zainab added a Share button to the finish screen that opens the phone\'s share menu with the drawing and a link to the game, copying or downloading it where that menu isn\'t available.',
+  46: "Zainab added an Invite friends button to Kevin's lobby, with the team's OK, that opens the phone's share menu with the lobby code and link filled in.",
   misread: 'Where the AI got something wrong or we had to correct course, and what happened next.',
   decisions: 'What we decided and what we dropped along the way.',
 }

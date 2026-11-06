@@ -583,7 +583,7 @@
         <h1>Scrawdle: build log</h1>
         <p class="intro">
           A daily drawing game, built by a team of four with Claude Code: a new set of parts to draw each day, a gallery of what
-          other people drew, and private lobbies. Here are the 45 entries of our log with one sentence on each and the name of
+          other people drew, and private lobbies. Here are the 46 entries of our log with one sentence on each and the name of
           whoever wrote it. Open an entry to read everything they wrote for it.
         </p>
         <ul class="facts" aria-label="Project facts">
@@ -673,7 +673,7 @@
   </ul></div>
 </div>
 <div class="toc-group is-open">
-  <button class="toc-head" type="button" aria-expanded="true">Thursday 5 November <span class="count">12</span></button>
+  <button class="toc-head" type="button" aria-expanded="true">Thursday 5 November <span class="count">13</span></button>
   <div class="toc-list-wrap"><ul class="toc-list">
     <li><a href="#entry-34"><span class="n">34</span><span>Fixed lag in the line tool and the marker and watercolor brushes</span></a></li>
     <li><a href="#entry-35"><span class="n">35</span><span>Votes replace the self-judged win</span></a></li>
@@ -687,6 +687,7 @@
     <li><a href="#entry-43"><span class="n">43</span><span>Dark mode</span></a></li>
     <li><a href="#entry-44"><span class="n">44</span><span>The leftover sample-drawing code is gone</span></a></li>
     <li><a href="#entry-45"><span class="n">45</span><span>A Share button for finished drawings</span></a></li>
+    <li><a href="#entry-46"><span class="n">46</span><span>Invite friends to a lobby in one tap</span></a></li>
   </ul></div>
 </div>
 <div class="toc-group is-open">
@@ -1470,6 +1471,21 @@
 <ul><li>77 logic tests pass. 17 checks in Chromium with a stand-in share menu that records what it receives: one PNG file with the parts and date (1880 pixels wide), the right text and link, &quot;Shared.&quot; afterwards, nothing when the menu is closed, the copy fallback (the clipboard really holds a PNG), the download fallback, no button for a blank drawing, and all three buttons fitting at 1280x800, 390x844, and 320x740. Dark mode, the Back button, My drawings, and the color checks still pass.</li><li>Not checked: a real phone's share menu, Safari, or Firefox. The stand-in only shows the game hands the right things to the browser.</li></ul>
 <p class="sub"><strong>Decisions</strong></p>
 <ul><li>Inviting friends to a lobby the same way (&quot;Invite friends&quot; opening the share menu with the code and link) would help too, but the lobby is Kevin's, so I'm asking him first.</li></ul>
+  </div></div></div>
+</article>
+<article class="entry" id="entry-46">
+  <h3 class="entry-head"><button type="button" aria-expanded="false" aria-controls="entry-46-body">
+    <span class="num">46</span>
+    <span><span class="title">Invite friends to a lobby in one tap<span class="by">by Zainab</span></span><span class="sum">Zainab added an Invite friends button to Kevin's lobby, with the team's OK, that opens the phone's share menu with the lobby code and link filled in.</span></span>
+    <span class="caret" aria-hidden="true"></span>
+  </button></h3>
+  <div class="body" id="entry-46-body"><div class="body-in"><div class="body-pad">
+<p class="sub"><strong>What I asked for</strong></p>
+<ul><li>Inviting friends to a lobby meant copying the link and pasting it into a message. I wanted one button that opens the phone's share menu, so a friend can be picked straight from Messages or WhatsApp. The lobby is Kevin's, and the team said I could add this.</li></ul>
+<p class="sub"><strong>What changed</strong></p>
+<ul><li><code>frontend/lobby.js</code> (Kevin's file; this is the only change in it): the lobby room has an Invite friends button beside the invite link. It opens the browser's share menu with &quot;Join my Scrawdle lobby! Code BCDFG&quot; and the invite link filled in. It only shows where the browser has a share menu (phones, and some laptop browsers). Elsewhere it stays hidden and Copy link is the main button, as before. Closing the menu does nothing.</li><li>No phone numbers or contacts ever reach the game: the phone's own menu handles who it goes to.</li></ul>
+<p class="sub"><strong>What I checked</strong></p>
+<ul><li>77 logic tests pass. 12 checks in Chromium with a stand-in for Supabase, so no real lobby was created in Kevin's project (checked: no request reached it): the button shows with a share menu and is the main button, the menu gets the right text and link, closing it does nothing, without a share menu it stays hidden and Copy link still copies the link, and both buttons fit at 390x844 and 320x740. I looked at the lobby room on a phone and in dark mode, which entry 43 couldn't check.</li><li>Not checked: a real phone's share menu, or a real lobby.</li></ul>
   </div></div></div>
 </article>
       </section>

@@ -924,6 +924,21 @@ Artifact 4 is "For Someone Else," due Sunday, November 8. Our team of four (Kevi
 
 ---
 
+## 46. Invite friends to a lobby in one tap (2026-11-05) — Zainab
+
+**What I asked for**
+- Inviting friends to a lobby meant copying the link and pasting it into a message. I wanted one button that opens the phone's share menu, so a friend can be picked straight from Messages or WhatsApp. The lobby is Kevin's, and the team said I could add this.
+
+**What changed**
+- `frontend/lobby.js` (Kevin's file; this is the only change in it): the lobby room has an Invite friends button beside the invite link. It opens the browser's share menu with "Join my Scrawdle lobby! Code BCDFG" and the invite link filled in. It only shows where the browser has a share menu (phones, and some laptop browsers). Elsewhere it stays hidden and Copy link is the main button, as before. Closing the menu does nothing.
+- No phone numbers or contacts ever reach the game: the phone's own menu handles who it goes to.
+
+**What I checked**
+- 77 logic tests pass. 12 checks in Chromium with a stand-in for Supabase, so no real lobby was created in Kevin's project (checked: no request reached it): the button shows with a share menu and is the main button, the menu gets the right text and link, closing it does nothing, without a share menu it stays hidden and Copy link still copies the link, and both buttons fit at 390x844 and 320x740. I looked at the lobby room on a phone and in dark mode, which entry 43 couldn't check.
+- Not checked: a real phone's share menu, or a real lobby.
+
+---
+
 ## Where AI misread me, or I had to correct course
 
 - Claude's first version of the start page put "What is this?" in the top right, where it collided with the "New set" button on the game screen. I caught it by running the page; Claude hadn't opened it in a browser.

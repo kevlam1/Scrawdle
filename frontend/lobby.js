@@ -189,6 +189,7 @@
       <h1 id="lobby-code" class="lobby-code"></h1>
       <div class="lobby-share">
         <input class="lobby-link" readonly aria-label="Invite link">
+        <button type="button" class="btn primary" data-act="invite" hidden>Invite friends</button>
         <button type="button" class="btn primary" data-act="copy">Copy link</button>
       </div>
       <p class="lobby-status" role="status"></p>
@@ -491,6 +492,19 @@
     }
   });
   linkEl.addEventListener("focus", () => linkEl.select());
+  // Where the browser has a share menu (phones, and some laptop browsers), Invite friends opens it with
+  // the invite filled in, so a friend can be picked in Messages, WhatsApp, and so on without copying
+  // anything. No phone numbers ever reach the game. Elsewhere it stays hidden and Copy link does the job.
+  const inviteBtn = $(room, '[data-act="invite"]');
+  if (typeof navigator.share === "function") {
+    inviteBtn.hidden = false;
+    copyBtn.classList.remove("primary");
+    inviteBtn.addEventListener("click", async () => {
+      try {
+        await navigator.share({ title: "Join my Scrawdle lobby", text: `Join my Scrawdle lobby! Code ${lobby.code}`, url: linkEl.value });
+      } catch (err) { /* they closed the menu; the link and Copy link are still right there */ }
+    });
+  }
   nameEl.addEventListener("change", () => {
     const name = cleanName(nameEl.value) || me.name;
     nameEl.value = name;
