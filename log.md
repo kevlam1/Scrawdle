@@ -850,6 +850,23 @@ Artifact 4 is "For Someone Else," due Sunday, November 8. Our team of four (Kevi
 
 ---
 
+## 42. Old Free play drawings move to My drawings (2026-11-05) — Zainab
+
+**What I asked for**
+- An old Free play drawing from testing kept showing as "Continue drawing" on the home screen days later, because Free play drawings never expired. I wanted the home screen to only show today's drawings.
+
+**What changed**
+- `frontend/drawing.js`: when the day changes, a Free play drawing now moves to My drawings, the same as Basic, Detailed, and Daily Free Play. It can still be downloaded there, but not drawn on any more, which is how the daily drawings already worked.
+- `README.md` says the same.
+
+**What I checked**
+- 74 logic tests pass. 25 My drawings checks in Chromium pass, including new ones: today's Free play is offered to continue, and one from an earlier day leaves the home screen and shows in My drawings with its date. The Back button checks still pass.
+
+**Decisions**
+- Someone mid-way through a Free play drawing at midnight can't keep drawing on it the next day. That matches the daily drawings, and nothing is lost.
+
+---
+
 ## Where AI misread me, or I had to correct course
 
 - Claude's first version of the start page put "What is this?" in the top right, where it collided with the "New set" button on the game screen. I caught it by running the page; Claude hadn't opened it in a browser.

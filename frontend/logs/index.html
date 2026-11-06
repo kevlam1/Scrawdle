@@ -583,7 +583,7 @@
         <h1>Scrawdle: build log</h1>
         <p class="intro">
           A daily drawing game, built by a team of four with Claude Code: a new set of parts to draw each day, a gallery of what
-          other people drew, and private lobbies. Here are the 41 entries of our log with one sentence on each and the name of
+          other people drew, and private lobbies. Here are the 42 entries of our log with one sentence on each and the name of
           whoever wrote it. Open an entry to read everything they wrote for it.
         </p>
         <ul class="facts" aria-label="Project facts">
@@ -673,7 +673,7 @@
   </ul></div>
 </div>
 <div class="toc-group is-open">
-  <button class="toc-head" type="button" aria-expanded="true">Thursday 5 November <span class="count">8</span></button>
+  <button class="toc-head" type="button" aria-expanded="true">Thursday 5 November <span class="count">9</span></button>
   <div class="toc-list-wrap"><ul class="toc-list">
     <li><a href="#entry-34"><span class="n">34</span><span>Fixed lag in the line tool and the marker and watercolor brushes</span></a></li>
     <li><a href="#entry-35"><span class="n">35</span><span>Votes replace the self-judged win</span></a></li>
@@ -683,6 +683,7 @@
     <li><a href="#entry-39"><span class="n">39</span><span>Color names, for colorblind players and screen readers</span></a></li>
     <li><a href="#entry-40"><span class="n">40</span><span>My drawings: keeping drawings after their day ends</span></a></li>
     <li><a href="#entry-41"><span class="n">41</span><span>The sample drawings are gone</span></a></li>
+    <li><a href="#entry-42"><span class="n">42</span><span>Old Free play drawings move to My drawings</span></a></li>
   </ul></div>
 </div>
 <div class="toc-group is-open">
@@ -1400,6 +1401,23 @@
 <ul><li>47 logic tests pass. 12 checks in Chromium, with publishing connected and with it turned off: no sample drawings on the home or finish screen, My drawings still there, the gallery button only when publishing is on, Download and Replay still there, and no page errors. The checks from entries 38, 39, and 40 still pass.</li></ul>
 <p class="sub"><strong>Decisions</strong></p>
 <ul><li>Left the leftover code for one more merge instead of editing lines Trenten is changing.</li></ul>
+  </div></div></div>
+</article>
+<article class="entry" id="entry-42">
+  <h3 class="entry-head"><button type="button" aria-expanded="false" aria-controls="entry-42-body">
+    <span class="num">42</span>
+    <span><span class="title">Old Free play drawings move to My drawings<span class="by">by Zainab</span></span><span class="sum">Zainab made an old Free play drawing move to My drawings when the day changes, so the home screen only offers today's drawings.</span></span>
+    <span class="caret" aria-hidden="true"></span>
+  </button></h3>
+  <div class="body" id="entry-42-body"><div class="body-in"><div class="body-pad">
+<p class="sub"><strong>What I asked for</strong></p>
+<ul><li>An old Free play drawing from testing kept showing as &quot;Continue drawing&quot; on the home screen days later, because Free play drawings never expired. I wanted the home screen to only show today's drawings.</li></ul>
+<p class="sub"><strong>What changed</strong></p>
+<ul><li><code>frontend/drawing.js</code>: when the day changes, a Free play drawing now moves to My drawings, the same as Basic, Detailed, and Daily Free Play. It can still be downloaded there, but not drawn on any more, which is how the daily drawings already worked.</li><li><code>README.md</code> says the same.</li></ul>
+<p class="sub"><strong>What I checked</strong></p>
+<ul><li>74 logic tests pass. 25 My drawings checks in Chromium pass, including new ones: today's Free play is offered to continue, and one from an earlier day leaves the home screen and shows in My drawings with its date. The Back button checks still pass.</li></ul>
+<p class="sub"><strong>Decisions</strong></p>
+<ul><li>Someone mid-way through a Free play drawing at midnight can't keep drawing on it the next day. That matches the daily drawings, and nothing is lost.</li></ul>
   </div></div></div>
 </article>
       </section>

@@ -47,6 +47,7 @@ export const SUMMARIES = {
   39: 'Zainab gave the 12 colors plain names, shown on hover, read by screen readers, and written beside the tool name for touch screens, so nobody has to tell colors apart by sight.',
   40: 'Zainab added My drawings, which keeps a player\'s drawings in their browser after the day ends or a new round replaces them, with Download and Delete for each.',
   41: "Zainab removed the strawberry sample drawings from the home and finish screens because the team didn't like them, leaving their unused code to clear out after Trenten's gallery changes merge.",
+  42: 'Zainab made an old Free play drawing move to My drawings when the day changes, so the home screen only offers today\'s drawings.',
   misread: 'Where the AI got something wrong or we had to correct course, and what happened next.',
   decisions: 'What we decided and what we dropped along the way.',
 }

@@ -999,8 +999,8 @@
       refreshToolbar();
       return kept.then(save);
     }
-    // What's saved in each slot, for the home screen. A today's or Daily Scrawl drawing from an
-    // earlier day is thrown away; Free play isn't tied to a date, so it stays.
+    // What's saved in each slot, for the home screen. A drawing from an earlier day, Free play
+    // included, moves to My drawings, so the home screen only offers today's.
     async function drafts() {
       const found = {};
       try { await draftStore.migrate(); } catch (err) { return found; }
@@ -1008,7 +1008,7 @@
         try {
           const draft = await draftStore.get(slot);
           if (!draft) continue;
-          if (slot !== "free" && draft.day !== dayKey()) {
+          if (draft.day !== dayKey()) {
             await myDrawings.keep(draft, slot).catch(() => {}); // its day is over, so it goes to My drawings
             await draftStore.remove(slot);
             continue;
