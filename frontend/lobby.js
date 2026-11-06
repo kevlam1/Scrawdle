@@ -1,4 +1,5 @@
-/* Lobbies: private rooms people join with a 5-letter code or a link like scrawdle.vercel.app/?BCDFG.
+/* Lobbies: private rooms people join with an invite link like scrawdle.vercel.app/?BCDFG. The 5-letter
+ * code in the link is how the database knows the lobby, but players never see or type it.
  *
  * What this file does: "Create Lobby" and "Join with a code" on the home screen, the lobby room
  * (the code, an invite link, who's in it), and a small contract for games to plug into. It does
@@ -186,7 +187,7 @@
     <header class="app-header"><span class="wordmark">Scrawdle</span><button type="button" class="quiet" data-act="leave">Leave lobby</button></header>
     <div class="lobby-body">
       <p class="eyebrow">Private lobby</p>
-      <h1 id="lobby-code" class="lobby-code"></h1>
+      <h1 id="lobby-code" class="lobby-title">Invite your friends</h1>
       <div class="lobby-share">
         <input class="lobby-link" readonly aria-label="Invite link">
         <button type="button" class="btn primary" data-act="invite" aria-expanded="false">Invite friends</button>
@@ -216,7 +217,6 @@
   room.addEventListener("close", () => { if (lobby.code && !room.open) room.showModal(); });
   stage.addEventListener("close", () => { if (lobby.game && !stage.open) stage.showModal(); });
 
-  const codeEl = $(room, ".lobby-code");
   const linkEl = $(room, ".lobby-link");
   const statusEl = $(room, ".lobby-status");
   const playersEl = $(room, ".lobby-players");
@@ -375,8 +375,6 @@
     lobby.players = [];
     lobby.ready = false;
     lobby.autoLaunch = true;
-    codeEl.textContent = code.split("").join(" ");
-    codeEl.setAttribute("aria-label", `Lobby code ${code.split("").join(" ")}`);
     linkEl.value = lobbyLink(location.origin, location.pathname, code);
     nameEl.value = me.name;
     setStatus("Connecting…");
@@ -425,17 +423,10 @@
   const card = el("section", "home-choice lobby-card");
   card.innerHTML = `
     <h2>Lobby</h2>
-    <p>Make a private room, then share the link or the 5-letter code with friends.</p>
+    <p>Make a private room, then invite friends with a link.</p>
     <button type="button" class="btn primary" data-act="create">Create Lobby</button>
-    <form class="lobby-join">
-      <label class="lobby-sr" for="lobby-code-input">Lobby code</label>
-      <input id="lobby-code-input" maxlength="5" placeholder="Code" autocomplete="off" autocapitalize="characters" spellcheck="false" inputmode="text">
-      <button type="submit" class="btn">Join</button>
-    </form>
     <p class="lobby-error" role="alert" hidden></p>`;
   const createBtn = $(card, '[data-act="create"]');
-  const joinForm = $(card, ".lobby-join");
-  const codeInput = $(card, "#lobby-code-input");
   const errorEl = $(card, ".lobby-error");
 
   function homeError(text) {
@@ -444,7 +435,6 @@
   }
   function busy(on) {
     createBtn.disabled = on;
-    for (const b of joinForm.querySelectorAll("button")) b.disabled = on;
   }
 
   async function createLobby() {
@@ -484,8 +474,6 @@
   }
 
   createBtn.addEventListener("click", createLobby);
-  joinForm.addEventListener("submit", (e) => { e.preventDefault(); joinLobby(codeInput.value); });
-  codeInput.addEventListener("input", () => { codeInput.value = codeInput.value.replace(/[^A-Za-z]/g, "").toUpperCase(); });
 
   $(room, '[data-act="leave"]').addEventListener("click", leave);
   copyBtn.addEventListener("click", async () => {

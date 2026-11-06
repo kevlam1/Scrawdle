@@ -37,7 +37,7 @@ Which updates are still waiting is listed under "Pending database updates" at th
 1. Open the file, read it, and paste the whole thing into the SQL Editor. Run it once. (Every update is written so a second run doesn't fail, but there's no reason to.)
 2. For `001`: if publishing a Daily Scrawl is still refused afterwards, the old mode constraint has a different name than the file assumes. The comment at the top of the file has the query that finds it.
 3. Redeploy the Edge Function if its file changed (see above).
-4. Check it from the app: Create Lobby should show a 5-letter code; open that `/?CODE` link in a second window and both should list two players.
+4. Check it from the app: Create Lobby should open a lobby whose invite link ends in `/?` and a 5-letter code; open that link in a second window and both should list two players.
 5. For `002`: publish a drawing in one window, open today's gallery in a private window, and give it a thumbs up. The first window's gallery should then say "You won!" on your own card. If the gallery shows no vote buttons, the browser console has the raw error from `vote_counts`.
 6. For `003`: publish a test drawing, then open today's gallery in three different private windows and press Report on it in each. After the third, it should disappear from the gallery. To bring it back, set `hidden` to false on its row in the `drawings` table and delete its rows from `reports`.
 

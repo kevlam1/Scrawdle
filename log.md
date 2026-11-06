@@ -1048,6 +1048,23 @@ Artifact 4 is "For Someone Else," due Sunday, November 8. Our team of four (Kevi
 
 ---
 
+## 54. No more lobby codes on screen (2026-11-05) — Zainab
+
+**What I asked for**
+- I'm not a fan of the lobby code. After entry 52 it was still shown big at the top of the lobby, and the home screen still had a box for typing one in. Friends should just tap the invite link.
+
+**What changed**
+- `frontend/lobby.js` and `lobby.css` (Kevin's files, with the team's OK): the lobby opens with "Invite your friends" where the big code was, with Invite friends right under it. The home screen's Lobby card no longer has the Code box and Join button, and says "Make a private room, then invite friends with a link." Joining by tapping an invite link works as before: the code is still inside the link, because that's how the database knows the lobby, but nobody has to see or type it.
+- `README.md`, `frontend/README.md`, `backend/README.md`, and the lobby section of `CLAUDE.md` describe joining by link instead of by code.
+
+**What I checked**
+- 77 logic tests pass. 10 checks in Chromium with a stand-in for Supabase, so no real lobby was created: no code box or Join button on the home card, no code in the lobby, the new heading (which still names the lobby for screen readers), Invite friends under it, joining by opening an invite link, no errors, and phone and dark-mode layouts. The Invite friends (16), name-goes-home (13), and dark mode (51) checks still pass.
+
+**Decisions**
+- Someone who only knows a code, with no link, can't join any more. The invite link is the way in.
+
+---
+
 ## Where AI misread me, or I had to correct course
 
 - Claude's first version of the start page put "What is this?" in the top right, where it collided with the "New set" button on the game screen. I caught it by running the page; Claude hadn't opened it in a browser.
@@ -1064,6 +1081,7 @@ Artifact 4 is "For Someone Else," due Sunday, November 8. Our team of four (Kevi
 - **Backticks in a shell command, the exact mistake our shared notes warn about (Claude's slip, entry 32):** a one-line script that edited four docs had backticks inside a single-quoted shell string, so the shell refused to run it. Nothing was changed, but it was a mistake the notes list by name. The edits were made with the editing tool instead. Separately, Claude's first check of the new link's colour failed because it expected the link to match the "Explore sample drawings" button, which turns out to have its own softer grey set in `flow.css`; the link was changed to match.
 
 - **A phone screenshot that wasn't the screen I thought (Claude's slip, entry 33):** Claude's browser check printed the right text for the phone home screen and moved on, but the screenshot it took was the game screen, because the page had restored the drawing left open by the desktop run. Claude noticed when it looked at the image instead of trusting the printed values, cleared the saved state, and retook it.
+- **The lobby code stayed on screen after I asked to drop it (entries 52 and 54):** when I said I wasn't a fan of the code, only the invite message changed at first, and the big code and the Join box stayed because the lobby was Kevin's design. It should have been checked whether I meant all of it. Fixed in entry 54.
 
 ---
 
