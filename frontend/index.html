@@ -444,6 +444,38 @@
       }
     });
 
+    /* ---------- The Scrawdle name in the top-left goes home ---------- */
+    // From any screen: it closes the finish screen, gallery, My drawings, or help, leaves a lobby the
+    // same way its Leave lobby button does, and returns home through history like Back to home.
+    async function wordmarkHome() {
+      const room = document.getElementById("lobby");
+      if (room && room.open) room.querySelector('[data-act="leave"]').click();
+      for (const id of ["finish", "gallery", "sketchbook", "help"]) {
+        const d = document.getElementById(id);
+        if (d && d.open) d.close();
+      }
+      if (!gameEl.hidden || !slotEl.hidden) goHome();
+    }
+    function makeWordmarksLinks() {
+      for (const mark of document.querySelectorAll(".wordmark")) {
+        if (mark.closest("#setup") || mark.dataset.home) continue; // already home there
+        mark.dataset.home = "true";
+        mark.setAttribute("role", "link");
+        mark.setAttribute("tabindex", "0");
+        mark.setAttribute("aria-label", "Scrawdle, back to home");
+        mark.title = "Back to home";
+      }
+    }
+    document.addEventListener("click", (e) => {
+      if (e.target.closest(".wordmark[data-home]")) wordmarkHome();
+    });
+    document.addEventListener("keydown", (e) => {
+      if ((e.key === "Enter" || e.key === " ") && e.target.closest && e.target.closest(".wordmark[data-home]")) {
+        e.preventDefault();
+        wordmarkHome();
+      }
+    });
+
     /* ---------- Drawing board (see drawing.js) ---------- */
     const board = ScrawdleDrawing.createBoard({ canvas: $("board"), toolbar: $("tools"), settings: $("brush-settings") });
     const gallery = ScrawdleGallery.createGallery(board);
@@ -453,6 +485,7 @@
     ScrawdleDrawing.createFinishScreen(board, gallery, {
       onHome: goHome,
     });
+    makeWordmarksLinks(); // after every screen with a wordmark exists
 
     // A refresh returns to the drawing this tab was on. A new visit starts at home.
     (async () => {

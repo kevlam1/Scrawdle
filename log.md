@@ -1033,6 +1033,21 @@ Artifact 4 is "For Someone Else," due Sunday, November 8. Our team of four (Kevi
 
 ---
 
+## 53. The Scrawdle name goes home (2026-11-05) — Zainab
+
+**What I asked for**
+- Clicking the Scrawdle name in the top-left corner should take me back home from anywhere, instead of having to find Start over, Back to home, or Leave lobby each time.
+
+**What changed**
+- `frontend/index.html`: on the reveal, drawing, finish, gallery, My drawings, and lobby screens, the Scrawdle name is a link home. It closes whatever is open (the finish screen, gallery, My drawings, or help), leaves a lobby the same way its Leave lobby button does, and returns home through the browser's history, so Back afterwards leaves the site with no extra press (entry 38). It works with the keyboard too, and its hover hint says "Back to home". The name on the home screen stays as it was.
+- `frontend/flow.css`: a pointer, a slight fade on hover, and a focus outline for the name.
+- The existing Start over, Back to home, and Leave lobby buttons stay for now.
+
+**What I checked**
+- 77 logic tests pass. 13 checks in Chromium, with a stand-in for Supabase for the lobby: the home screen's name isn't a link and the six others are; going home from the drawing, the reveal (and the spin doesn't reappear), the finish screen, the gallery, My drawings, and a lobby (which it leaves, clearing the code from the address); Back afterwards; Enter on the name; and no errors. The first run of my own check failed because its stand-in couldn't create a lobby; the page was fine. The Back button, dark mode, and My drawings checks still pass.
+
+---
+
 ## Where AI misread me, or I had to correct course
 
 - Claude's first version of the start page put "What is this?" in the top right, where it collided with the "New set" button on the game screen. I caught it by running the page; Claude hadn't opened it in a browser.
