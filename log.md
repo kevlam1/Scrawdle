@@ -1004,6 +1004,20 @@ Artifact 4 is "For Someone Else," due Sunday, November 8. Our team of four (Kevi
 
 ---
 
+## 51. The Publish button shows that publishing worked (2026-11-05) — Zainab
+
+**What I asked for**
+- After pressing Publish drawing, the screen looked stuck. Publishing had worked, but the only sign was a small line of text, and the button stayed yellow with the same words. I wanted it to be obvious.
+
+**What changed**
+- `frontend/drawing.js`: the button now shows where publishing is up to. It says "Publishing…" while sending, then turns green as "Published ✓". If publishing fails, it goes back to "Publish drawing" so it can be tried again. Coming back to the finish screen, or trying again after a refresh (which says it's already published), shows "Published ✓" too. The line under it now says "Your drawing is published. See it in today's drawings."
+- `frontend/flow.css`: the green published style, which also works in dark mode.
+
+**What I checked**
+- 77 logic tests pass. 10 checks in Chromium with a stand-in for Supabase whose upload waits, so each step could be seen: "Publishing…" while sending, "Published ✓" in green with the new line, still published when the finish screen reopens, a failed publish going back to "Publish drawing", already published after a refresh, and dark mode. Nothing reached Kevin's project. The dark mode, Share, play button, and Report checks still pass.
+
+---
+
 ## Where AI misread me, or I had to correct course
 
 - Claude's first version of the start page put "What is this?" in the top right, where it collided with the "New set" button on the game screen. I caught it by running the page; Claude hadn't opened it in a browser.

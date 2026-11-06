@@ -1210,19 +1210,28 @@
       downloadBtn.click();
       note.textContent = "Sharing isn't available in this browser, so it downloaded instead. Attach the file to share it.";
     });
+    // The button itself shows where publishing is up to, so it never looks stuck.
+    const showPublish = (state) => {
+      publishBtn.textContent = { ready: "Publish drawing", sending: "Publishing…", done: "Published ✓" }[state];
+      publishBtn.disabled = state !== "ready";
+      publishBtn.classList.toggle("published", state === "done");
+    };
     publishBtn.addEventListener("click", async () => {
       const key = roundKey();
-      publishBtn.disabled = true;
-      note.textContent = "Publishing…";
+      showPublish("sending");
+      note.textContent = "";
       try {
         const blob = await board.canvasBlob();
         await window.scrawdlePublish({ blob, ...board.round });
-        note.textContent = "Your drawing is published.";
+        note.textContent = "Your drawing is published. See it in today's drawings.";
         published.set(key, note.textContent);
+        showPublish("done");
       } catch (err) {
         note.textContent = err.userMessage || "Couldn't publish. Your drawing is still saved here, so try again.";
-        if (err.alreadyPublished) published.set(key, note.textContent);
-        else publishBtn.disabled = false;
+        if (err.alreadyPublished) {
+          published.set(key, note.textContent);
+          showPublish("done");
+        } else showPublish("ready");
       }
     });
 
@@ -1242,7 +1251,7 @@
       dialog.querySelector(".publish-disclosure").hidden = !ready;
       publishBtn.hidden = !ready;
       const publishedNote = published.get(roundKey());
-      publishBtn.disabled = Boolean(publishedNote);
+      showPublish(publishedNote ? "done" : "ready");
       publishBtn.classList.toggle("primary", ready);
       downloadBtn.classList.toggle("primary", !ready);
       galleryBtn.hidden = !daily || empty || typeof window.scrawdleGallery !== "function";

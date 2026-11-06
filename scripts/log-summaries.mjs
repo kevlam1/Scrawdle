@@ -56,6 +56,7 @@ export const SUMMARIES = {
   48: 'Zainab made the My drawings link appear only once a player has a drawing, and removed the line saying drafts save in the browser.',
   49: "Zainab added a Report button under other players' drawings in the gallery, which hides a drawing once 3 different players report it, waiting on Kevin's database update.",
   50: "Zainab replaced Replay's text link with a round play button over the finished drawing that comes back as 'watch again'.",
+  51: "Zainab made the Publish button say 'Publishing…' and then turn green as 'Published ✓', because publishing worked but looked stuck.",
   misread: 'Where the AI got something wrong or we had to correct course, and what happened next.',
   decisions: 'What we decided and what we dropped along the way.',
 }

@@ -93,6 +93,8 @@ h1{font:400 44px/1.15 var(--hand);margin:0}
 .finish-prompt{font:400 19px/1.4 var(--hand);margin:8px 0 0}
 .finish-art{width:min(680px,100%,calc((100dvh - 330px)*1.5));max-width:100%;min-width:220px;padding:0;border:var(--line);border-radius:6px;overflow:hidden;transform:none}
 .finish-side{gap:8px;align-items:center;width:min(600px,100%)}
+/* A published drawing's button turns green, so it's clear publishing worked. */
+#finish .btn.published,#finish .btn.published:disabled{background:var(--sage);color:var(--sage-ink);border-color:transparent;box-shadow:none}
 /* The replay's play button, over the middle of the finished drawing. */
 .finish-art .play{position:absolute;left:50%;top:50%;width:76px;height:76px;margin:-38px 0 0 -38px;padding:0;display:grid;place-items:center;border:2px solid rgba(255,255,255,.85);border-radius:50%;background:rgba(44,42,40,.7);color:#fff;box-shadow:0 4px 16px rgba(44,42,40,.3);cursor:pointer;transition:transform .15s,background .15s,opacity .2s}
 .finish-art .play svg{width:34px;height:34px;fill:currentColor}
