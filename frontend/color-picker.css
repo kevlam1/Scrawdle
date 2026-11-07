@@ -1,0 +1,49 @@
+/* Scrawdle's own color picker (color-picker.js), opened from the rainbow "Custom" button in the tool
+ * tray. Defined here in full so it looks the same in every browser. Uses the theme's variables, so
+ * dark mode (theme.css) applies with no extra rules. Loaded after the other stylesheets. */
+
+/* The rainbow button. It used to be a label around the browser's hidden color input. */
+.custom-color { position: relative; }
+button.wheel { padding: 0; margin: 0; appearance: none; -webkit-appearance: none; font: inherit; color: inherit; }
+button.wheel:focus-visible { outline: 2.5px solid var(--ink); outline-offset: 4px; }
+/* With a custom color chosen, its color shows in the middle of the rainbow. */
+.wheel.on::after { content: ""; position: absolute; inset: 27%; border-radius: 50%; background: var(--custom-color, transparent); box-shadow: 0 0 0 2px var(--surface, #fffcf7); }
+
+.cp-panel {
+  position: absolute; z-index: 40; bottom: calc(100% + 12px); left: 50%;
+  transform: translateX(calc(-50% + var(--cp-shift, 0px)));
+  width: 252px; padding: 14px; display: flex; flex-direction: column; gap: 12px;
+  background: var(--surface, #fffcf7); color: var(--ink); border: var(--line); border-radius: 12px;
+  box-shadow: 0 8px 24px #302f2b2e, var(--raise); text-align: left; font-size: 13px;
+}
+.cp-panel[hidden] { display: none; }
+
+.cp-square, .cp-hue { position: relative; touch-action: none; cursor: crosshair; border: var(--line); }
+.cp-square { height: 150px; border-radius: 8px; background: linear-gradient(to top, #000, rgba(0, 0, 0, 0)), linear-gradient(to right, #fff, var(--cp-hue, red)); }
+.cp-hue { height: 16px; border-radius: 8px; cursor: ew-resize; background: linear-gradient(to right, #f00 0%, #ff0 16.67%, #0f0 33.33%, #0ff 50%, #00f 66.67%, #f0f 83.33%, #f00 100%); }
+.cp-square:focus-visible, .cp-hue:focus-visible { outline: 2.5px solid var(--ink); outline-offset: 3px; }
+.cp-thumb { position: absolute; width: 18px; height: 18px; border-radius: 50%; border: 2px solid #fff; box-shadow: 0 0 0 1px #00000080, 0 1px 3px #00000059; transform: translate(-50%, -50%); pointer-events: none; }
+.cp-square .cp-thumb { background: var(--cp-color, #000); }
+.cp-hue .cp-thumb { top: 50%; background: var(--cp-hue, red); }
+
+.cp-row { display: flex; align-items: center; gap: 8px; }
+.cp-swatch { flex: none; width: 34px; height: 34px; border-radius: 8px; border: var(--line); background: var(--cp-color, #000); }
+.cp-hex-label { display: flex; align-items: center; gap: 6px; flex: 1; min-width: 0; color: var(--ink-soft); }
+.cp-hex { width: 100%; min-width: 0; height: 34px; padding: 0 8px; border: var(--line); border-radius: 7px; background: var(--cream); color: var(--ink); font: 14px/1 ui-monospace, Menlo, Consolas, monospace; text-transform: lowercase; }
+.cp-hex:focus-visible { outline: 2px solid var(--ink); outline-offset: 1px; }
+.cp-hex[aria-invalid="true"] { border-color: var(--alert-ink); background: var(--alert); }
+.cp-done { flex: none; min-height: 34px; padding: 0 14px; font-size: 13px; }
+
+.cp-recent { display: grid; grid-template-columns: repeat(6, 28px); justify-content: space-between; }
+.cp-recent[hidden] { display: none; }
+.cp-recent-color { width: 28px; height: 28px; padding: 0; border-radius: 50%; border: var(--line); background: var(--cp-swatch); cursor: pointer; }
+.cp-recent-color:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+
+/* Phones: pinned across the bottom of the screen, so it can't go off either side. */
+@media (max-width: 640px) {
+  .cp-panel { position: fixed; left: 12px; right: 12px; bottom: 12px; width: auto; transform: none; }
+  .cp-square { height: 170px; }
+  .cp-hue { height: 22px; }
+  .cp-recent { grid-template-columns: repeat(6, 34px); }
+  .cp-recent-color { width: 34px; height: 34px; }
+}

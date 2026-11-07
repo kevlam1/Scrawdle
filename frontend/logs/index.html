@@ -609,11 +609,11 @@
         <h1>Scrawdle: build log</h1>
         <p class="intro">
           A daily drawing game, built by a team of four with Claude Code: a new set of parts to draw each day, a gallery of what
-          other people drew, and private lobbies. Here are the 63 entries of our log with one sentence on each and the name of
+          other people drew, and private lobbies. Here are the 64 entries of our log with one sentence on each and the name of
           whoever wrote it. Open an entry to read everything they wrote for it.
         </p>
         <ul class="facts" aria-label="Project facts">
-          <li>28 October to 6 November 2026</li>
+          <li>28 October to 7 November 2026</li>
           <li>Team of four</li>
           <li>Claude Code</li>
           <li>Plain canvas + Supabase</li>
@@ -736,6 +736,12 @@
     <li><a href="#entry-61"><span class="n">61</span><span>Doodles behind every page</span></a></li>
     <li><a href="#entry-62"><span class="n">62</span><span>Start over stays put, part bubbles, a way back from the build log</span></a></li>
     <li><a href="#entry-63"><span class="n">63</span><span>One Public drawings page, and the lock breaks</span></a></li>
+  </ul></div>
+</div>
+<div class="toc-group is-open">
+  <button class="toc-head" type="button" aria-expanded="true">Saturday 7 November <span class="count">1</span></button>
+  <div class="toc-list-wrap"><ul class="toc-list">
+    <li><a href="#entry-64"><span class="n">64</span><span>Scrawdle's own color picker</span></a></li>
   </ul></div>
 </div>
 <div class="toc-group is-open">
@@ -1810,6 +1816,24 @@
 <ul><li>The 84 logic tests pass. In headless Chrome, with the Supabase requests faked so nothing reached the live project, I drew a Daily Scrawl, published it, pressed See public drawings, and watched the page: Public drawings opens, the lock shows then breaks, the bubble opens, and Daily Scrawl drawings appear. A Daily Free Play published the same way left Daily Scrawl locked and showed Daily Free Play. With a mix of fake drawings in all the modes, Daily Scrawl showed only the Daily Scrawl ones and Daily Free Play only its own. I looked at screenshots of the lock before, during, and after breaking.</li><li>Not checked: a real publish to the live project, dark mode and phone width for the new animation, and Safari.</li></ul>
 <p class="sub"><strong>Decisions</strong></p>
 <ul><li>The most likely reason the unlock didn't happen for me is not in the page. I read the live project (read-only, no publishing): it has recent Daily Free Play and old Basic drawings from today and no Daily Scrawl (<code>daily</code>) drawings at all. <code>backend/supabase/updates/004-daily-scrawl.sql</code>, which lets the database accept the new mode, is still on the &quot;to run&quot; list in <code>CLAUDE.md</code>, so the database is probably refusing Daily Scrawl publishes (&quot;Couldn't share right now&quot;), so nothing is marked as posted and nothing unlocks. Only Kevin can run it. I did not change the code to work around that.</li><li>&quot;Today's drawings&quot; is gone from the game; one page does both jobs.</li></ul>
+  </div></div></div>
+</article>
+<h3 class="day">Saturday 7 November</h3>
+<article class="entry" id="entry-64">
+  <h3 class="entry-head"><button type="button" aria-expanded="false" aria-controls="entry-64-body">
+    <span class="num">64</span>
+    <span><span class="title">Scrawdle's own color picker<span class="by">by Trenten</span></span><span class="sum">Trenten replaced the browser's built-in color picker with Scrawdle's own, a shade square, hue bar, hex box and recent colors that look the same in every browser and in dark mode.</span></span>
+    <span class="caret" aria-hidden="true"></span>
+  </button></h3>
+  <div class="body" id="entry-64-body"><div class="body-in"><div class="body-pad">
+<p class="sub"><strong>What I asked for</strong></p>
+<ul><li>The &quot;Custom&quot; color button opened the browser's built-in color picker, so it looked different in every browser (a pop-up in Chrome, a system window in Firefox, the Mac color panel in Safari). I asked for the picker to be defined in our own project, as the new top priority before the streak, and approved Claude's plan before it built anything.</li></ul>
+<p class="sub"><strong>What changed</strong></p>
+<ul><li><code>frontend/color-picker.js</code> and <code>color-picker.css</code> (new): clicking the rainbow button opens a panel above it with a shade square (grey to full color, light to dark), a hue bar, a hex box with a swatch of the current color, the last six custom colors (kept in this browser), and a Done button. The color applies as you drag. It closes on Done, Enter in the hex box, Esc, or a click outside, and works with mouse, finger, stylus and keyboard (arrow keys move the square and bar, Shift for bigger steps; screen readers hear values like &quot;Hue 210 degrees&quot;). On a phone it's pinned across the bottom of the screen. It uses the theme's colors, so dark mode works.</li><li><code>frontend/drawing.js</code>: the rainbow button is now a real button that opens the panel, instead of a label wrapped around the browser's hidden color input. With a custom color chosen, that color shows in the middle of the rainbow. Each board gets its own picker, so the main game and Scrawdle Party don't share one. <code>drawing.css</code>: removed the rule for the old hidden input. <code>index.html</code>: loads the two new files.</li><li><code>tests/color-picker.test.js</code> (new). <code>README.md</code>: the test command is now <code>node --test tests/</code>, which runs every test file; the old list had missed four of them.</li></ul>
+<p class="sub"><strong>What I checked</strong></p>
+<ul><li>7 Node tests for the color math: hex codes in any form, bad codes refused, pure colors and black, white and grey landing in the right place, every tray color and a sample of all colors surviving a round trip unchanged, and the recent-colors list. All 92 tests pass.</li><li>In Chromium: opening and closing (button, Done, Enter, Esc, a click outside); dragging the square and the bar; arrow keys; typing a hex code (half-typed codes are marked invalid until they're complete); a recent color; the pen then drew exactly the color picked (<code>#e07b39</code>); the panel stays on screen and nothing covers or clips it at 1280 by 800 and at phone width; dark mode; and a second board inside a full-screen dialog, like Scrawdle Party's, gets its own picker. A real Esc key press closed only the picker, not the dialog around it.</li><li>Not checked: Safari, Firefox, a real phone or stylus. The whole point is that it looks the same everywhere, so it's worth a look in those. The preview pane was too small for useful screenshots, so the look was checked by measuring, not by eye.</li></ul>
+<p class="sub"><strong>Decisions</strong></p>
+<ul><li>Built from plain page elements and CSS gradients, with no library and no <code>&lt;input type=&quot;color&quot;&gt;</code>, so no browser draws any part of it.</li><li>The recent colors are shared by every board on the page and kept in this browser only.</li></ul>
   </div></div></div>
 </article>
       </section>

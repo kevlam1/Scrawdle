@@ -361,9 +361,12 @@
       b.setAttribute("aria-label", colorName(c));
       return b;
     });
-    const picker = el("input", { type: "color", className: "picker", value: color, title: "Pick any color", oninput: (e) => setColor(e.target.value) });
-    picker.setAttribute("aria-label", "Pick any color");
-    const wheel = el("label", { className: "wheel" }, picker);
+    // "Custom" opens Scrawdle's own color picker (color-picker.js), not the browser's built-in one,
+    // so it looks the same in every browser. Each board gets its own.
+    const wheel = el("button", { type: "button", className: "wheel", title: "Pick any color" });
+    wheel.setAttribute("aria-label", "Pick any color");
+    const picker = root.ScrawdleColorPicker ? root.ScrawdleColorPicker.create({ anchor: wheel, onInput: (c) => setColor(c) }) : null;
+    wheel.addEventListener("click", () => { if (picker) picker.toggle(color); });
     const sizeInput = el("input", { type: "range", min: 1, max: 60, value: 3, id: `${idPrefix}tool-size`, oninput: (e) => {
       if (sizes[tool] !== null) sizes[tool] = Number(e.target.value);
       refreshToolbar();
@@ -427,6 +430,7 @@
     sizeValue.htmlFor = `${idPrefix}tool-size`;
     sizeGroup.prepend(sizeValue);
     const custom = el("div", {className: "custom-color"}, wheel, el("span", {textContent: "Custom"}));
+    if (picker) custom.append(picker.el);
     toolbar.append(
       el("div", {className: "tray"},
         el("div", {className: "tray-group tray-tools"}, ...Object.values(toolButtons)),
@@ -450,6 +454,7 @@
       for (const [id, b] of Object.entries(toolButtons)) b.setAttribute("aria-pressed", String(id === tool));
       for (const b of swatches) b.setAttribute("aria-pressed", String(b.dataset.color === color));
       wheel.classList.toggle("on", !COLORS.includes(color));
+      wheel.style.setProperty("--custom-color", color);
       const noSize = sizes[tool] === null;
       sizeInput.disabled = noSize;
       for (const b of presetButtons) b.disabled = noSize;
@@ -480,7 +485,6 @@
     function setColor(c) {
       color = c;
       if (!brushPanel.hidden) renderBrushPreviews();
-      picker.value = c;
       if (tool === "eraser") tool = "pen";
       refreshToolbar();
     }

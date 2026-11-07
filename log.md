@@ -1242,6 +1242,27 @@ Artifact 4 is "For Someone Else," due Sunday, November 8. Our team of four (Kevi
 
 ---
 
+## 64. Scrawdle's own color picker (2026-11-07) — Trenten
+
+**What I asked for**
+- The "Custom" color button opened the browser's built-in color picker, so it looked different in every browser (a pop-up in Chrome, a system window in Firefox, the Mac color panel in Safari). I asked for the picker to be defined in our own project, as the new top priority before the streak, and approved Claude's plan before it built anything.
+
+**What changed**
+- `frontend/color-picker.js` and `color-picker.css` (new): clicking the rainbow button opens a panel above it with a shade square (grey to full color, light to dark), a hue bar, a hex box with a swatch of the current color, the last six custom colors (kept in this browser), and a Done button. The color applies as you drag. It closes on Done, Enter in the hex box, Esc, or a click outside, and works with mouse, finger, stylus and keyboard (arrow keys move the square and bar, Shift for bigger steps; screen readers hear values like "Hue 210 degrees"). On a phone it's pinned across the bottom of the screen. It uses the theme's colors, so dark mode works.
+- `frontend/drawing.js`: the rainbow button is now a real button that opens the panel, instead of a label wrapped around the browser's hidden color input. With a custom color chosen, that color shows in the middle of the rainbow. Each board gets its own picker, so the main game and Scrawdle Party don't share one. `drawing.css`: removed the rule for the old hidden input. `index.html`: loads the two new files.
+- `tests/color-picker.test.js` (new). `README.md`: the test command is now `node --test tests/`, which runs every test file; the old list had missed four of them.
+
+**What I checked**
+- 7 Node tests for the color math: hex codes in any form, bad codes refused, pure colors and black, white and grey landing in the right place, every tray color and a sample of all colors surviving a round trip unchanged, and the recent-colors list. All 92 tests pass.
+- In Chromium: opening and closing (button, Done, Enter, Esc, a click outside); dragging the square and the bar; arrow keys; typing a hex code (half-typed codes are marked invalid until they're complete); a recent color; the pen then drew exactly the color picked (`#e07b39`); the panel stays on screen and nothing covers or clips it at 1280 by 800 and at phone width; dark mode; and a second board inside a full-screen dialog, like Scrawdle Party's, gets its own picker. A real Esc key press closed only the picker, not the dialog around it.
+- Not checked: Safari, Firefox, a real phone or stylus. The whole point is that it looks the same everywhere, so it's worth a look in those. The preview pane was too small for useful screenshots, so the look was checked by measuring, not by eye.
+
+**Decisions**
+- Built from plain page elements and CSS gradients, with no library and no `<input type="color">`, so no browser draws any part of it.
+- The recent colors are shared by every board on the page and kept in this browser only.
+
+---
+
 ## Where AI misread me, or I had to correct course
 
 - Claude's first version of the start page put "What is this?" in the top right, where it collided with the "New set" button on the game screen. I caught it by running the page; Claude hadn't opened it in a browser.
