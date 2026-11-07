@@ -19,7 +19,7 @@
 (function (root) {
   "use strict";
   const R = root.ScrawdlePartyRules;
-  if (!root.ScrawdleLobby || !R || !root.ScrawdleDrawing) return;
+  if (!root.ScrawdleLobby || !R || !root.ScrawdleDrawing || !root.ScrawdleTimer) return;
 
   const REVEAL_MS = 3500; // the parts show on their own before the timer starts
   const SEND_SPREAD_MS = 1200; // when the timer runs out, drawings go out over this long, not all at once
@@ -109,12 +109,15 @@
     const note = (text) => el("p", { className: "party-note", textContent: text });
     const button = (text, onclick, primary = true) => el("button", { type: "button", className: primary ? "btn primary" : "btn", textContent: text, onclick });
     const partsLine = (parts) => parts.map((p) => `${p.label}: ${p.value}${p.optional ? " (optional)" : ""}`).join(" · ");
+    // The countdown math is shared with the Time Challenge (timer.js); the interval stays here, in this
+    // game's own timers, so ending the game stops it.
     function countdown(target, seconds, onEnd) {
+      const T = root.ScrawdleTimer;
       const endsAt = Date.now() + seconds * 1000;
       const tick = () => {
-        const left = Math.max(0, Math.ceil((endsAt - Date.now()) / 1000));
-        target.textContent = `${Math.floor(left / 60)}:${String(left % 60).padStart(2, "0")}`;
-        target.classList.toggle("hurry", left <= 10);
+        const left = T.secondsLeft(endsAt, Date.now());
+        target.textContent = T.clockText(left);
+        target.classList.toggle("hurry", left <= T.HURRY);
         if (left === 0) { stop(t); if (onEnd) onEnd(); }
       };
       const t = every(250, tick);

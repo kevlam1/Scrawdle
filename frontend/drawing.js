@@ -219,7 +219,18 @@
   };
   // Daily Free Play (mode "scrawl") is a free draw with its own save, cleared each day like "today".
   // Daily Scrawl (mode "daily"), and the older "basic" and "detailed", share the "today" save.
-  const slotOf = (round) => (round.mode === "scrawl" ? "scrawl" : round.daily === false ? "free" : "today");
+  // A Time Challenge (round.timed) has its own slot, so it never replaces the Free Play drawing.
+  const slotOf = (round) => (round.timed ? "timed" : round.mode === "scrawl" ? "scrawl" : round.daily === false ? "free" : "today");
+  const SLOTS = ["today", "scrawl", "free", "timed"];
+
+  // The finish screen's line for a Time Challenge. `timed` is { seconds, startedAt, used }: `used` is how
+  // long it took, set when it ends; with none, it ended when the page was reloaded or left.
+  function timedText(timed) {
+    if (!timed || !timed.seconds) return "";
+    if (typeof timed.used !== "number") return `⏱ ${timed.seconds}-second Time Challenge. It ended when you left the drawing.`;
+    if (timed.used >= timed.seconds) return `⏱ Drawn in ${timed.seconds} seconds!`;
+    return `⏱ Finished in ${timed.used} of ${timed.seconds} seconds!`;
+  }
   const draftImage = async (draft) => draft.blob || (await fetch(draft.dataUrl)).blob();
   // A drawing with something in it, as opposed to a round that was opened and left blank.
   const isMarked = (draft) => !Array.isArray(draft.ops) || draft.ops.length > 0 || draft.canReplay === false;
@@ -240,7 +251,7 @@
     async keep(draft, slot) {
       if (!draft || !isMarked(draft)) return;
       const blob = await draftImage(draft);
-      const entry = { day: draft.day, mode: draft.mode, daily: draft.daily !== false, prompts: draft.prompts, blob, savedAt: draft.savedAt || Date.now() };
+      const entry = { day: draft.day, mode: draft.mode, daily: draft.daily !== false, prompts: draft.prompts, blob, savedAt: draft.savedAt || Date.now(), ...(draft.timed ? { timed: draft.timed } : {}) };
       await draftStore.put(entry, bookKey(entry, slot));
       for (const key of keysToDrop(await draftStore.keys())) await draftStore.remove(key);
     },
@@ -261,18 +272,19 @@
 
   /* ---------- Sharing: the line that goes with a shared drawing, like a daily puzzle's ---------- */
   // `streak` is the player's current streak (streak.js); a daily drawing's line ends with it, Wordle-style.
-  function shareLine({ mode, daily, prompts, day }, url, streak = 0) {
+  function shareLine({ mode, daily, prompts, day, timed }, url, streak = 0) {
     const date = new Date(`${day}T12:00:00`).toLocaleDateString(undefined, { month: "long", day: "numeric" });
     const fire = streak > 0 ? ` 🔥 ${streak}` : "";
     if (mode === "scrawl") return `My Scrawdle Daily Free Play drawing for ${date}. Draw yours: ${url}${fire}`;
     const parts = prompts.map((p) => p.value).join(", ");
+    if (timed && timed.seconds) return `My Scrawdle ${timed.seconds}-second Time Challenge: ${parts}. Draw yours: ${url}`;
     if (daily === false) return `My Scrawdle Open Canvas drawing: ${parts}. Draw yours: ${url}`;
     const name = mode === "daily" ? "Daily Scrawl" : mode === "detailed" ? "Detailed" : "Basic";
     return `My Scrawdle ${name} drawing for ${date}: ${parts}. Draw yours: ${url}${fire}`;
   }
 
   /* ---------- The finished image: the drawing with its prompts and date underneath ---------- */
-  function letterDrawing(source, { prompts, day }) {
+  function letterDrawing(source, { prompts, day, timed }) {
     const W = source.width;
     const H = source.height;
     const m = 40;
@@ -302,7 +314,7 @@
     c.textBaseline = "top";
     lines.forEach((line, i) => c.fillText(line, m, H + m + 24 + i * lineHeight));
     c.font = '36px "Gochi Hand", "Trebuchet MS", sans-serif';
-    c.fillText(`Scrawdle, ${day}`, m, H + m + 24 + lines.length * lineHeight);
+    c.fillText(`Scrawdle, ${day}${timed && timed.seconds ? ` · ${timed.seconds}-second Time Challenge` : ""}`, m, H + m + 24 + lines.length * lineHeight);
     return out;
   }
 
@@ -1096,15 +1108,16 @@
     document.addEventListener("visibilitychange", () => { if (document.visibilityState === "hidden") saveNow(); });
 
     /* --- rounds --- */
-    function start(mode, prompts, daily = true) {
+    // `timed` ({ seconds }) makes it a Time Challenge, with its own save slot.
+    function start(mode, prompts, daily = true, timed = null) {
       // A Free play drawing, or today's in the other mode, that this round replaces goes to My drawings
       // first. The new round saves only after that, so it can't overwrite the old one before it's kept.
-      const slot = slotOf({ mode, daily });
+      const slot = slotOf({ mode, daily, timed });
       const kept = draftStore.get(slot).then((old) => myDrawings.keep(old, slot)).catch(() => {});
       clearTimeout(saveTimer);
       saveGeneration++;
       unsaved = false;
-      round = { mode, prompts, daily, day: dayKey() };
+      round = { mode, prompts, daily, day: dayKey(), ...(timed ? { timed: { ...timed } } : {}) };
       blank();
       history.clear();
       ops = [];
@@ -1118,7 +1131,7 @@
     async function drafts() {
       const found = {};
       try { await draftStore.migrate(); } catch (err) { return found; }
-      for (const slot of ["today", "scrawl", "free"]) {
+      for (const slot of SLOTS) {
         try {
           const draft = await draftStore.get(slot);
           if (!draft) continue;
@@ -1129,7 +1142,7 @@
           }
           const image = await draftImage(draft);
           (await createImageBitmap(image)).close();
-          found[slot] = { slot, mode: draft.mode, daily: draft.daily !== false, day: draft.day, prompts: draft.prompts, image, marked: isMarked(draft), savedAt: draft.savedAt || 0 };
+          found[slot] = { slot, mode: draft.mode, daily: draft.daily !== false, day: draft.day, prompts: draft.prompts, timed: draft.timed || null, image, marked: isMarked(draft), savedAt: draft.savedAt || 0 };
         } catch (err) { // a damaged save shouldn't stop the game from opening
           await draftStore.remove(slot).catch(() => {});
         }
@@ -1155,7 +1168,7 @@
       ops = Array.isArray(draft.ops) ? draft.ops : [];
       opsAt = ops.length;
       canReplay = Array.isArray(draft.ops) && draft.canReplay !== false;
-      round = { mode: draft.mode, prompts: draft.prompts, daily: draft.daily !== false, day: draft.day };
+      round = { mode: draft.mode, prompts: draft.prompts, daily: draft.daily !== false, day: draft.day, ...(draft.timed ? { timed: { ...draft.timed } } : {}) };
       history.clear();
       refreshToolbar();
       setStatus("Saved in this browser", "saved");
@@ -1191,6 +1204,8 @@
     return {
       start, drafts, restore, flush, discard, undo, redo, exportCanvas, canvasBlob, replay,
       save, setLocked,
+      // A Time Challenge's progress ({ startedAt } when the clock starts, { used } when it ends), saved with the drawing.
+      noteTimed(fields) { if (round && round.timed) { Object.assign(round.timed, fields); scheduleSave(); } },
       clear: clearAll, // erases the canvas but keeps the round and its parts; Undo brings the drawing back
       get locked() { return locked; },
       get canReplay() { return canReplay && opsAt > 0; },
@@ -1208,7 +1223,7 @@
     dialog.id = "finish";
     dialog.innerHTML = `
       <header class="app-header"><span class="wordmark">Scrawdle</span><button type="button" class="quiet" data-act="home">Back to home</button></header>
-      <div class="finish-heading"><p class="finish-date eyebrow"></p><h1>Made by you.</h1><h2 class="finish-prompt"></h2><p class="finish-streak" role="status" hidden></p></div>
+      <div class="finish-heading"><p class="finish-date eyebrow"></p><h1>Made by you.</h1><h2 class="finish-prompt"></h2><p class="finish-streak" role="status" hidden></p><p class="finish-timed" hidden></p></div>
       <div class="finish-art">
         <img alt="Your finished drawing">
         <canvas class="replay" hidden aria-label="Your drawing being redrawn"></canvas>
@@ -1379,6 +1394,10 @@
         streakEl.textContent = root.ScrawdleStreak.finishText(s, s.added, s.bestBefore);
       }
       streakEl.hidden = !streakEl.textContent;
+      // A Time Challenge says how long it took (timedText).
+      const timedEl = dialog.querySelector(".finish-timed");
+      timedEl.textContent = timedText(board.round.timed);
+      timedEl.hidden = !timedEl.textContent;
       dialog.showModal();
       try { sessionStorage.setItem(FINISH_KEY, "1"); } catch (err) { /* private browsing: a refresh just goes back to the drawing */ }
     };
@@ -1387,7 +1406,7 @@
     return { open };
   }
 
-  const api = { floodFill, blendFill, FINISH_KEY, History, dayKey, brushWidthFactor, slotOf, COLORS, COLOR_NAMES, bookKey, keysToDrop, BOOK_MAX, shareLine };
+  const api = { floodFill, blendFill, FINISH_KEY, History, dayKey, brushWidthFactor, slotOf, SLOTS, timedText, COLORS, COLOR_NAMES, bookKey, keysToDrop, BOOK_MAX, shareLine };
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   else root.ScrawdleDrawing = { ...api, createBoard, createFinishScreen, HISTORY_BYTES, myDrawings, letterDrawing };
 })(typeof window !== "undefined" ? window : globalThis);

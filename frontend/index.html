@@ -82,6 +82,12 @@
             <span class="menu-text">Random parts whenever you want, as many times as you like.</span>
           </span></span>
         </button>
+        <button class="menu-card" id="time-challenge" type="button">
+          <span class="menu-name">Time Challenge</span>
+          <span class="menu-more"><span class="menu-more-inner">
+            <span class="menu-text">Four random parts and a ticking clock: 30, 60 or 90 seconds. The canvas locks at 0:00.</span>
+          </span></span>
+        </button>
       </div>
       <div id="multiplayer-error"></div>
       <button class="quiet" id="my-drawings" type="button" hidden>My drawings</button>
@@ -103,6 +109,8 @@
       <h1 class="reveal-heading">Your parts</h1>
       <div id="reels" aria-hidden="true"></div>
       <h2 id="slot-sentence" role="status" hidden></h2>
+      <!-- Time Challenge only: how long, picked before the clock starts. -->
+      <div class="challenge-times" id="slot-times" role="radiogroup" aria-label="How long to draw" hidden></div>
       <div class="slot-actions">
         <button class="quiet" id="slot-skip" type="button">Skip animation</button>
         <button class="btn" id="slot-new" type="button" hidden>New set</button>
@@ -124,11 +132,14 @@
           <small id="prompt-label"></small>
           <strong id="prompt-text"></strong>
         </div>
+        <span class="challenge-timer" id="challenge-timer" role="timer" aria-label="Time left" hidden></span>
         <button class="help-open round-btn" id="help-btn" type="button" aria-label="Help">?</button>
       </div>
     </header>
     <div id="stage">
       <canvas id="board" width="1800" height="1200" aria-label="Drawing canvas"></canvas>
+      <!-- Time Challenge: "3, 2, 1, Draw!" before the clock starts, and "Time's up!" at 0:00. -->
+      <div class="challenge-count" id="challenge-count" aria-live="assertive" hidden></div>
     </div>
     <aside id="brush-settings" aria-label="Drawing settings"></aside>
     <div id="tools"></div>
@@ -136,6 +147,7 @@
 
   <script src="daily.js"></script>
   <script src="streak.js"></script>
+  <script src="timer.js"></script>
   <script src="color-picker.js"></script>
   <script src="drawing.js"></script>
   <script src="votes.js"></script>
@@ -255,12 +267,16 @@
       $("slot-sentence").hidden = false;
       $("slot-skip").hidden = true;
       $("slot-new").hidden = daily;
+      if (board.round && board.round.timed) showTimeChoices();
       $("slot-start").hidden = false;
       $("slot-start").focus({ preventScroll: true });
     }
 
     function spin(parts, results, mode, daily) {
-      slotEl.querySelector(".slot-label").textContent = !daily ? "Free Play" : mode === "detailed" ? "Today's Detailed parts" : mode === "basic" ? "Today's Basic parts" : "Today's Daily Scrawl parts";
+      const timed = board.round && board.round.timed;
+      slotEl.querySelector(".slot-label").textContent = timed ? "Time Challenge" : !daily ? "Free Play" : mode === "detailed" ? "Today's Detailed parts" : mode === "basic" ? "Today's Basic parts" : "Today's Daily Scrawl parts";
+      $("slot-start").textContent = timed ? "Start the clock" : "Start drawing";
+      $("slot-times").hidden = true;
       slotEl.hidden = false;
       gameEl.inert = true;
       $("slot-sentence").hidden = true;
@@ -288,12 +304,17 @@
       anims[anims.length - 1].finished.then(endSpin).catch(() => {});
     }
     $("slot-skip").addEventListener("click", () => endSpin());
-    $("slot-start").addEventListener("click", () => { slotEl.hidden = true; gameEl.inert = false; $("back-home").focus({ preventScroll: true }); });
+    $("slot-start").addEventListener("click", () => {
+      slotEl.hidden = true;
+      gameEl.inert = false;
+      $("back-home").focus({ preventScroll: true });
+      if (board.round && board.round.timed && !board.round.timed.startedAt) beginChallenge();
+    });
 
     /* ---------- Screens ---------- */
     // Which saved drawing a round belongs to: Daily Free Play (id "scrawl"), today's Daily Scrawl (id "daily", and the
     // older Basic and Detailed), or Open Canvas (what used to be called Free play; its slot is still "free").
-    const slotFor = (round) => (round.mode === "scrawl" ? "scrawl" : round.daily ? "today" : "free");
+    const slotFor = (round) => ScrawdleDrawing.slotOf(round); // a Time Challenge has its own, "timed"
     // Daily Free Play is a free draw, so its one "prompt" is just a label (this also fills the finished PNG).
     const SCRAWL_PROMPTS = [{ label: "Daily Free Play", value: "Draw anything", optional: false }];
 
@@ -310,16 +331,97 @@
 
     function showGame() {
       const round = board.round;
-      $("prompt-label").textContent = round.mode === "scrawl" ? "Daily Free Play" : !round.daily ? "Free Play" : round.mode === "detailed" ? "Detailed" : round.mode === "basic" ? "Basic" : "Daily Scrawl";
+      $("prompt-label").textContent = round.timed ? `${round.timed.seconds}-second Time Challenge` : round.mode === "scrawl" ? "Daily Free Play" : !round.daily ? "Free Play" : round.mode === "detailed" ? "Detailed" : round.mode === "basic" ? "Basic" : "Daily Scrawl";
       showParts(round.prompts);
-      $("restart").textContent = round.daily ? "Start over" : "New set";
+      $("restart").textContent = round.timed ? "New challenge" : round.daily ? "Start over" : "New set";
       sessionStorage.setItem(OPEN_KEY, slotFor(round));
       setupEl.hidden = true;
       gameEl.hidden = false;
+      // A Time Challenge that isn't about to start and isn't running is over: it stays locked.
+      const timer = $("challenge-timer");
+      timer.hidden = !round.timed;
+      if (round.timed && !challenge.pending && !challenge.stop) {
+        board.setLocked(true);
+        timer.textContent = "Time's up";
+        timer.classList.remove("hurry");
+      } else if (!round.timed) board.setLocked(false);
       markGameEntry();
     }
 
-    async function start(mode, daily = true) {
+    /* ---------- Time Challenge ---------- */
+    // Four random parts (the Basic set without its optional extra), a 3-2-1, a clock, and a canvas that locks
+    // at 0:00. It has its own save slot ("timed" in drawing.js) and isn't published. Leaving the drawing or
+    // reloading the page ends it; what was drawn is kept. The clock is timer.js, shared with Scrawdle Party.
+    const TIME_KEY = "scrawdle-time-challenge"; // localStorage: the length last picked
+    const TIME_OPTIONS = [30, 60, 90];
+    const challenge = { pending: false, stop: null }; // pending: rolled but the clock hasn't started; stop: ends the running clock
+    function chosenSeconds() {
+      let s = 60;
+      try { s = Number(localStorage.getItem(TIME_KEY)) || 60; } catch (err) { /* private browsing */ }
+      return TIME_OPTIONS.includes(s) ? s : 60;
+    }
+    // The 30 / 60 / 90 choice on the reveal screen, before the clock starts.
+    function showTimeChoices() {
+      const box = $("slot-times");
+      const pick = (s) => {
+        board.noteTimed({ seconds: s });
+        try { localStorage.setItem(TIME_KEY, String(s)); } catch (err) { /* private browsing */ }
+        for (const b of box.children) b.setAttribute("aria-pressed", String(Number(b.dataset.seconds) === s));
+        $("prompt-label").textContent = `${s}-second Time Challenge`;
+      };
+      box.replaceChildren(...TIME_OPTIONS.map((s) => {
+        const b = document.createElement("button");
+        b.type = "button";
+        b.className = "chip";
+        b.dataset.seconds = String(s);
+        b.textContent = `${s} seconds`;
+        b.addEventListener("click", () => pick(s));
+        return b;
+      }));
+      pick(board.round.timed.seconds);
+      box.hidden = false;
+    }
+    function startTimeChallenge() {
+      start("basic", false, { seconds: chosenSeconds() });
+    }
+    const pause = (ms) => new Promise((r) => setTimeout(r, ms));
+    async function bigWord(text, ms) {
+      const el = $("challenge-count");
+      el.textContent = text;
+      el.hidden = false;
+      await pause(ms);
+      el.hidden = true;
+    }
+    async function beginChallenge() {
+      const round = board.round;
+      board.setLocked(true);
+      const timer = $("challenge-timer");
+      timer.hidden = false;
+      timer.textContent = ScrawdleTimer.clockText(round.timed.seconds);
+      timer.classList.remove("hurry");
+      for (const word of reduceMotion ? ["Draw!"] : ["3", "2", "1", "Draw!"]) {
+        await bigWord(word, word === "Draw!" ? 500 : 700);
+        if (board.round !== round) return; // left during the countdown
+      }
+      challenge.pending = false;
+      board.setLocked(false);
+      board.noteTimed({ startedAt: Date.now() });
+      challenge.stop = ScrawdleTimer.run(timer, round.timed.seconds, { onEnd: () => endChallenge(true) });
+    }
+    // Ends the running challenge. timeUp: the clock hit 0:00. `quiet` skips the finish screen (leaving the drawing).
+    async function endChallenge(timeUp, { quiet = false } = {}) {
+      if (!challenge.stop) return;
+      challenge.stop();
+      challenge.stop = null;
+      const t = board.round.timed;
+      board.noteTimed({ used: timeUp ? t.seconds : ScrawdleTimer.secondsUsed(t.startedAt, Date.now(), t.seconds) });
+      board.setLocked(true);
+      if (quiet) return;
+      if (timeUp) await bigWord("Time's up!", 1100);
+      finish.open();
+    }
+
+    async function start(mode, daily = true, timed = null) {
       errorEl.hidden = true;
       try {
         await loadPrompts();
@@ -329,10 +431,14 @@
         return;
       }
       await board.flush();
-      const parts = partsFor(mode);
+      if (challenge.stop) await endChallenge(false, { quiet: true });
+      // A Time Challenge has only the four core parts: no optional extra.
+      const parts = partsFor(mode).filter((p) => !timed || !p.optional);
       const today = ScrawdleDrawing.dayKey();
       const results = parts.map((p) => (daily ? p.options[ScrawdleDaily.dailyIndex(today, p.key, p.options.length)] : pickRandom(p.options)));
-      await board.start(mode, parts.map((p, i) => ({ label: p.label, value: results[i], optional: Boolean(p.optional) })), daily);
+      await board.start(mode, parts.map((p, i) => ({ label: p.label, value: results[i], optional: Boolean(p.optional) })), daily, timed);
+      challenge.pending = Boolean(timed);
+      board.setLocked(Boolean(timed)); // a challenge's canvas waits for the clock
       showGame();
       spin(parts, results, mode, daily);
     }
@@ -352,6 +458,7 @@
     async function startScrawl() {
       if (saved.scrawl && saved.scrawl.marked) return openSaved("scrawl");
       await board.flush();
+      challenge.pending = false;
       await board.start("scrawl", SCRAWL_PROMPTS, true);
       showGame();
     }
@@ -413,6 +520,9 @@
     }
 
     async function showHome() {
+      // Leaving a Time Challenge ends it; what was drawn is kept.
+      if (challenge.stop) await endChallenge(false, { quiet: true });
+      challenge.pending = false;
       gameEl.hidden = true;
       gameEl.inert = false;
       slotEl.hidden = true;
@@ -435,7 +545,7 @@
 
     // My drawings only shows once there's something in it: a drawing in progress or one already kept.
     async function showMyDrawingsLink() {
-      const open = [saved.today, saved.scrawl, saved.free].some((d) => d && d.marked);
+      const open = [saved.today, saved.scrawl, saved.free, saved.timed].some((d) => d && d.marked);
       const kept = await ScrawdleDrawing.myDrawings.count().catch(() => 0);
       $("my-drawings").hidden = !open && kept === 0;
     }
@@ -453,6 +563,7 @@
     // same erase as the Clear button, so Undo brings the drawing back. New set (Free Play) is a different round.
     function restartRound() {
       const round = board.round;
+      if (round.timed) return startTimeChallenge(); // the old one goes to My drawings
       if (!round.daily) return startFreePlay(!board.isEmpty);
       if (board.isEmpty) return;
       if (!confirm("Start over? This erases your drawing, but Undo can bring it back.")) return;
@@ -463,7 +574,12 @@
     $("mode-scrawl").addEventListener("click", startScrawl);
     $("free-play").addEventListener("click", () => startFreePlay(Boolean(saved.free && saved.free.marked)));
     $("restart").addEventListener("click", restartRound);
-    $("slot-new").addEventListener("click", () => { slotEl.hidden = true; start("basic", false); });
+    $("time-challenge").addEventListener("click", startTimeChallenge);
+    $("slot-new").addEventListener("click", () => {
+      slotEl.hidden = true;
+      const t = board.round && board.round.timed;
+      start("basic", false, t ? { seconds: t.seconds } : null);
+    });
     $("back-home").addEventListener("click", goHome);
 
     /* ---------- The browser's Back button ---------- */
@@ -561,6 +677,8 @@
     const finish = ScrawdleDrawing.createFinishScreen(board, gallery, {
       onHome: goHome,
     });
+    // Done drawing during a Time Challenge stops the clock first, so the finish screen shows the time it took.
+    board.onDone = () => (challenge.stop ? endChallenge(false) : finish.open());
     makeWordmarksLinks(); // after every screen with a wordmark exists
 
     // A refresh returns to the drawing this tab was on, and to the finish screen if that was open. A new visit

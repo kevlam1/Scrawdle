@@ -35,3 +35,8 @@ test("a daily drawing's line ends with the streak, Wordle-style, and only when t
   assert.equal(shareLine(day, URL_, 0), shareLine(day, URL_), "no streak, no flame");
   assert.doesNotMatch(shareLine({ ...day, daily: false }, URL_, 5), /🔥/, "Open Canvas doesn't count toward a streak");
 });
+
+test("a Time Challenge says how long it was, and has no date or streak", () => {
+  const round = { mode: "basic", daily: false, prompts: parts, day: "2026-11-05", timed: { seconds: 60 } };
+  assert.equal(shareLine(round, URL_, 5), "My Scrawdle 60-second Time Challenge: Parrot, Dinosaur tail. Draw yours: " + URL_);
+});
