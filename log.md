@@ -1242,6 +1242,144 @@ Artifact 4 is "For Someone Else," due Sunday, November 8. Our team of four (Kevi
 
 ---
 
+## 64. Scrawdle's own color picker (2026-11-07) — Trenten
+
+**What I asked for**
+- The "Custom" color button opened the browser's built-in color picker, so it looked different in every browser (a pop-up in Chrome, a system window in Firefox, the Mac color panel in Safari). I asked for the picker to be defined in our own project, as the new top priority before the streak, and approved Claude's plan before it built anything.
+
+**What changed**
+- `frontend/color-picker.js` and `color-picker.css` (new): clicking the rainbow button opens a panel above it with a shade square (grey to full color, light to dark), a hue bar, a hex box with a swatch of the current color, the last six custom colors (kept in this browser), and a Done button. The color applies as you drag. It closes on Done, Enter in the hex box, Esc, or a click outside, and works with mouse, finger, stylus and keyboard (arrow keys move the square and bar, Shift for bigger steps; screen readers hear values like "Hue 210 degrees"). On a phone it's pinned across the bottom of the screen. It uses the theme's colors, so dark mode works.
+- `frontend/drawing.js`: the rainbow button is now a real button that opens the panel, instead of a label wrapped around the browser's hidden color input. With a custom color chosen, that color shows in the middle of the rainbow. Each board gets its own picker, so the main game and Scrawdle Party don't share one. `drawing.css`: removed the rule for the old hidden input. `index.html`: loads the two new files.
+- `tests/color-picker.test.js` (new). `README.md`: the test command is now `node --test tests/`, which runs every test file; the old list had missed four of them.
+
+**What I checked**
+- 7 Node tests for the color math: hex codes in any form, bad codes refused, pure colors and black, white and grey landing in the right place, every tray color and a sample of all colors surviving a round trip unchanged, and the recent-colors list. All 92 tests pass.
+- In Chromium: opening and closing (button, Done, Enter, Esc, a click outside); dragging the square and the bar; arrow keys; typing a hex code (half-typed codes are marked invalid until they're complete); a recent color; the pen then drew exactly the color picked (`#e07b39`); the panel stays on screen and nothing covers or clips it at 1280 by 800 and at phone width; dark mode; and a second board inside a full-screen dialog, like Scrawdle Party's, gets its own picker. A real Esc key press closed only the picker, not the dialog around it.
+- Not checked: Safari, Firefox, a real phone or stylus. The whole point is that it looks the same everywhere, so it's worth a look in those. The preview pane was too small for useful screenshots, so the look was checked by measuring, not by eye.
+
+**Decisions**
+- Built from plain page elements and CSS gradients, with no library and no `<input type="color">`, so no browser draws any part of it.
+- The recent colors are shared by every board on the page and kept in this browser only.
+
+---
+
+## 65. Kicking players, and votes to kick (2026-11-07) — Trenten
+
+**What I asked for**
+- A way for the lobby's host to kick a player, then a vote to kick: any player can call a vote on another, and if all the other players agree (everyone except the player being kicked), that player is kicked. Claude planned it first and pointed out that `CLAUDE.md` says only Kevin edits the lobby code; Kevin OK'd it. I went with Claude's recommendations: a kick lasts for the rest of that day, votes happen in the lobby room, and the host can still kick during a game.
+
+**What changed**
+- `frontend/lobby.js` and `lobby.css`: in the lobby room, the host has a Kick button next to each other player (with a "Kick Ben?" check first). Everyone else has "Vote to kick", which is off, with the reason on hover, when there are fewer than 3 players, a vote is already going, or that player was voted on less than a minute ago. A vote shows a bar to everyone: "Ana wants to kick Ben. Everyone else has to agree. 1 of 2 agree · 30s left", with Yes and No for the voters. It passes once every player except the target has said yes; one No, or 30 seconds, fails it. Players who leave stop counting. The host can be voted out, and the next player in line carries out the kick and becomes host. During a game, the host gets a Players button in the bottom-left corner to kick from there; a vote in progress is called off when a game starts.
+- The kicked player's page leaves, says "You were removed from that lobby" (or "voted out"), and remembers the lobby so the same invite link won't put it back in that day. If someone kicked comes back in the same tab anyway, the host's page kicks them again.
+- The rules are pure functions in `lobby.js` with 8 new tests in `tests/lobby.test.js`.
+- `frontend/party.js`: the host's setup screen now keeps its player list up to date when someone leaves or is kicked, without resetting the settings already picked. It used to keep showing players who had gone.
+- `CLAUDE.md` (lobby section) and `README.md`: what kicking does and its limits.
+
+**What I checked**
+- All 100 Node tests pass.
+- In a browser with a stand-in for Supabase (each player is the real page in its own frame, running the real `lobby.js` and `party.js`, with messages and the player list passed between them): the host kicking a player (everyone's list updates and says so; the kicked page shows the message and remembers it); the kicked browser being refused when it opens the invite link again; a fake kick sent by a player who isn't the host being ignored; a vote failing on one No, with that player's Vote to kick button then off for a minute; voting out the host (the next player carried out the kick and became host); a vote passing when the only player who hadn't voted left; a vote failing after 30 seconds with nobody voting; the Players button showing only for the host during a game, and kicking from it, with the game carrying on for everyone else.
+- On the live lobby, with three tabs of the local page as Ana (host), Ben and Cal (lobby `QRRCT`, deleted by the daily job): Ben's vote to kick Cal showed the right bar in all three tabs, passed when Ana said yes, and both remaining tabs said "Cal was voted out of the lobby"; Cal's home screen showed "You were voted out of that lobby" under Multiplayer, and opening the invite link again was refused for the day. Then Ana kicked Ben, and Ben's home screen said "You were removed from that lobby". No errors from the test in any tab's console. Afterwards Claude cleared the remembered kick, since the test tabs share one browser's storage.
+- Not checked: the host's Players button during a game on the live lobby (only in the stand-in), players on different computers, Safari or Firefox, and how it looks (the preview pane was too small for useful screenshots).
+
+**Decisions**
+- The same trust limits as the rest of the lobby, written down in `CLAUDE.md` rather than hidden: messages say who sent them and nothing can check that, and a kicked player can come back from another browser. Doing better needs logins or a server deciding who's in a lobby.
+- Votes need at least 3 players; with 2, one person would decide alone, and the host can already kick.
+
+---
+
+## 66. A streak of days in a row (2026-11-07) — Trenten
+
+**What I asked for**
+- A streak that keeps track of consecutive days of drawing, planned before building. I went with Claude's recommendations: a day counts when you finish a daily drawing, it starts counting from now (not from old drawings), and it shows on the home screen, the finish screen, and the share text.
+
+**What changed**
+- `frontend/streak.js` (new): a day counts when the finish screen opens for a daily drawing that isn't blank (Daily Scrawl or Daily Free Play, not Free Play). The days are the player's local date, like the rest of the game. The streak counts back from today, or from yesterday if today isn't drawn yet (it's still alive until today ends); a whole missed day ends it. The best streak is remembered too. Kept in this browser only, as the list of days drawn, so there's no database change and nothing to sign in to.
+- `frontend/index.html` and `flow.css`: under the date on the home screen, "🔥 5-day streak", or "🔥 5-day streak · Draw today to keep it going" before today's drawing is done; hidden with no streak.
+- `frontend/drawing.js`: the finish screen records the day and says "🔥 That's 5 days in a row!", "🔥 New best: 7 days in a row!", or "🔥 Day 1 of a new streak", and just "🔥 5-day streak" when today already counted. The share text for a daily drawing ends with the streak, like "… Draw yours: [link] 🔥 5".
+- `tests/streak.test.js` (new) and one new test in `tests/share.test.js`.
+
+**What I checked**
+- 12 Node tests for the date math (the next day across months, years, a leap day and a clock change; refusing dates like 2026-02-30; counting from today or yesterday; a missed day; the best streak; the wording), and one for the share text with and without a streak. All 113 tests pass.
+- In the browser, with past days written straight into the saved streak to stand in for earlier visits: finishing Daily Free Play turned two days into three on the finish screen, finishing it again didn't count twice, the share text ended with 🔥 3, and the home screen showed the streak; with only yesterday drawn the home screen showed the "Draw today" nudge; a missed day hid it; Free Play and a blank Daily Scrawl didn't count. The home line fits at phone width and follows dark mode. Claude put the browser's real saved streak back afterwards.
+- Not checked: an actual change of date while the page is open (the streak updates the next time the home or finish screen is shown), Safari or Firefox.
+
+**Decisions**
+- Finishing counts, not publishing, so the streak works even when publishing doesn't.
+- Per browser only, the same as My drawings. A leaderboard that compares streaks would need them on the database; that's a question for the leaderboard plan.
+
+---
+
+## 67. Today's leaderboard (2026-11-07) — Trenten
+
+**What I asked for**
+- A daily leaderboard that resets each day, planned first. Claude found that the Public drawings page already loads every drawing posted today with its votes, so a leaderboard could be built with no database change, but it can only rank drawings, not players, because a published drawing doesn't carry a name. I went with its recommendations: rank drawings, give it its own page, and rank by thumbs up.
+
+**What changed**
+- `frontend/leaderboard/index.html`, `leaderboard.js` and `leaderboard.css` (new), served at `/leaderboard/`: "Today's top drawings", with a list for Daily Scrawl (including the older Basic and Detailed) and one for Daily Free Play. The top three are a podium with gold, silver and bronze place badges; places 4 to 10 are rows below, and every drawing tied for 10th shows. Drawings with no thumbs up aren't ranked; ties share a place (1, 2, 2, 4), and fewer thumbs down breaks a tie. Your own drawing is marked "Yours", with "Yours is #4 of 23 today" (or "no thumbs up yet, so it isn't ranked") above the list. Daily Scrawl's list is locked until you've posted your own Daily Scrawl drawing, the same rule as Public drawings, and its drawings aren't even loaded until then.
+- It reuses `publish.js`'s `scrawdlePublicGallery` unchanged, so it starts over at local midnight like Public drawings, and the daily wipe clears its drawings.
+- Links: "Today's leaderboard" on the home screen (shown only when Supabase is connected, like Public drawings) and on the finish screen next to "See public drawings", and "See today's leaderboard" under the Public drawings page.
+- `tests/leaderboard.test.js` (new).
+
+**What I checked**
+- 8 Node tests for the ranking (order, tie-breaks, shared places, unranked drawings, your standing, which list each mode goes in, and ties at 10th). All 121 tests pass.
+- The page against the live project, read-only (it only loads): no Daily Free Play drawings posted yet today, and Daily Scrawl locked, because this browser hadn't posted one.
+- With stand-in data (14 Daily Scrawl drawings with ties and one of them yours, and Daily Free Play drawings with no thumbs up): the places, the shared places, "Yours is #7 of 12 today", the unranked message, the lock (Daily Scrawl not even requested), and the message when loading fails. Measured at 1280 by 800 (podium side by side) and phone width (stacked), with nothing scrolling sideways, and checked dark mode. Both new links appear and point to `leaderboard/`.
+- That first stand-in test caught a tie problem: three drawings tied for 10th, but only one showed. Fixed so everyone tied for the last place shown appears, with a test.
+- Not checked: the page with real votes (there were none today when it was tested), Safari or Firefox. The small local test server doesn't serve a folder's `index.html` the way Vercel does, so the page was opened as `/leaderboard/index.html` locally; `/leaderboard/` relies on the same Vercel behavior as `/public-drawings/`.
+
+**Decisions**
+- Drawings, not players, so there's no database update and no public player names to moderate. Ranking players later would mean storing a name with each published drawing (a new update for Kevin).
+- Its own page rather than a section of Public drawings, so Angie's and Kevin's page only gained one link.
+
+---
+
+## 68. Yesterday's winner (2026-11-07) — Trenten
+
+**What I asked for**
+- Show yesterday's winner, planned first. Claude found that the daily wipe keeps yesterday's drawings for the whole of the player's local day, but the database only lets the game read drawings within a day of its own (UTC) date, so in US time the player's yesterday stops being readable every evening. So it needs one small database update. I went with its recommendations: show it on the home screen and the leaderboard, show everyone tied for first, and write the update for Kevin.
+
+**What changed**
+- `backend/supabase/updates/005-yesterdays-winner.sql` (new) and `schema.sql`: a function, `top_drawings(target_day, modes, max_count)`, that returns a day's best drawing(s): the most thumbs up (at least one), then the fewest thumbs down, with every drawing tied on both, oldest first, up to `max_count` (three by default, never more than ten). Hidden drawings never count, and it only answers for days the daily wipe still keeps. It changes no table and no policy and stores nothing. It took the number `005`, so the planned update that drops `basic` and `detailed` from the mode constraint becomes `006`.
+- `frontend/publish.js`: `scrawdleYesterdayWinners()` asks for yesterday by the player's local date, once for Daily Scrawl (with the older Basic and Detailed) and once for Daily Free Play, and marks a winner as yours the same way the gallery does. It returns nothing when the function isn't on the database yet.
+- `frontend/leaderboard.js` and `leaderboard.css`: "Yesterday's winners" (or "🏆 Your drawing won yesterday!") with each winner's picture, yesterday's parts (two lines, the full list in a tooltip) and its thumbs up. On the leaderboard it's above today's lists and shows up to three tied winners per list; there's no lock, since yesterday can't spoil today's parts. On the home screen (`index.html`), a compact copy with one winner per list sits under the Continue cards, with a link to the leaderboard.
+- `CLAUDE.md`: update 005 is under "Pending database updates" with steps for Kevin's session. `README.md`, `frontend/README.md`, `backend/README.md` updated.
+
+**What I checked**
+- The SQL in PGlite (a real Postgres) on top of the original schema and updates 001 to 004: 9 of 9 checks pass. It runs twice without error; the winner is the most thumbs up, then fewest thumbs down; a hidden drawing with more votes never wins; each list sees only its own modes; ties come back oldest first up to the limit; a day with no thumbs up has no winner; days the wipe has cleared return nothing even if the rows are still there; the public key still can't read old drawings or the votes table; and a fresh project's `schema.sql` has the function. Breaking the SQL on purpose in a copy (letting hidden drawings count, and dropping the day limit) failed 2 checks, as it should. The test script and PGlite stayed in a temporary folder, not the repo.
+- 3 new Node tests that load the real `publish.js` against a stand-in, and 2 more in `tests/leaderboard.test.js`. All 126 tests pass.
+- The real page against the live project, which doesn't have the function yet: no winner shows, nothing breaks, and the console says `top_drawings` wasn't found.
+- With stand-in winners: the home card (including "🏆 Your drawing won yesterday!") and the leaderboard section with three tied winners, at 1280 by 800 and phone width, with nothing scrolling sideways, and in dark mode. This caught Daily Scrawl's long parts list being cut off after a few words; it now wraps to two lines with the full list in a tooltip.
+- Not checked: the live function (Kevin hasn't run the update), Safari or Firefox.
+
+**Decisions**
+- A function that returns only the winners, rather than widening who can read drawings, so the read rule stays as Kevin wrote it.
+- Nothing extra is stored or kept: the winners are drawings the daily wipe already keeps through the player's whole yesterday-plus-today.
+
+---
+
+## 69. Time Challenge (2026-11-07) — Trenten
+
+**What I asked for**
+- A time challenge, planned first. I went with Claude's recommendations: four random parts, a choice of 30, 60 or 90 seconds, not published (so no database change), and its own card on the home screen.
+
+**What changed**
+- `frontend/index.html`: a "Time Challenge" card on the home screen. The slot machine rolls four parts (Basic's head, arms, legs and tail, without the optional extra), the reveal screen offers 30, 60 or 90 seconds (the last choice is remembered) and "Start the clock", then "3, 2, 1, Draw!" over the canvas (just "Draw!" with reduced motion), with the canvas locked until the clock starts. The clock sits beside the parts and turns red for the last ten seconds. At 0:00 the canvas locks, "Time's up!" shows, and the finish screen opens; Done drawing finishes early. Leaving the drawing or reloading ends the challenge and keeps what was drawn, so a reload can't buy extra time. "New challenge" replaces it.
+- `frontend/drawing.js`: a Time Challenge has its own save slot (`"timed"`), so it never replaces the Free Play drawing; the round carries `timed: { seconds, startedAt, used }` through saves and restores; the finish screen says "⏱ Drawn in 30 seconds!", "⏱ Finished in 3 of 30 seconds!", or that it ended when you left; the share text and downloaded picture name it as a Time Challenge. It isn't published and doesn't count toward the streak (it isn't a daily drawing). My drawings (`sketchbook.js`) lists it as "30-second Time Challenge".
+- `frontend/timer.js` (new): the countdown, now shared: Scrawdle Party's clock uses its math.
+- `flow.css`: the clock, the 3-2-1, the time choices, and the finish line, in light and dark mode.
+- `tests/timer.test.js`, `tests/time-challenge.test.js` (new), and one more test in `tests/share.test.js`.
+
+**What I checked**
+- 7 new Node tests (the clock's wording and rounding, time used, the save slot, the finish line, the share text). All 133 tests pass.
+- In the browser, with the clock sped up 30 times so 30 seconds took about one: the card and the reveal (four parts, the choices, "Start the clock"); the canvas refusing to draw during "3, 2, 1"; the clock running from 0:30, red from 0:10, to 0:00; "Time's up!", the canvas locked, and the finish screen saying "Drawn in 30 seconds!" with no publish, Public drawings or leaderboard buttons and no streak line; the share text; finishing early ("Finished in 3 of 30 seconds!"); the 30-second choice remembered; reloading mid-challenge (the drawing kept and locked, "Time's up" on the clock, the finish screen saying it ended); a new challenge sending the last one to My drawings; the Free Play drawing untouched (last saved 43 minutes before the test). Scrawdle Party's clock still counts down with the shared timer. At phone width the time buttons are 44 px tall and fit, the clock doesn't cover the parts or the help button, and nothing scrolls sideways; dark mode checked.
+- Not checked: Safari or Firefox, a real phone, and a real 60- or 90-second challenge at normal speed (the clock is worked out from the time on each tick, the same as Scrawdle Party's).
+
+**Decisions**
+- Not published, so there's no database update and no new list on Public drawings or the leaderboard. That can be added later with a new mode on the database.
+- When a challenge ends by reload, the time it took isn't known, so the finish screen says it ended rather than guessing.
+
+---
+
 ## Where AI misread me, or I had to correct course
 
 - Claude's first version of the start page put "What is this?" in the top right, where it collided with the "New set" button on the game screen. I caught it by running the page; Claude hadn't opened it in a browser.
@@ -1253,6 +1391,8 @@ Artifact 4 is "For Someone Else," due Sunday, November 8. Our team of four (Kevi
 - **A layout that passed every check and was visibly broken (Claude's slip, entry 29):** the Lobby card's Join button overflowed the card whenever a saved drawing was showing, because an existing rule in `flow.css` forces every home button to full width with an id selector. All 65 browser checks passed anyway, because the checks tested values, not how it looked; only the screenshot showed it. Fixed by matching that rule's specificity, after printing what the browser actually computed instead of guessing.
 - **Weak or wrong tests of my own (Claude's slips, entry 29):** a lobby test compared two different random names (nonsense, fixed to check that every generated name survives cleaning); a cleanup test expected a file three folders deep to be found, which our code never makes (fixed the test, not the code); and one broken copy of the host ordering survived because the test's ids happened to be alphabetical in join order, so it passed with the join-time sort deleted (added a case where they differ). I also wrote "54 logic tests" in `CLAUDE.md` from memory and recounted to find 41.
 - **Four faults in my own checks while building the logs page, none in the page (Claude's slips, entry 31):** (1) A "break it on purpose" test changed a phrase that isn't in `log.md`, so nothing changed and it reported "survived"; I only noticed because it should have failed. (2) Another one read a file from `/tmp`, which Node on Windows resolves to a different folder than Git Bash does. (3) The browser script waited forever for a page-load event that never comes when only the `#hash` of a page changes, and hung until it was stopped. (4) A link check searched the whole page for "midi-companion", which the log text legitimately mentions twice, so it failed on correct output. Each was fixed in the check, and the page's real links were read directly to confirm they were right.
+- **A Time Challenge losing its name in My drawings (Claude's slip, entry 69, caught in the browser):** My drawings copies only some fields when it keeps a drawing, and Claude added the challenge's length to the round without adding it there, so a kept challenge showed as an ordinary drawing. Fixed in `myDrawings.keep`. The current one was also labeled "in progress" with a Continue button, which is wrong for a challenge that's already over; it now says "today" with an Open button.
+- **Two mistakes in Claude's first version of kicking (entry 65), both caught by the stand-in lobby test, not by the unit tests:** (1) after a vote failed, the player list was redrawn just before the one-minute wait was recorded, so that player's Vote to kick button still looked usable (pressing it would still have been refused). (2) When a vote passed because the last undecided player left, the kicked player's own page saw it first and left, and the other pages then saw the target gone and reported "Dan left, so the vote ended" instead of a kick. Fixed by checking for a pass before checking whether the target is still there, with a test for it.
 - **A party round that would have stalled (Claude's slip, entry 37, caught by the stand-in lobby test):** the host counted everyone in the lobby as a voter, including a player who joined mid-round and never got the drawings, so the round would have waited the full 30 seconds plus grace for a vote that couldn't come. Fixed so only the round's players are waited for. Claude's helper in that test also first grabbed the real lobby's empty game area instead of the test's, which looked like a missing button until it checked what was on the page.
 - **The generator would have stopped on our own headings (found before running it, entry 31):** the copied script only accepted `## N. Title (date)`, and every heading here now ends with `— Name`. Reading the script first caught it; running it unchanged would have failed with "Unexpected section".
 - **Backticks in a shell command, the exact mistake our shared notes warn about (Claude's slip, entry 32):** a one-line script that edited four docs had backticks inside a single-quoted shell string, so the shell refused to run it. Nothing was changed, but it was a mistake the notes list by name. The edits were made with the editing tool instead. Separately, Claude's first check of the new link's colour failed because it expected the link to match the "Explore sample drawings" button, which turns out to have its own softer grey set in `flow.css`; the link was changed to match.

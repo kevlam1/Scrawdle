@@ -151,7 +151,6 @@ canvas { touch-action: none; }
 .wheel { position: relative; flex: none; display: block; width: 36px; height: 36px; border-radius: 50%; border: var(--line); background: conic-gradient(#ff5a5a, #ffb23f, #ffe14d, #6bcb77, #4d96ff, #9b5de5, #ff5a9d, #ff5a5a); cursor: pointer; }
 .wheel.on { box-shadow: 0 0 0 2px var(--cream), 0 0 0 3.5px var(--ink); }
 .wheel:focus-within { outline: 2.5px solid var(--ink); outline-offset: 4px; }
-.picker { position: absolute; inset: 0; width: 100%; height: 100%; padding: 0; border: 0; opacity: 0; cursor: pointer; }
 .swatches { display: grid; grid-template-columns: repeat(5, auto); gap: 4px; }
 .swatch { display: block; width: 26px; height: 26px; padding: 0; border: 1px solid rgba(44, 42, 40, .55); border-radius: 50%; background: var(--swatch); }
 .swatch[aria-pressed="true"] { box-shadow: 0 0 0 2px var(--cream), 0 0 0 3.5px var(--ink); }

@@ -238,3 +238,24 @@ html:has(#slot:not([hidden])){overflow:hidden}
  #brush-settings .tray-sizes{padding-top:8px;gap:4px;margin-top:0}
  .size-top{display:none}
 }
+
+/* The streak (streak.js): under the date on the home screen, and under the parts on the finish screen. */
+.home-streak{display:inline-block;margin:6px auto 0;padding:4px 12px;border:var(--line);border-radius:99px;background:var(--cream);color:var(--ink);font:400 18px/1.3 var(--hand)}
+.home-streak[hidden],.finish-streak[hidden]{display:none}
+.finish-streak{margin:10px 0 0;font:400 21px/1.3 var(--hand);color:var(--ink)}
+
+/* Time Challenge (index.html): the clock beside the parts, the 3-2-1 over the canvas, the time choices on the reveal, and the finish line. */
+.challenge-timer{flex:none;min-width:70px;padding:4px 12px;border:var(--line);border-radius:9px;background:var(--cream);font:400 24px/1.2 var(--hand);text-align:center;font-variant-numeric:tabular-nums;color:var(--ink)}
+.challenge-timer.hurry{background:var(--alert);color:var(--alert-ink)}
+.challenge-timer[hidden]{display:none}
+#stage{position:relative}
+.challenge-count{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none;font:400 clamp(64px,14vw,150px)/1 var(--hand);color:var(--ink);text-shadow:0 2px 0 var(--paper),0 0 18px var(--paper);animation:challenge-pop .7s ease-out}
+.challenge-count[hidden]{display:none}
+@keyframes challenge-pop{from{transform:scale(1.4);opacity:0}to{transform:scale(1);opacity:1}}
+@media(prefers-reduced-motion:reduce){.challenge-count{animation:none}}
+.challenge-times{display:flex;flex-wrap:wrap;justify-content:center;gap:8px}
+.challenge-times[hidden]{display:none}
+.challenge-times .chip{min-height:44px;padding:0 16px;border:var(--line);border-radius:9px;background:var(--cream);font:400 19px/1 var(--hand);color:var(--ink);cursor:pointer}
+.challenge-times .chip[aria-pressed="true"]{background:#fff0c4;border-color:#c59a2e;box-shadow:inset 0 0 0 1px #c59a2e;color:#302f2b}
+.finish-timed{margin:10px 0 0;font:400 21px/1.3 var(--hand);color:var(--ink)}
+.finish-timed[hidden]{display:none}

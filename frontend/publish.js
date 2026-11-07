@@ -168,8 +168,10 @@
   };
 
   // Today's date as the game writes it (the player's own local date), like a round's `day`.
-  function localDay() {
+  // `back` days ago, for yesterday's winner.
+  function localDay(back = 0) {
     const d = new Date();
+    d.setDate(d.getDate() - back);
     const pad = (n) => String(n).padStart(2, "0");
     return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
   }
@@ -212,5 +214,29 @@
       const { data: urlData } = client.storage.from(BUCKET).getPublicUrl(row.image_path);
       return { id: row.id, mode: row.mode, imageUrl: urlData && urlData.publicUrl, caption: "", mine: mine.includes(row.id), votes: counts && counts[row.id] };
     }).filter((card) => card.imageUrl);
+  };
+
+  // Yesterday's winners (by the player's local date): { day, daily: [cards], free: [cards] }, each card
+  // { id, mode, imageUrl, prompts, votes: { up, down }, mine }. A list is empty when nothing had a
+  // thumbs up. Returns null if the database doesn't have top_drawings yet (update 005), so the page
+  // shows nothing. The function only returns the winners, and only for days the daily wipe still keeps.
+  root.scrawdleYesterdayWinners = async function () {
+    const day = localDay(1);
+    const lists = { daily: ["daily", "basic", "detailed"], free: ["scrawl"] };
+    let mine = [];
+    try { mine = Object.values(JSON.parse(localStorage.getItem(PUBLISHED_KEY) || "{}")).filter((v) => typeof v === "string"); } catch { /* none */ }
+    const out = { day };
+    for (const [key, modes] of Object.entries(lists)) {
+      const { data, error } = await client.rpc("top_drawings", { target_day: day, modes, max_count: 3 });
+      if (error) {
+        console.error("publish.js top_drawings error (raw):", error);
+        return null;
+      }
+      out[key] = (Array.isArray(data) ? data : []).map((row) => {
+        const { data: urlData } = client.storage.from(BUCKET).getPublicUrl(row.image_path);
+        return { id: row.id, mode: row.mode, imageUrl: urlData && urlData.publicUrl, prompts: Array.isArray(row.prompts) ? row.prompts : [], votes: { up: row.up, down: row.down }, mine: mine.includes(row.id) };
+      }).filter((card) => card.imageUrl);
+    }
+    return out;
   };
 })(typeof window !== "undefined" ? window : globalThis);

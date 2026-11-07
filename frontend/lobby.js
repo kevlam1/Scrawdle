@@ -118,7 +118,64 @@
     return message;
   }
 
-  const pure = { MAX_PLAYERS, normalizeCode, codeFromSearch, lobbyLink, cleanName, randomName, playersFromState, isOverCap, activeGameOf, unwrap };
+  /* ----- Kicking (the host kicks, or everyone else votes someone out) ----- */
+  const VOTE_MS = 30000;        // how long a vote to kick stays open
+  const VOTE_COOLDOWN_MS = 60000; // after a vote fails, how long before the same player can be voted on again
+  const VOTE_MIN_PLAYERS = 3;   // with two, one person would decide alone, and the host can already kick
+
+  // A kick counts if the current host sent it, or if it carries out a vote this page saw pass.
+  // (Messages say who sent them, and the lobby can't check that, so this keeps out honest
+  // mistakes and other pages' bugs, not someone set on faking messages.)
+  function mayKick(players, body, passedVotes) {
+    if (!body || typeof body.target !== "string" || typeof body.by !== "string" || body.target === body.by) return false;
+    if (body.reason === "vote") return Boolean(passedVotes && passedVotes.has && passedVotes.has(`${body.voteId}|${body.target}`));
+    return players.length > 0 && players[0].id === body.by;
+  }
+
+  // Why this player can't call a vote on that one right now, or null if they can.
+  function voteBlocker({ players, me, target, active, cooldownUntil = 0, now = Date.now(), inGame = false }) {
+    if (inGame) return "Votes to kick happen in the lobby, not during a game.";
+    if (active) return "A vote is already going.";
+    if (players.length < VOTE_MIN_PLAYERS) return `Votes to kick need at least ${VOTE_MIN_PLAYERS} players.`;
+    if (target === me) return "You can't vote to kick yourself.";
+    if (!players.some((p) => p.id === target) || !players.some((p) => p.id === me)) return "That player isn't here.";
+    if (now < cooldownUntil) return "That player was just voted on. Try again in a minute.";
+    return null;
+  }
+
+  // Everyone in the lobby except the player being voted on has a say, and it takes all of them.
+  // One No ends it; so does the time running out. Players who leave stop counting.
+  // A vote everyone agreed to still passes if its target's own page saw that first and left
+  // before this page heard about it; only a target who left mid-vote ends it as "gone".
+  function voteOutcome(players, vote, now = Date.now()) {
+    const ids = players.map((p) => p.id);
+    const voters = ids.filter((id) => id !== vote.target);
+    if (voters.length >= VOTE_MIN_PLAYERS - 1 && !voters.some((id) => vote.no.has(id)) && voters.every((id) => vote.yes.has(id))) return "pass";
+    if (!ids.includes(vote.target)) return "gone";
+    if (voters.length < VOTE_MIN_PLAYERS - 1) return "fail";
+    if (voters.some((id) => vote.no.has(id))) return "fail";
+    return now >= vote.endsAt ? "fail" : "open";
+  }
+
+  // Who carries out a kick once a vote passes: the longest-present player other than the one
+  // voted out. Usually the host; the next in line when the host is the one voted out.
+  function voteEnforcer(players, target) {
+    const next = players.find((p) => p.id !== target);
+    return next ? next.id : null;
+  }
+
+  // Lobbies this browser was kicked from, as { CODE: "YYYY-MM-DD" }. A kick lasts for that day.
+  function wasKicked(kicks, code, day) {
+    return Boolean(kicks && typeof kicks === "object" && kicks[code] === day);
+  }
+  function rememberKick(kicks, code, day) {
+    const out = {};
+    for (const [c, d] of Object.entries(kicks && typeof kicks === "object" ? kicks : {})) if (d === day) out[c] = d;
+    out[code] = day;
+    return out;
+  }
+
+  const pure = { MAX_PLAYERS, normalizeCode, codeFromSearch, lobbyLink, cleanName, randomName, playersFromState, isOverCap, activeGameOf, unwrap, VOTE_MS, VOTE_COOLDOWN_MS, VOTE_MIN_PLAYERS, mayKick, voteBlocker, voteOutcome, voteEnforcer, wasKicked, rememberKick };
   if (typeof module !== "undefined" && module.exports) { module.exports = pure; return; }
 
   /* ---------- Browser side ---------- */
@@ -169,7 +226,15 @@
 
   const JOIN_WINDOW_MS = 4000; // how long after arriving you can be dropped into a game already running
   const me = { id: storedId(), name: storedName() };
-  const lobby = { code: null, channel: null, joinedAt: 0, players: [], game: null, cleanup: null, listeners: new Map(), watchers: new Set(), gameDef: null, ready: false };
+  const lobby = { code: null, channel: null, joinedAt: 0, players: [], game: null, cleanup: null, listeners: new Map(), watchers: new Set(), gameDef: null, ready: false,
+    kicked: new Set(), passedVotes: new Set(), vote: null, voteTimer: 0, cooldowns: new Map(), rekickedAt: new Map() };
+
+  // Lobbies this browser was kicked from today, so the same invite link can't put it back in.
+  const KICKS_KEY = "scrawdle-lobby-kicks"; // localStorage: { CODE: "YYYY-MM-DD" }
+  const today = () => { const d = new Date(); const pad = (n) => String(n).padStart(2, "0"); return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`; };
+  const readKicks = () => { try { return JSON.parse(localStorage.getItem(KICKS_KEY) || "{}"); } catch (err) { return {}; } };
+  const noteKicked = (code) => { try { localStorage.setItem(KICKS_KEY, JSON.stringify(rememberKick(readKicks(), code, today()))); } catch (err) { /* private mode */ } };
+  const newId = () => (typeof crypto.randomUUID === "function" ? crypto.randomUUID() : `v-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`);
 
   /* ----- the screens ----- */
   const $ = (root_, sel) => root_.querySelector(sel);
@@ -206,6 +271,7 @@
       <p class="lobby-status" role="status"></p>
       <h2>Players <span class="lobby-count"></span></h2>
       <ul class="lobby-players"></ul>
+      <div class="lobby-vote" role="status" hidden><p class="lobby-vote-text"></p><div class="lobby-vote-actions"><button type="button" class="btn" data-vote="yes">Yes, kick</button><button type="button" class="btn" data-vote="no">No</button></div></div>
       <label class="lobby-name">Your name <input maxlength="${NAME_MAX}" autocomplete="off" spellcheck="false"></label>
       <h2>Games</h2>
       <ul class="lobby-games"></ul>
@@ -214,7 +280,16 @@
   const stage = el("dialog", "lobby-stage");
   stage.id = "lobby-game";
   const stageRoot = el("div", "lobby-stage-root");
-  stage.append(stageRoot);
+  // During a game the lobby room is hidden, so the host gets a small Players button on the game's
+  // screen to kick someone from there.
+  const stagePlayersBtn = el("button", "lobby-stage-players quiet", "Players");
+  stagePlayersBtn.type = "button";
+  stagePlayersBtn.setAttribute("aria-expanded", "false");
+  stagePlayersBtn.hidden = true;
+  const stageMenu = el("ul", "lobby-stage-menu");
+  stageMenu.hidden = true;
+  stageMenu.setAttribute("aria-label", "Players");
+  stage.append(stageRoot, stagePlayersBtn, stageMenu);
   document.body.append(room, stage);
   for (const d of [room, stage]) d.addEventListener("cancel", (e) => e.preventDefault()); // Esc shouldn't drop you out
   // Browsers let a second Esc close a dialog anyway. If that happens mid-lobby, put it back.
@@ -229,9 +304,32 @@
   const gamesEl = $(room, ".lobby-games");
   const gamesEmptyEl = $(room, ".lobby-games-empty");
   const copyBtn = $(room, '[data-act="copy"]');
+  const voteEl = $(room, ".lobby-vote");
+  const voteTextEl = $(room, ".lobby-vote-text");
+  const voteActionsEl = $(room, ".lobby-vote-actions");
 
   const setStatus = (text) => { statusEl.textContent = text || ""; };
   const isHost = () => lobby.players.length > 0 && lobby.players[0].id === me.id;
+  const nameOf = (id) => (lobby.players.find((p) => p.id === id) || {}).name || "A player";
+
+  // Next to each other player: Kick for the host, Vote to kick for everyone else.
+  function kickButton(p) {
+    if (isHost()) {
+      const b = el("button", "quiet lobby-kick", "Kick");
+      b.type = "button";
+      b.setAttribute("aria-label", `Kick ${p.name}`);
+      b.addEventListener("click", () => hostKick(p.id));
+      return b;
+    }
+    const b = el("button", "quiet lobby-kick", "Vote to kick");
+    b.type = "button";
+    b.setAttribute("aria-label", `Start a vote to kick ${p.name}`);
+    const why = voteBlocker({ players: lobby.players, me: me.id, target: p.id, active: Boolean(lobby.vote), cooldownUntil: lobby.cooldowns.get(p.id) || 0, inGame: Boolean(lobby.game) });
+    b.disabled = Boolean(why);
+    if (why) b.title = why;
+    b.addEventListener("click", () => callVote(p.id));
+    return b;
+  }
 
   function renderPlayers() {
     countEl.textContent = `${lobby.players.length} of ${MAX_PLAYERS}`;
@@ -240,9 +338,145 @@
       li.append(el("span", "lobby-player-name", p.name));
       if (p.id === me.id) li.append(el("span", "lobby-tag", "you"));
       if (i === 0) li.append(el("span", "lobby-tag host", "host"));
+      if (p.id !== me.id && lobby.ready) li.append(kickButton(p));
+      return li;
+    }));
+    renderStageMenu();
+  }
+
+  function renderStageMenu() {
+    const show = Boolean(lobby.game) && isHost() && lobby.players.length > 1;
+    stagePlayersBtn.hidden = !show;
+    if (!show) { stageMenu.hidden = true; stagePlayersBtn.setAttribute("aria-expanded", "false"); }
+    stageMenu.replaceChildren(...lobby.players.filter((p) => p.id !== me.id).map((p) => {
+      const li = el("li");
+      li.append(el("span", "lobby-player-name", p.name), kickButton(p));
       return li;
     }));
   }
+  stagePlayersBtn.addEventListener("click", () => {
+    stageMenu.hidden = !stageMenu.hidden;
+    stagePlayersBtn.setAttribute("aria-expanded", String(!stageMenu.hidden));
+  });
+
+  /* ----- kicking ----- */
+  function hostKick(target) {
+    if (!isHost() || target === me.id) return;
+    if (!confirm(`Kick ${nameOf(target)} from the lobby? They won't be able to rejoin it today.`)) return;
+    lobby.kicked.add(target);
+    send("lobby:kick", { target, by: me.id });
+  }
+
+  function beKicked(byVote) {
+    const code = lobby.code;
+    leave();
+    if (code) noteKicked(code);
+    homeError(byVote ? "You were voted out of that lobby." : "You were removed from that lobby.");
+  }
+
+  function onKick(message) {
+    const body = unwrap(message) || {};
+    if (!mayKick(lobby.players, body, lobby.passedVotes)) return;
+    lobby.kicked.add(body.target);
+    if (body.target === me.id) { beKicked(body.reason === "vote"); return; }
+    if (body.reason !== "vote") setStatus(`${nameOf(body.target)} was removed from the lobby.`);
+  }
+
+  // Someone kicked earlier who shows up again (the same tab, after clearing what this browser
+  // remembers) is kicked again by the host. Not more than once every few seconds per player.
+  function rekickReturning() {
+    if (!isHost()) return;
+    for (const p of lobby.players) {
+      if (p.id === me.id || !lobby.kicked.has(p.id) || Date.now() - (lobby.rekickedAt.get(p.id) || 0) < 5000) continue;
+      lobby.rekickedAt.set(p.id, Date.now());
+      send("lobby:kick", { target: p.id, by: me.id });
+    }
+  }
+
+  /* ----- votes to kick ----- */
+  function callVote(target) {
+    const why = voteBlocker({ players: lobby.players, me: me.id, target, active: Boolean(lobby.vote), cooldownUntil: lobby.cooldowns.get(target) || 0, inGame: Boolean(lobby.game) });
+    if (why) { setStatus(why); return; }
+    if (!confirm(`Start a vote to kick ${nameOf(target)}? Everyone else in the lobby has to agree.`)) return;
+    send("lobby:votekick", { id: newId(), target, by: me.id });
+  }
+
+  function onVoteKick(message) {
+    const body = unwrap(message) || {};
+    if (typeof body.id !== "string" || typeof body.target !== "string" || typeof body.by !== "string") return;
+    const why = voteBlocker({ players: lobby.players, me: body.by, target: body.target, active: Boolean(lobby.vote), cooldownUntil: lobby.cooldowns.get(body.target) || 0, inGame: Boolean(lobby.game) });
+    if (why) return;
+    lobby.vote = { id: body.id, target: body.target, by: body.by, targetName: nameOf(body.target), byName: nameOf(body.by), yes: new Set([body.by]), no: new Set(), endsAt: Date.now() + VOTE_MS };
+    clearInterval(lobby.voteTimer);
+    lobby.voteTimer = setInterval(checkVote, 1000);
+    setStatus("");
+    renderPlayers();
+    checkVote();
+  }
+
+  function castBallot(yes) {
+    const v = lobby.vote;
+    if (!v || v.target === me.id) return;
+    send("lobby:ballot", { id: v.id, voter: me.id, yes });
+  }
+
+  function onBallot(message) {
+    const body = unwrap(message) || {};
+    const v = lobby.vote;
+    if (!v || body.id !== v.id || typeof body.voter !== "string" || body.voter === v.target || typeof body.yes !== "boolean") return;
+    v.yes.delete(body.voter);
+    v.no.delete(body.voter);
+    (body.yes ? v.yes : v.no).add(body.voter);
+    checkVote();
+  }
+
+  // Every page works out the result from the same votes, so they all agree on it.
+  function checkVote() {
+    const v = lobby.vote;
+    if (!v) return;
+    const outcome = voteOutcome(lobby.players, v);
+    if (outcome === "open") { renderVote(); return; }
+    endVote();
+    if (outcome === "pass") {
+      lobby.passedVotes.add(`${v.id}|${v.target}`);
+      lobby.kicked.add(v.target);
+      if (v.target === me.id) { beKicked(true); return; }
+      setStatus(`${v.targetName} was voted out of the lobby.`);
+      if (voteEnforcer(lobby.players, v.target) === me.id) send("lobby:kick", { target: v.target, by: me.id, reason: "vote", voteId: v.id });
+    } else if (outcome === "fail") {
+      lobby.cooldowns.set(v.target, Date.now() + VOTE_COOLDOWN_MS);
+      renderPlayers(); // again, now that the wait is set, so that player's Vote to kick button is off
+      setTimeout(renderPlayers, VOTE_COOLDOWN_MS + 50); // and it comes back once the wait is over
+      setStatus(v.target === me.id ? "The vote to kick you didn't pass." : `The vote to kick ${v.targetName} didn't pass.`);
+    } else {
+      setStatus(`${v.targetName} left, so the vote ended.`);
+    }
+  }
+
+  function endVote() {
+    clearInterval(lobby.voteTimer);
+    lobby.voteTimer = 0;
+    lobby.vote = null;
+    renderVote();
+    renderPlayers();
+  }
+
+  function renderVote() {
+    const v = lobby.vote;
+    voteEl.hidden = !v;
+    if (!v) return;
+    const left = Math.max(0, Math.ceil((v.endsAt - Date.now()) / 1000));
+    const voters = lobby.players.filter((p) => p.id !== v.target);
+    const agreed = voters.filter((p) => v.yes.has(p.id)).length;
+    const tally = `${agreed} of ${voters.length} agree · ${left}s left`;
+    const mine = v.yes.has(me.id) ? "yes" : v.no.has(me.id) ? "no" : null;
+    if (v.target === me.id) voteTextEl.textContent = `${v.byName} started a vote to kick you. ${tally}.`;
+    else if (v.by === me.id) voteTextEl.textContent = `You started a vote to kick ${v.targetName}. ${tally}.`;
+    else voteTextEl.textContent = `${v.byName} wants to kick ${v.targetName}. Everyone else has to agree. ${tally}.`;
+    voteActionsEl.hidden = v.target === me.id || v.by === me.id;
+    for (const b of voteActionsEl.querySelectorAll("button")) b.setAttribute("aria-pressed", String(b.dataset.vote === mine));
+  }
+  for (const b of voteActionsEl.querySelectorAll("button")) b.addEventListener("click", () => castBallot(b.dataset.vote === "yes"));
 
   renderGames = function () {
     const list = [...games.values()];
@@ -286,6 +520,8 @@
     lobby.ready = true;
     renderPlayers();
     renderGames();
+    rekickReturning();
+    checkVote(); // someone leaving can settle a vote
     for (const fn of lobby.watchers) fn(lobby.players.slice());
     // Joining while a game is already on drops you into it. That only counts for a few seconds
     // after arriving (the other players' entries can trickle in after your own), and stops as soon
@@ -339,6 +575,9 @@
     lobby.autoLaunch = false;
     lobby.game = gameId;
     lobby.gameDef = game;
+    // Votes to kick happen in the lobby room, which the game covers, so one in progress stops here.
+    if (lobby.vote) { endVote(); setStatus("The vote to kick was called off because a game started."); }
+    renderPlayers();
     stageRoot.replaceChildren();
     if (!stage.open) stage.showModal();
     track();
@@ -368,6 +607,7 @@
     stageRoot.replaceChildren();
     if (stage.open) stage.close();
     track();
+    renderPlayers();
     renderGames();
   }
 
@@ -379,6 +619,10 @@
     lobby.players = [];
     lobby.ready = false;
     lobby.autoLaunch = true;
+    lobby.kicked = new Set();
+    lobby.passedVotes = new Set();
+    lobby.cooldowns = new Map();
+    lobby.rekickedAt = new Map();
     linkEl.value = lobbyLink(location.origin, location.pathname, code);
     nameEl.value = me.name;
     setStatus("Connecting…");
@@ -396,6 +640,9 @@
     channel.on("broadcast", { event: "lobby:start" }, live(onStart));
     channel.on("broadcast", { event: "lobby:end" }, live(stopGame));
     channel.on("broadcast", { event: "game" }, live(onGameMessage));
+    channel.on("broadcast", { event: "lobby:kick" }, live(onKick));
+    channel.on("broadcast", { event: "lobby:votekick" }, live(onVoteKick));
+    channel.on("broadcast", { event: "lobby:ballot" }, live(onBallot));
     channel.subscribe(async (status) => {
       if (lobby.channel !== channel) return;
       if (status === "SUBSCRIBED") {
@@ -410,6 +657,8 @@
 
   function leave() {
     stopGame();
+    if (lobby.vote) endVote();
+    setStatus("");
     const channel = lobby.channel;
     lobby.channel = null;
     lobby.code = null;
@@ -461,6 +710,7 @@
     homeError("");
     const code = normalizeCode(raw);
     if (!code) { homeError("Lobby codes are 5 letters, like BCDFG."); return false; }
+    if (wasKicked(readKicks(), code, today())) { homeError("You were removed from that lobby, so you can't rejoin it today."); return false; }
     busy(true);
     try {
       const { data, error } = await client.rpc("lobby_exists", { lobby_code: code });

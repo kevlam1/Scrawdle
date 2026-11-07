@@ -62,6 +62,24 @@ a.quiet { color: #5c584f; } /* the same grey flow.css gives the "Explore sample 
 .lobby-player-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .lobby-tag { flex: none; padding: 4px 8px; border-radius: 99px; background: var(--tan); font: 11px/1 Arial, sans-serif; letter-spacing: 1px; text-transform: uppercase; }
 .lobby-tag.host { background: var(--yellow); }
+
+/* ---------- Kicking: Kick (host) or Vote to kick (everyone else), and the vote bar ---------- */
+.lobby-kick { flex: none; min-height: 32px; padding: 0 10px; font-size: 13px; }
+.lobby-kick:disabled { opacity: .45; cursor: not-allowed; }
+.lobby-vote { margin-top: 12px; padding: 12px 14px; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; background: var(--alert); color: var(--alert-ink); border: var(--line); border-radius: 12px; text-align: left; }
+.lobby-vote[hidden] { display: none; }
+.lobby-vote-text { flex: 1 1 220px; margin: 0; font-size: 14px; line-height: 1.5; }
+.lobby-vote-actions { display: flex; gap: 8px; }
+.lobby-vote-actions[hidden] { display: none; }
+.lobby-vote-actions .btn { min-height: 40px; }
+.lobby-vote-actions .btn[aria-pressed="true"] { background: var(--ink); color: var(--paper); }
+
+/* During a game: the host's Players button, in the bottom-left corner of the game's screen. */
+.lobby-stage-players { position: fixed; left: 12px; bottom: 12px; z-index: 30; min-height: 36px; padding: 0 12px; background: var(--surface, #fffcf7); border: var(--line); border-radius: 99px; font-size: 13px; box-shadow: var(--raise); }
+.lobby-stage-players[hidden] { display: none; }
+.lobby-stage-menu { position: fixed; left: 12px; bottom: 56px; z-index: 30; width: min(300px, calc(100vw - 24px)); margin: 0; padding: 8px; list-style: none; display: grid; gap: 6px; background: var(--surface, #fffcf7); border: var(--line); border-radius: 12px; box-shadow: 0 8px 24px #302f2b2e; }
+.lobby-stage-menu[hidden] { display: none; }
+.lobby-stage-menu li { display: flex; align-items: center; gap: 8px; padding: 4px 4px 4px 8px; }
 .lobby-name { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; margin-top: 22px; font-size: 15px; text-align: left; }
 .lobby-name input { width: min(300px, 100%); }
 .lobby-game-text { display: flex; flex: 1; flex-direction: column; min-width: 0; }

@@ -1,0 +1,71 @@
+/* Today's leaderboard (leaderboard.js, /leaderboard/). Uses the theme's variables, so dark mode
+ * (theme.css) applies with no extra rules. */
+
+.lb-page { min-height: 100dvh; padding: 20px 32px 40px; background: var(--paper); color: var(--ink); }
+.lb-page .app-header { max-width: 1000px; margin: 0 auto; }
+.lb-page .gallery-heading { margin: 20px auto 8px; text-align: center; }
+.lb-page h1 { margin: 0; font: 400 40px/1.2 var(--hand); }
+.lb-page .gallery-note { margin: 0 auto 8px; text-align: center; font-size: 13px; color: var(--ink-soft); }
+.lb-body { max-width: 1000px; margin: 0 auto; display: grid; gap: 28px; }
+.lb-links { max-width: 1000px; margin: 28px auto 0; text-align: center; }
+
+.lb-group h2 { margin: 0 0 6px; font: 400 30px/1.2 var(--hand); text-align: left; }
+.lb-standing { margin: 0 0 12px; font: 400 20px/1.3 var(--hand); }
+.lb-note { margin: 6px 0 0; padding: 14px 16px; border: var(--line); border-radius: 12px; background: var(--surface, #fffcf7); font-size: 14px; line-height: 1.5; color: var(--ink-soft); }
+
+/* The top three: big cards side by side. */
+.lb-podium { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+.lb-entry { position: relative; display: flex; flex-direction: column; background: white; border: var(--line); border-radius: 10px; overflow: hidden; }
+.lb-entry img { display: block; width: 100%; aspect-ratio: 3 / 2; object-fit: contain; background: white; }
+.lb-entry.mine { background: #fff3d0; box-shadow: inset 0 0 0 2px var(--picked-edge, #c59a2e); }
+.lb-place { position: absolute; top: 8px; left: 8px; z-index: 1; min-width: 40px; padding: 4px 10px; border: var(--line); border-radius: 99px; background: var(--cream); font: 400 20px/1 var(--hand); text-align: center; color: var(--ink); }
+.lb-podium-entry:nth-child(1) .lb-place { background: #ffd95c; }
+.lb-podium-entry:nth-child(2) .lb-place { background: #e3e3e3; }
+.lb-podium-entry:nth-child(3) .lb-place { background: #f0c49b; }
+.lb-info { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 10px 12px; font-size: 14px; color: #3d3a35; }
+.lb-yours { padding: 2px 8px; border-radius: 99px; background: var(--yellow); font: 11px/1.4 Arial, sans-serif; letter-spacing: 1px; text-transform: uppercase; color: #302f2b; }
+
+/* Places 4 to 10: smaller rows. */
+.lb-list { list-style: none; margin: 14px 0 0; padding: 0; display: grid; gap: 8px; }
+.lb-list .lb-entry { flex-direction: row; align-items: center; }
+.lb-list .lb-place { position: static; margin: 0 4px 0 10px; flex: none; }
+.lb-list .lb-entry img { width: 120px; flex: none; border-left: var(--line); border-right: var(--line); }
+.lb-list .lb-info { flex: 1; }
+
+/* Dark mode: the cards keep a white picture area (drawings are white), with dark text strips. */
+html[data-theme="dark"] .lb-entry { background: var(--surface); }
+html[data-theme="dark"] .lb-entry.mine { background: var(--picked); }
+html[data-theme="dark"] .lb-info { color: var(--ink); }
+html[data-theme="dark"] .lb-place { color: #1f1e1b; }
+html[data-theme="dark"] .lb-podium-entry:not(:nth-child(-n+3)) .lb-place, html[data-theme="dark"] .lb-list .lb-place { background: var(--cream); color: var(--ink); }
+
+@media (max-width: 640px) {
+  .lb-page { padding: 12px 16px 32px; }
+  .lb-page h1 { font-size: 32px; }
+  .lb-podium { grid-template-columns: 1fr; }
+  .lb-list .lb-entry img { width: 96px; }
+}
+
+/* ---------- Yesterday's winners: on the leaderboard (full) and the home screen (compact) ---------- */
+.yesterday { padding: 16px; border: var(--line); border-radius: 14px; background: var(--surface, #fffcf7); text-align: left; }
+.yesterday-title { margin: 0 0 12px; font: 400 26px/1.2 var(--hand); }
+.yesterday-grid { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px; }
+.yesterday-card { display: flex; flex-direction: column; background: white; border: var(--line); border-radius: 10px; overflow: hidden; }
+.yesterday-card.mine { box-shadow: inset 0 0 0 2px var(--picked-edge, #c59a2e); background: #fff3d0; }
+.yesterday-card img { display: block; width: 100%; aspect-ratio: 3 / 2; object-fit: contain; background: white; }
+.yesterday-text { margin: 0; padding: 8px 10px; display: flex; flex-direction: column; gap: 2px; font-size: 13px; color: #3d3a35; }
+/* Daily Scrawl has up to ten parts, so the caption gets two lines; the full list is in its tooltip. */
+.yesterday-caption { overflow: hidden; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; }
+.yesterday-votes { color: #6b665d; }
+.yesterday-link { display: inline-block; margin-top: 10px; font-size: 13px; }
+
+/* The home screen's copy sits under the Continue cards, at the width of the home column. */
+#yesterday-slot:empty { display: none; }
+#yesterday-slot { width: min(720px, 100%); margin: 0 auto 20px; }
+.yesterday.compact .yesterday-grid { grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); }
+.yesterday.compact .yesterday-title { font-size: 22px; }
+
+html[data-theme="dark"] .yesterday-card { background: var(--surface); }
+html[data-theme="dark"] .yesterday-card.mine { background: var(--picked); }
+html[data-theme="dark"] .yesterday-text { color: var(--ink); }
+html[data-theme="dark"] .yesterday-votes { color: var(--ink-soft); }
