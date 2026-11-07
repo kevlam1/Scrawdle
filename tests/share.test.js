@@ -27,3 +27,11 @@ test("Open Canvas has no date, since it isn't a daily drawing", () => {
   const line = shareLine({ mode: "basic", daily: false, prompts: parts, day: "2026-11-05" }, URL_);
   assert.equal(line, "My Scrawdle Open Canvas drawing: Parrot, Dinosaur tail. Draw yours: " + URL_);
 });
+
+test("a daily drawing's line ends with the streak, Wordle-style, and only when there is one", () => {
+  const day = { mode: "daily", daily: true, prompts: parts, day: "2026-11-05" };
+  assert.match(shareLine(day, URL_, 5), / Draw yours: https:\/\/scrawdle\.vercel\.app\/ 🔥 5$/);
+  assert.match(shareLine({ ...day, mode: "scrawl" }, URL_, 2), / 🔥 2$/);
+  assert.equal(shareLine(day, URL_, 0), shareLine(day, URL_), "no streak, no flame");
+  assert.doesNotMatch(shareLine({ ...day, daily: false }, URL_, 5), /🔥/, "Open Canvas doesn't count toward a streak");
+});

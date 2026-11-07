@@ -71,6 +71,7 @@ export const SUMMARIES = {
   63: 'Angie made the finish screen open the same Public drawings page as the home screen, added a breaking-padlock animation when Daily Scrawl unlocks, and Claude found that the live database has no Daily Scrawl drawings, so update 004 is probably the reason it never unlocked.',
   64: "Trenten replaced the browser's built-in color picker with Scrawdle's own, a shade square, hue bar, hex box and recent colors that look the same in every browser and in dark mode.",
   65: "Trenten added kicking to lobbies: the host can kick a player, even during a game, and with three or more players anyone can call a vote to kick that passes only if everyone else agrees.",
+  66: "Trenten added a streak of days in a row with a finished daily drawing, kept in the browser and shown on the home screen, the finish screen, and the share text.",
   misread: 'Where the AI got something wrong or we had to correct course, and what happened next.',
   decisions: 'What we decided and what we dropped along the way.',
 }

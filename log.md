@@ -1287,6 +1287,28 @@ Artifact 4 is "For Someone Else," due Sunday, November 8. Our team of four (Kevi
 
 ---
 
+## 66. A streak of days in a row (2026-11-07) — Trenten
+
+**What I asked for**
+- A streak that keeps track of consecutive days of drawing, planned before building. I went with Claude's recommendations: a day counts when you finish a daily drawing, it starts counting from now (not from old drawings), and it shows on the home screen, the finish screen, and the share text.
+
+**What changed**
+- `frontend/streak.js` (new): a day counts when the finish screen opens for a daily drawing that isn't blank (Daily Scrawl or Daily Free Play, not Free Play). The days are the player's local date, like the rest of the game. The streak counts back from today, or from yesterday if today isn't drawn yet (it's still alive until today ends); a whole missed day ends it. The best streak is remembered too. Kept in this browser only, as the list of days drawn, so there's no database change and nothing to sign in to.
+- `frontend/index.html` and `flow.css`: under the date on the home screen, "🔥 5-day streak", or "🔥 5-day streak · Draw today to keep it going" before today's drawing is done; hidden with no streak.
+- `frontend/drawing.js`: the finish screen records the day and says "🔥 That's 5 days in a row!", "🔥 New best: 7 days in a row!", or "🔥 Day 1 of a new streak", and just "🔥 5-day streak" when today already counted. The share text for a daily drawing ends with the streak, like "… Draw yours: [link] 🔥 5".
+- `tests/streak.test.js` (new) and one new test in `tests/share.test.js`.
+
+**What I checked**
+- 12 Node tests for the date math (the next day across months, years, a leap day and a clock change; refusing dates like 2026-02-30; counting from today or yesterday; a missed day; the best streak; the wording), and one for the share text with and without a streak. All 113 tests pass.
+- In the browser, with past days written straight into the saved streak to stand in for earlier visits: finishing Daily Free Play turned two days into three on the finish screen, finishing it again didn't count twice, the share text ended with 🔥 3, and the home screen showed the streak; with only yesterday drawn the home screen showed the "Draw today" nudge; a missed day hid it; Free Play and a blank Daily Scrawl didn't count. The home line fits at phone width and follows dark mode. Claude put the browser's real saved streak back afterwards.
+- Not checked: an actual change of date while the page is open (the streak updates the next time the home or finish screen is shown), Safari or Firefox.
+
+**Decisions**
+- Finishing counts, not publishing, so the streak works even when publishing doesn't.
+- Per browser only, the same as My drawings. A leaderboard that compares streaks would need them on the database; that's a question for the leaderboard plan.
+
+---
+
 ## Where AI misread me, or I had to correct course
 
 - Claude's first version of the start page put "What is this?" in the top right, where it collided with the "New set" button on the game screen. I caught it by running the page; Claude hadn't opened it in a browser.

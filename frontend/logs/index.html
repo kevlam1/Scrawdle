@@ -609,7 +609,7 @@
         <h1>Scrawdle: build log</h1>
         <p class="intro">
           A daily drawing game, built by a team of four with Claude Code: a new set of parts to draw each day, a gallery of what
-          other people drew, and private lobbies. Here are the 65 entries of our log with one sentence on each and the name of
+          other people drew, and private lobbies. Here are the 66 entries of our log with one sentence on each and the name of
           whoever wrote it. Open an entry to read everything they wrote for it.
         </p>
         <ul class="facts" aria-label="Project facts">
@@ -739,10 +739,11 @@
   </ul></div>
 </div>
 <div class="toc-group is-open">
-  <button class="toc-head" type="button" aria-expanded="true">Saturday 7 November <span class="count">2</span></button>
+  <button class="toc-head" type="button" aria-expanded="true">Saturday 7 November <span class="count">3</span></button>
   <div class="toc-list-wrap"><ul class="toc-list">
     <li><a href="#entry-64"><span class="n">64</span><span>Scrawdle's own color picker</span></a></li>
     <li><a href="#entry-65"><span class="n">65</span><span>Kicking players, and votes to kick</span></a></li>
+    <li><a href="#entry-66"><span class="n">66</span><span>A streak of days in a row</span></a></li>
   </ul></div>
 </div>
 <div class="toc-group is-open">
@@ -1852,6 +1853,23 @@
 <ul><li>All 100 Node tests pass.</li><li>In a browser with a stand-in for Supabase (each player is the real page in its own frame, running the real <code>lobby.js</code> and <code>party.js</code>, with messages and the player list passed between them): the host kicking a player (everyone's list updates and says so; the kicked page shows the message and remembers it); the kicked browser being refused when it opens the invite link again; a fake kick sent by a player who isn't the host being ignored; a vote failing on one No, with that player's Vote to kick button then off for a minute; voting out the host (the next player carried out the kick and became host); a vote passing when the only player who hadn't voted left; a vote failing after 30 seconds with nobody voting; the Players button showing only for the host during a game, and kicking from it, with the game carrying on for everyone else.</li><li>On the live lobby, with three tabs of the local page as Ana (host), Ben and Cal (lobby <code>QRRCT</code>, deleted by the daily job): Ben's vote to kick Cal showed the right bar in all three tabs, passed when Ana said yes, and both remaining tabs said &quot;Cal was voted out of the lobby&quot;; Cal's home screen showed &quot;You were voted out of that lobby&quot; under Multiplayer, and opening the invite link again was refused for the day. Then Ana kicked Ben, and Ben's home screen said &quot;You were removed from that lobby&quot;. No errors from the test in any tab's console. Afterwards Claude cleared the remembered kick, since the test tabs share one browser's storage.</li><li>Not checked: the host's Players button during a game on the live lobby (only in the stand-in), players on different computers, Safari or Firefox, and how it looks (the preview pane was too small for useful screenshots).</li></ul>
 <p class="sub"><strong>Decisions</strong></p>
 <ul><li>The same trust limits as the rest of the lobby, written down in <code>CLAUDE.md</code> rather than hidden: messages say who sent them and nothing can check that, and a kicked player can come back from another browser. Doing better needs logins or a server deciding who's in a lobby.</li><li>Votes need at least 3 players; with 2, one person would decide alone, and the host can already kick.</li></ul>
+  </div></div></div>
+</article>
+<article class="entry" id="entry-66">
+  <h3 class="entry-head"><button type="button" aria-expanded="false" aria-controls="entry-66-body">
+    <span class="num">66</span>
+    <span><span class="title">A streak of days in a row<span class="by">by Trenten</span></span><span class="sum">Trenten added a streak of days in a row with a finished daily drawing, kept in the browser and shown on the home screen, the finish screen, and the share text.</span></span>
+    <span class="caret" aria-hidden="true"></span>
+  </button></h3>
+  <div class="body" id="entry-66-body"><div class="body-in"><div class="body-pad">
+<p class="sub"><strong>What I asked for</strong></p>
+<ul><li>A streak that keeps track of consecutive days of drawing, planned before building. I went with Claude's recommendations: a day counts when you finish a daily drawing, it starts counting from now (not from old drawings), and it shows on the home screen, the finish screen, and the share text.</li></ul>
+<p class="sub"><strong>What changed</strong></p>
+<ul><li><code>frontend/streak.js</code> (new): a day counts when the finish screen opens for a daily drawing that isn't blank (Daily Scrawl or Daily Free Play, not Free Play). The days are the player's local date, like the rest of the game. The streak counts back from today, or from yesterday if today isn't drawn yet (it's still alive until today ends); a whole missed day ends it. The best streak is remembered too. Kept in this browser only, as the list of days drawn, so there's no database change and nothing to sign in to.</li><li><code>frontend/index.html</code> and <code>flow.css</code>: under the date on the home screen, &quot;🔥 5-day streak&quot;, or &quot;🔥 5-day streak · Draw today to keep it going&quot; before today's drawing is done; hidden with no streak.</li><li><code>frontend/drawing.js</code>: the finish screen records the day and says &quot;🔥 That's 5 days in a row!&quot;, &quot;🔥 New best: 7 days in a row!&quot;, or &quot;🔥 Day 1 of a new streak&quot;, and just &quot;🔥 5-day streak&quot; when today already counted. The share text for a daily drawing ends with the streak, like &quot;… Draw yours: [link] 🔥 5&quot;.</li><li><code>tests/streak.test.js</code> (new) and one new test in <code>tests/share.test.js</code>.</li></ul>
+<p class="sub"><strong>What I checked</strong></p>
+<ul><li>12 Node tests for the date math (the next day across months, years, a leap day and a clock change; refusing dates like 2026-02-30; counting from today or yesterday; a missed day; the best streak; the wording), and one for the share text with and without a streak. All 113 tests pass.</li><li>In the browser, with past days written straight into the saved streak to stand in for earlier visits: finishing Daily Free Play turned two days into three on the finish screen, finishing it again didn't count twice, the share text ended with 🔥 3, and the home screen showed the streak; with only yesterday drawn the home screen showed the &quot;Draw today&quot; nudge; a missed day hid it; Free Play and a blank Daily Scrawl didn't count. The home line fits at phone width and follows dark mode. Claude put the browser's real saved streak back afterwards.</li><li>Not checked: an actual change of date while the page is open (the streak updates the next time the home or finish screen is shown), Safari or Firefox.</li></ul>
+<p class="sub"><strong>Decisions</strong></p>
+<ul><li>Finishing counts, not publishing, so the streak works even when publishing doesn't.</li><li>Per browser only, the same as My drawings. A leaderboard that compares streaks would need them on the database; that's a question for the leaderboard plan.</li></ul>
   </div></div></div>
 </article>
       </section>

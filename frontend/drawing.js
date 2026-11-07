@@ -260,13 +260,15 @@
   };
 
   /* ---------- Sharing: the line that goes with a shared drawing, like a daily puzzle's ---------- */
-  function shareLine({ mode, daily, prompts, day }, url) {
+  // `streak` is the player's current streak (streak.js); a daily drawing's line ends with it, Wordle-style.
+  function shareLine({ mode, daily, prompts, day }, url, streak = 0) {
     const date = new Date(`${day}T12:00:00`).toLocaleDateString(undefined, { month: "long", day: "numeric" });
-    if (mode === "scrawl") return `My Scrawdle Daily Free Play drawing for ${date}. Draw yours: ${url}`;
+    const fire = streak > 0 ? ` 🔥 ${streak}` : "";
+    if (mode === "scrawl") return `My Scrawdle Daily Free Play drawing for ${date}. Draw yours: ${url}${fire}`;
     const parts = prompts.map((p) => p.value).join(", ");
     if (daily === false) return `My Scrawdle Open Canvas drawing: ${parts}. Draw yours: ${url}`;
     const name = mode === "daily" ? "Daily Scrawl" : mode === "detailed" ? "Detailed" : "Basic";
-    return `My Scrawdle ${name} drawing for ${date}: ${parts}. Draw yours: ${url}`;
+    return `My Scrawdle ${name} drawing for ${date}: ${parts}. Draw yours: ${url}${fire}`;
   }
 
   /* ---------- The finished image: the drawing with its prompts and date underneath ---------- */
@@ -1206,7 +1208,7 @@
     dialog.id = "finish";
     dialog.innerHTML = `
       <header class="app-header"><span class="wordmark">Scrawdle</span><button type="button" class="quiet" data-act="home">Back to home</button></header>
-      <div class="finish-heading"><p class="finish-date eyebrow"></p><h1>Made by you.</h1><h2 class="finish-prompt"></h2></div>
+      <div class="finish-heading"><p class="finish-date eyebrow"></p><h1>Made by you.</h1><h2 class="finish-prompt"></h2><p class="finish-streak" role="status" hidden></p></div>
       <div class="finish-art">
         <img alt="Your finished drawing">
         <canvas class="replay" hidden aria-label="Your drawing being redrawn"></canvas>
@@ -1296,7 +1298,8 @@
     shareBtn.addEventListener("click", async () => {
       const round = board.round;
       const file = new File([exportBlob], `scrawdle-${round.day}.png`, { type: "image/png" });
-      const text = shareLine(round, `${location.origin}${location.pathname}`);
+      const streak = round.daily !== false && root.ScrawdleStreak ? root.ScrawdleStreak.read(dayKey()).current : 0;
+      const text = shareLine(round, `${location.origin}${location.pathname}`, streak);
       if (navigator.canShare && navigator.canShare({ files: [file] })) {
         try {
           await navigator.share({ files: [file], title: "My Scrawdle drawing", text });
@@ -1366,6 +1369,14 @@
       dialog.querySelector(".finish-prompt").textContent = prompts.map((p) => p.value).join(", ");
       dialog.querySelector(".finish-date").textContent = new Date(`${day}T12:00:00`).toLocaleDateString(undefined, { weekday: "long", year: "numeric", month: "long", day: "numeric" });
       note.textContent = empty ? "Draw something first." : (ready && publishedNote) || "";
+      // Finishing a daily drawing (not Free Play, not a blank one) counts today for the streak (streak.js).
+      const streakEl = dialog.querySelector(".finish-streak");
+      streakEl.textContent = "";
+      if (daily && !empty && root.ScrawdleStreak) {
+        const s = root.ScrawdleStreak.record(day, dayKey());
+        streakEl.textContent = root.ScrawdleStreak.finishText(s, s.added, s.bestBefore);
+      }
+      streakEl.hidden = !streakEl.textContent;
       dialog.showModal();
       try { sessionStorage.setItem(FINISH_KEY, "1"); } catch (err) { /* private browsing: a refresh just goes back to the drawing */ }
     };

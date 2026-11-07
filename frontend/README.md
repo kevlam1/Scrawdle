@@ -4,6 +4,7 @@
 - `prompts.json`: the parts the slot machine picks from.
 - `daily.js`: picks the same parts for everyone on a given date.
 - `drawing.js`: the drawing tools, brush types, undo and redo, auto-save, replay, and the finish screen.
+- `streak.js`: the streak of days in a row with a finished daily drawing. `drawing.js`'s finish screen records the day and shows the line, `index.html`'s home screen shows it under the date, and the share text ends with it. Kept in `localStorage` (`scrawdle-streak`), so it's per browser. Load it before `drawing.js`. Its date math is tested in `../tests/streak.test.js`.
 - `color-picker.js` and `color-picker.css`: Scrawdle's own color picker, opened from the rainbow "Custom" button in the tool tray, so it looks the same in every browser instead of using the browser's built-in one. `drawing.js` makes one per board. Load `color-picker.js` before `drawing.js`. Its color math is tested in `../tests/color-picker.test.js`.
 - `drawing.css`, `studio.css`, and `flow.css`: the look of the game, loaded in that order. Later files override earlier ones.
 - `fonts/`: Patrick Hand and Gochi Hand.

@@ -50,6 +50,7 @@
     <div class="home-body">
       <span class="wm-slot home-logo"></span>
       <p class="eyebrow" id="home-date"></p>
+      <p class="home-streak" id="home-streak" hidden></p>
       <h1>Ready to draw?</h1>
       <div id="continue-list"></div>
       <div class="menu-stack">
@@ -131,6 +132,7 @@
   </section>
 
   <script src="daily.js"></script>
+  <script src="streak.js"></script>
   <script src="color-picker.js"></script>
   <script src="drawing.js"></script>
   <script src="votes.js"></script>
@@ -421,6 +423,10 @@
       setupEl.classList.toggle("has-saved", cards.length > 0);
       setupEl.hidden = false;
       $("home-date").textContent = new Date().toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric" });
+      // The streak of days in a row with a finished daily drawing (streak.js). Hidden until there is one.
+      const streakText = window.ScrawdleStreak ? ScrawdleStreak.homeText(ScrawdleStreak.read(ScrawdleDrawing.dayKey())) : "";
+      $("home-streak").textContent = streakText;
+      $("home-streak").hidden = !streakText;
     }
 
     // My drawings only shows once there's something in it: a drawing in progress or one already kept.

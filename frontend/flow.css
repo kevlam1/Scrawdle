@@ -238,3 +238,8 @@ html:has(#slot:not([hidden])){overflow:hidden}
  #brush-settings .tray-sizes{padding-top:8px;gap:4px;margin-top:0}
  .size-top{display:none}
 }
+
+/* The streak (streak.js): under the date on the home screen, and under the parts on the finish screen. */
+.home-streak{display:inline-block;margin:6px auto 0;padding:4px 12px;border:var(--line);border-radius:99px;background:var(--cream);color:var(--ink);font:400 18px/1.3 var(--hand)}
+.home-streak[hidden],.finish-streak[hidden]{display:none}
+.finish-streak{margin:10px 0 0;font:400 21px/1.3 var(--hand);color:var(--ink)}
