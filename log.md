@@ -1309,6 +1309,30 @@ Artifact 4 is "For Someone Else," due Sunday, November 8. Our team of four (Kevi
 
 ---
 
+## 67. Today's leaderboard (2026-11-07) — Trenten
+
+**What I asked for**
+- A daily leaderboard that resets each day, planned first. Claude found that the Public drawings page already loads every drawing posted today with its votes, so a leaderboard could be built with no database change, but it can only rank drawings, not players, because a published drawing doesn't carry a name. I went with its recommendations: rank drawings, give it its own page, and rank by thumbs up.
+
+**What changed**
+- `frontend/leaderboard/index.html`, `leaderboard.js` and `leaderboard.css` (new), served at `/leaderboard/`: "Today's top drawings", with a list for Daily Scrawl (including the older Basic and Detailed) and one for Daily Free Play. The top three are a podium with gold, silver and bronze place badges; places 4 to 10 are rows below, and every drawing tied for 10th shows. Drawings with no thumbs up aren't ranked; ties share a place (1, 2, 2, 4), and fewer thumbs down breaks a tie. Your own drawing is marked "Yours", with "Yours is #4 of 23 today" (or "no thumbs up yet, so it isn't ranked") above the list. Daily Scrawl's list is locked until you've posted your own Daily Scrawl drawing, the same rule as Public drawings, and its drawings aren't even loaded until then.
+- It reuses `publish.js`'s `scrawdlePublicGallery` unchanged, so it starts over at local midnight like Public drawings, and the daily wipe clears its drawings.
+- Links: "Today's leaderboard" on the home screen (shown only when Supabase is connected, like Public drawings) and on the finish screen next to "See public drawings", and "See today's leaderboard" under the Public drawings page.
+- `tests/leaderboard.test.js` (new).
+
+**What I checked**
+- 8 Node tests for the ranking (order, tie-breaks, shared places, unranked drawings, your standing, which list each mode goes in, and ties at 10th). All 121 tests pass.
+- The page against the live project, read-only (it only loads): no Daily Free Play drawings posted yet today, and Daily Scrawl locked, because this browser hadn't posted one.
+- With stand-in data (14 Daily Scrawl drawings with ties and one of them yours, and Daily Free Play drawings with no thumbs up): the places, the shared places, "Yours is #7 of 12 today", the unranked message, the lock (Daily Scrawl not even requested), and the message when loading fails. Measured at 1280 by 800 (podium side by side) and phone width (stacked), with nothing scrolling sideways, and checked dark mode. Both new links appear and point to `leaderboard/`.
+- That first stand-in test caught a tie problem: three drawings tied for 10th, but only one showed. Fixed so everyone tied for the last place shown appears, with a test.
+- Not checked: the page with real votes (there were none today when it was tested), Safari or Firefox. The small local test server doesn't serve a folder's `index.html` the way Vercel does, so the page was opened as `/leaderboard/index.html` locally; `/leaderboard/` relies on the same Vercel behavior as `/public-drawings/`.
+
+**Decisions**
+- Drawings, not players, so there's no database update and no public player names to moderate. Ranking players later would mean storing a name with each published drawing (a new update for Kevin).
+- Its own page rather than a section of Public drawings, so Angie's and Kevin's page only gained one link.
+
+---
+
 ## Where AI misread me, or I had to correct course
 
 - Claude's first version of the start page put "What is this?" in the top right, where it collided with the "New set" button on the game screen. I caught it by running the page; Claude hadn't opened it in a browser.

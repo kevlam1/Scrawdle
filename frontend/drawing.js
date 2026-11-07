@@ -1225,6 +1225,7 @@
         <div class="finish-secondary">
           <button type="button" class="quiet" data-act="keep">Keep drawing</button>
           <button type="button" class="quiet" data-act="gallery">See public drawings</button>
+          <a class="quiet" data-act="leaderboard" href="leaderboard/">Today's leaderboard</a>
         </div>
       </div>`;
     document.body.appendChild(dialog);
@@ -1363,6 +1364,7 @@
       publishBtn.classList.toggle("primary", ready);
       downloadBtn.classList.toggle("primary", !ready);
       galleryBtn.hidden = !daily || empty || typeof window.scrawdlePublicGallery !== "function";
+      dialog.querySelector('[data-act="leaderboard"]').hidden = galleryBtn.hidden;
       replayBtn.hidden = empty || !board.canReplay;
       shareBtn.hidden = empty;
       keepBtn.textContent = board.locked ? "Back" : "Keep drawing";

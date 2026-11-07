@@ -609,7 +609,7 @@
         <h1>Scrawdle: build log</h1>
         <p class="intro">
           A daily drawing game, built by a team of four with Claude Code: a new set of parts to draw each day, a gallery of what
-          other people drew, and private lobbies. Here are the 66 entries of our log with one sentence on each and the name of
+          other people drew, and private lobbies. Here are the 67 entries of our log with one sentence on each and the name of
           whoever wrote it. Open an entry to read everything they wrote for it.
         </p>
         <ul class="facts" aria-label="Project facts">
@@ -739,11 +739,12 @@
   </ul></div>
 </div>
 <div class="toc-group is-open">
-  <button class="toc-head" type="button" aria-expanded="true">Saturday 7 November <span class="count">3</span></button>
+  <button class="toc-head" type="button" aria-expanded="true">Saturday 7 November <span class="count">4</span></button>
   <div class="toc-list-wrap"><ul class="toc-list">
     <li><a href="#entry-64"><span class="n">64</span><span>Scrawdle's own color picker</span></a></li>
     <li><a href="#entry-65"><span class="n">65</span><span>Kicking players, and votes to kick</span></a></li>
     <li><a href="#entry-66"><span class="n">66</span><span>A streak of days in a row</span></a></li>
+    <li><a href="#entry-67"><span class="n">67</span><span>Today's leaderboard</span></a></li>
   </ul></div>
 </div>
 <div class="toc-group is-open">
@@ -1870,6 +1871,23 @@
 <ul><li>12 Node tests for the date math (the next day across months, years, a leap day and a clock change; refusing dates like 2026-02-30; counting from today or yesterday; a missed day; the best streak; the wording), and one for the share text with and without a streak. All 113 tests pass.</li><li>In the browser, with past days written straight into the saved streak to stand in for earlier visits: finishing Daily Free Play turned two days into three on the finish screen, finishing it again didn't count twice, the share text ended with 🔥 3, and the home screen showed the streak; with only yesterday drawn the home screen showed the &quot;Draw today&quot; nudge; a missed day hid it; Free Play and a blank Daily Scrawl didn't count. The home line fits at phone width and follows dark mode. Claude put the browser's real saved streak back afterwards.</li><li>Not checked: an actual change of date while the page is open (the streak updates the next time the home or finish screen is shown), Safari or Firefox.</li></ul>
 <p class="sub"><strong>Decisions</strong></p>
 <ul><li>Finishing counts, not publishing, so the streak works even when publishing doesn't.</li><li>Per browser only, the same as My drawings. A leaderboard that compares streaks would need them on the database; that's a question for the leaderboard plan.</li></ul>
+  </div></div></div>
+</article>
+<article class="entry" id="entry-67">
+  <h3 class="entry-head"><button type="button" aria-expanded="false" aria-controls="entry-67-body">
+    <span class="num">67</span>
+    <span><span class="title">Today's leaderboard<span class="by">by Trenten</span></span><span class="sum">Trenten added Today's leaderboard, a page ranking today's published drawings by thumbs up for Daily Scrawl and Daily Free Play, built on the data the Public drawings page already loads, with no database change.</span></span>
+    <span class="caret" aria-hidden="true"></span>
+  </button></h3>
+  <div class="body" id="entry-67-body"><div class="body-in"><div class="body-pad">
+<p class="sub"><strong>What I asked for</strong></p>
+<ul><li>A daily leaderboard that resets each day, planned first. Claude found that the Public drawings page already loads every drawing posted today with its votes, so a leaderboard could be built with no database change, but it can only rank drawings, not players, because a published drawing doesn't carry a name. I went with its recommendations: rank drawings, give it its own page, and rank by thumbs up.</li></ul>
+<p class="sub"><strong>What changed</strong></p>
+<ul><li><code>frontend/leaderboard/index.html</code>, <code>leaderboard.js</code> and <code>leaderboard.css</code> (new), served at <code>/leaderboard/</code>: &quot;Today's top drawings&quot;, with a list for Daily Scrawl (including the older Basic and Detailed) and one for Daily Free Play. The top three are a podium with gold, silver and bronze place badges; places 4 to 10 are rows below, and every drawing tied for 10th shows. Drawings with no thumbs up aren't ranked; ties share a place (1, 2, 2, 4), and fewer thumbs down breaks a tie. Your own drawing is marked &quot;Yours&quot;, with &quot;Yours is #4 of 23 today&quot; (or &quot;no thumbs up yet, so it isn't ranked&quot;) above the list. Daily Scrawl's list is locked until you've posted your own Daily Scrawl drawing, the same rule as Public drawings, and its drawings aren't even loaded until then.</li><li>It reuses <code>publish.js</code>'s <code>scrawdlePublicGallery</code> unchanged, so it starts over at local midnight like Public drawings, and the daily wipe clears its drawings.</li><li>Links: &quot;Today's leaderboard&quot; on the home screen (shown only when Supabase is connected, like Public drawings) and on the finish screen next to &quot;See public drawings&quot;, and &quot;See today's leaderboard&quot; under the Public drawings page.</li><li><code>tests/leaderboard.test.js</code> (new).</li></ul>
+<p class="sub"><strong>What I checked</strong></p>
+<ul><li>8 Node tests for the ranking (order, tie-breaks, shared places, unranked drawings, your standing, which list each mode goes in, and ties at 10th). All 121 tests pass.</li><li>The page against the live project, read-only (it only loads): no Daily Free Play drawings posted yet today, and Daily Scrawl locked, because this browser hadn't posted one.</li><li>With stand-in data (14 Daily Scrawl drawings with ties and one of them yours, and Daily Free Play drawings with no thumbs up): the places, the shared places, &quot;Yours is #7 of 12 today&quot;, the unranked message, the lock (Daily Scrawl not even requested), and the message when loading fails. Measured at 1280 by 800 (podium side by side) and phone width (stacked), with nothing scrolling sideways, and checked dark mode. Both new links appear and point to <code>leaderboard/</code>.</li><li>That first stand-in test caught a tie problem: three drawings tied for 10th, but only one showed. Fixed so everyone tied for the last place shown appears, with a test.</li><li>Not checked: the page with real votes (there were none today when it was tested), Safari or Firefox. The small local test server doesn't serve a folder's <code>index.html</code> the way Vercel does, so the page was opened as <code>/leaderboard/index.html</code> locally; <code>/leaderboard/</code> relies on the same Vercel behavior as <code>/public-drawings/</code>.</li></ul>
+<p class="sub"><strong>Decisions</strong></p>
+<ul><li>Drawings, not players, so there's no database update and no public player names to moderate. Ranking players later would mean storing a name with each published drawing (a new update for Kevin).</li><li>Its own page rather than a section of Public drawings, so Angie's and Kevin's page only gained one link.</li></ul>
   </div></div></div>
 </article>
       </section>

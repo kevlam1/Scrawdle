@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Today's leaderboard · Scrawdle</title>
+  <!-- Dark mode is set before anything draws, so the page doesn't flash light first. -->
+  <script>try { if (localStorage.getItem("scrawdle-theme") === "dark") document.documentElement.dataset.theme = "dark"; } catch (err) {}</script>
+  <link rel="preload" href="../fonts/patrick-hand.woff2" as="font" type="font/woff2" crossorigin />
+  <link rel="preload" href="../fonts/gochi-hand.woff2" as="font" type="font/woff2" crossorigin />
+  <!-- The same stylesheets as the Public drawings page, then the leaderboard's own.
+       Paths start with ../ so they work with or without a trailing slash on this page's address. -->
+  <link rel="stylesheet" href="../drawing.css" />
+  <link rel="stylesheet" href="../studio.css" />
+  <link rel="stylesheet" href="../flow.css" />
+  <link rel="stylesheet" href="../theme.css" />
+  <link rel="stylesheet" href="../home.css" />
+  <link rel="stylesheet" href="../leaderboard.css" />
+</head>
+<body>
+  <!-- leaderboard.js draws the page into this element. -->
+  <main id="page" class="lb-page"></main>
+  <noscript><p style="padding:24px;text-align:center">The leaderboard needs JavaScript.</p></noscript>
+
+  <script src="../votes.js"></script>
+  <script src="../leaderboard.js"></script>
+  <!-- Supabase's client, the project's keys, then publish.js, which sets window.scrawdlePublicGallery and
+       window.scrawdleHasPosted. Same order as the Public drawings page. -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="../supabase-config.js"></script>
+  <script src="../publish.js"></script>
+  <script>ScrawdleLeaderboard.show(document.getElementById("page"));</script>
+</body>
+</html>

@@ -72,6 +72,7 @@ export const SUMMARIES = {
   64: "Trenten replaced the browser's built-in color picker with Scrawdle's own, a shade square, hue bar, hex box and recent colors that look the same in every browser and in dark mode.",
   65: "Trenten added kicking to lobbies: the host can kick a player, even during a game, and with three or more players anyone can call a vote to kick that passes only if everyone else agrees.",
   66: "Trenten added a streak of days in a row with a finished daily drawing, kept in the browser and shown on the home screen, the finish screen, and the share text.",
+  67: "Trenten added Today's leaderboard, a page ranking today's published drawings by thumbs up for Daily Scrawl and Daily Free Play, built on the data the Public drawings page already loads, with no database change.",
   misread: 'Where the AI got something wrong or we had to correct course, and what happened next.',
   decisions: 'What we decided and what we dropped along the way.',
 }

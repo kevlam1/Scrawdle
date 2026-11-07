@@ -83,6 +83,7 @@
       </div>
       <div id="multiplayer-error"></div>
       <button class="quiet" id="my-drawings" type="button" hidden>My drawings</button>
+      <a class="quiet" id="leaderboard-link" href="leaderboard/" hidden>Today's leaderboard</a>
       <a class="quiet" href="/logs/">Read our build log</a>
       <p id="setup-error" role="alert" hidden></p>
     </div>
@@ -536,6 +537,7 @@
     const sketchbook = ScrawdleSketchbook.create(board, { onContinue: openSaved });
     $("my-drawings").addEventListener("click", () => sketchbook.show());
     $("public-drawings").hidden = typeof window.scrawdlePublicGallery !== "function"; // needs the Supabase project; it links to public-drawings/
+    $("leaderboard-link").hidden = typeof window.scrawdlePublicGallery !== "function"; // the same data, ranked (leaderboard.js)
 
     // Multiplayer Games goes straight to the lobby screen for now: it presses Create Lobby on the Lobby card that
     // lobby.js adds (the card itself is hidden in home.css), and its error message shows under these buttons.
