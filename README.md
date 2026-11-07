@@ -29,7 +29,6 @@ TCSS 490 Artifact 4, built by a team of four: [kevlam1](https://github.com/kevla
 **Not built or not confirmed yet**
 - **Stopping someone voting for their own drawing, or voting twice on purpose.** The gallery hides the buttons on your own drawing, and each browser gets one vote per drawing, but clearing browser data or calling the database directly gets around both.
 - **The first scheduled daily wipe.** It's deployed and a manual test run was reported to work, but nobody has seen a scheduled run. Check the function's Logs tab after 10:00 UTC.
-- **Reporting on the live site.** The Report button is built: three different players' reports hide a drawing. It needs Kevin to run `backend/supabase/updates/003-reports.sql` first (see "Pending database updates" in `CLAUDE.md`); until then, pressing Report says reporting isn't switched on yet. A teammate can still hide or bring back a drawing by hand in the database (see `backend/README.md`).
 - **Replaying other players' drawings.** Replay only works on your own.
 - **Scrawdle Party with a full lobby.** It was tested with a stand-in lobby (up to four players in one browser) and with two tabs on the live lobby, but not with more than two real players or across different computers.
 - **Items on the team's plan doc** (read 2026-11-04) that aren't in `main` as far as this README knows: an AI judge, "AI versus", a Pictionary mode, light and dark settings, a showcase page of every player's drawings, and a tooltip naming each color. Teammates may have some in progress on their own branches.
