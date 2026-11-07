@@ -1222,6 +1222,26 @@ Artifact 4 is "For Someone Else," due Sunday, November 8. Our team of four (Kevi
 
 ---
 
+## 63. One Public drawings page, and the lock breaks (2026-11-06) — Angie
+
+**What I asked for**
+- Publishing a Daily Scrawl drawing wasn't unlocking the Daily Scrawl bubble on Public drawings. "See today's drawings" on the finish screen showed everything on one separate page; it should go to the same Public drawings page as the home screen's button. Add a little animation of the lock breaking when it unlocks. Make sure Daily Scrawl drawings land under Daily Scrawl and Daily Free Play drawings under Daily Free Play.
+
+**What changed**
+- `frontend/drawing.js`: the finish screen's button now says "See public drawings" and opens the Public drawings page (`gallery.showPublic`), starting with the bubble that matches the drawing you just made (Daily Scrawl or Daily Free Play). The old separate Today's drawings page is no longer reached from the game. The publish message now says "See it under Public drawings", plus that Daily Scrawl is unlocked when you posted one.
+- `frontend/gallery.js`: `showPublic({ focus })` takes an optional starting category. The first time the page opens after you have posted a Daily Scrawl on a given day, the Daily Scrawl bubble starts with a padlock, the padlock shakes, its shackle pops off and its body splits and falls, then the bubble opens with a small burst and a line saying "Unlocked!". This browser remembers the day it last played (`scrawdle-unlock-seen`), so it plays once per day. With reduced motion switched on, it unlocks with no animation. Your own drawing on the page also shows how it did (the thumbs-up result), which the old page did.
+- `frontend/home.css`: the padlock (now an SVG, no emoji) and the animation. Every drawing already sorted by its mode: Daily Scrawl (and the older Basic and Detailed) under Daily Scrawl, Daily Free Play under its own bubble; I only checked that here.
+
+**What I checked**
+- The 84 logic tests pass. In headless Chrome, with the Supabase requests faked so nothing reached the live project, I drew a Daily Scrawl, published it, pressed See public drawings, and watched the page: Public drawings opens, the lock shows then breaks, the bubble opens, and Daily Scrawl drawings appear. A Daily Free Play published the same way left Daily Scrawl locked and showed Daily Free Play. With a mix of fake drawings in all the modes, Daily Scrawl showed only the Daily Scrawl ones and Daily Free Play only its own. I looked at screenshots of the lock before, during, and after breaking.
+- Not checked: a real publish to the live project, dark mode and phone width for the new animation, and Safari.
+
+**Decisions**
+- The most likely reason the unlock didn't happen for me is not in the page. I read the live project (read-only, no publishing): it has recent Daily Free Play and old Basic drawings from today and no Daily Scrawl (`daily`) drawings at all. `backend/supabase/updates/004-daily-scrawl.sql`, which lets the database accept the new mode, is still on the "to run" list in `CLAUDE.md`, so the database is probably refusing Daily Scrawl publishes ("Couldn't share right now"), so nothing is marked as posted and nothing unlocks. Only Kevin can run it. I did not change the code to work around that.
+- "Today's drawings" is gone from the game; one page does both jobs.
+
+---
+
 ## Where AI misread me, or I had to correct course
 
 - Claude's first version of the start page put "What is this?" in the top right, where it collided with the "New set" button on the game screen. I caught it by running the page; Claude hadn't opened it in a browser.
@@ -1241,6 +1261,7 @@ Artifact 4 is "For Someone Else," due Sunday, November 8. Our team of four (Kevi
 - **The lobby code stayed on screen after I asked to drop it (entries 52 and 54):** when I said I wasn't a fan of the code, only the invite message changed at first, and the big code and the Join box stayed because the lobby was Kevin's design. It should have been checked whether I meant all of it. Fixed in entry 54.
 - **A guessed measurement in a code comment (Claude's slip, entry 60):** the first CSS comment said the big background word is "about 3.05 times its font size" wide, which Claude had not measured. Measuring it in Chrome gave 3.81, so the word ran off the page until the size and the comment were corrected.
 - **I said Free Play was broken and Claude could not find it (entry 61):** I reported that the Free Play button didn't work. Claude checked it in a real browser with scripted clicks and with real mouse movements, at several window sizes, and it opened the parts screen every time, wired to the same `startFreePlay` as the old Open Canvas button. The cause is not found yet. One guess is the "Replace your Free Play drawing?" question, which only appears when a Free Play drawing already exists.
+- **I blamed the browser for a lock that probably wasn't a browser problem (Claude's slip, entries 62 and 63):** when you said the Daily Scrawl filter didn't unlock, Claude tested the unlock with a faked "published" marker and listed the browser, the private window, and the file-versus-localhost address as likely causes. That left out the likeliest one, which Claude only checked next time: the live database has no Daily Scrawl drawings, so update 004 was probably never run and publishing it is refused.
 - **My own edit helper dropped changes without saying so (Claude's slip, entries 56 to 58):** a script that patched the Supabase test stand-in returned the old text, so three of its edits vanished and the new tests failed with "is not a function". The failing tests caught it, nothing was committed, and the edits were redone. A check at the time of the home-screen change also looked at the export screen 700 ms after pressing Done drawing, before it had finished opening, and reported a failure that was only timing.
 
 ---
