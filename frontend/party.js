@@ -153,7 +153,10 @@
         sync();
         return el("fieldset", { className: "party-field" }, el("legend", { textContent: label }), row);
       };
-      const players = el("ul", { className: "party-players" }, ...ctx.players().map((p) => el("li", { textContent: p.id === me ? `${p.name} (you, host)` : p.name })));
+      const players = el("ul", { className: "party-players" });
+      // Kept up to date as players come and go, without resetting the settings already chosen.
+      game.renderSetupPlayers = () => players.replaceChildren(...ctx.players().map((p) => el("li", { textContent: p.id === me ? `${p.name} (you, host)` : p.name })));
+      game.renderSetupPlayers();
       screen("Set up the game",
         note("Everyone draws the same random parts, then votes on each other's drawings. Each thumbs up is a point."),
         group("Parts", "mode", R.OPTIONS.mode, (m) => (m === "basic" ? "Basic" : "Detailed")),
@@ -353,6 +356,7 @@
         return;
       }
       if (game.phase === "wait") showWaiting(game.round ? "A game is on. You'll join at the next round." : "The host is choosing the settings.");
+      if (game.phase === "setup" && game.renderSetupPlayers) game.renderSetupPlayers();
       if (!amHost()) return;
       const arrived = ids.filter((id) => !host.seen.has(id));
       arrived.forEach((id) => host.seen.add(id));

@@ -120,3 +120,78 @@ test("a broadcast callback's argument is read as the whole message or as the bar
   assert.equal(unwrap(null), null);
   assert.deepEqual(unwrap({ type: "broadcast", event: "e", payload: {} }), {});
 });
+
+/* ---------- Kicking ---------- */
+const { mayKick, voteBlocker, voteOutcome, voteEnforcer, wasKicked, rememberKick, VOTE_MIN_PLAYERS } = require("../frontend/lobby.js");
+const room = (...ids) => ids.map((id, i) => ({ id, name: id.toUpperCase(), joinedAt: i, game: null }));
+const vote = (target, yes, no = [], endsAt = 1000) => ({ target, yes: new Set(yes), no: new Set(no), endsAt });
+
+test("only the host can kick, and nobody can kick themselves", () => {
+  const players = room("host", "ben", "cal");
+  assert.equal(mayKick(players, { target: "ben", by: "host" }), true);
+  assert.equal(mayKick(players, { target: "cal", by: "ben" }), false, "not the host");
+  assert.equal(mayKick(players, { target: "host", by: "host" }), false, "yourself");
+  assert.equal(mayKick(players, { target: "ben", by: "gone" }), false, "someone who isn't the host now");
+  for (const bad of [null, {}, { target: 1, by: "host" }, { target: "ben" }]) assert.equal(mayKick(players, bad), false);
+});
+
+test("a kick from a vote counts only if this page saw that vote pass for that player", () => {
+  const players = room("host", "ben", "cal");
+  const passed = new Set(["v1|host"]);
+  assert.equal(mayKick(players, { target: "host", by: "ben", reason: "vote", voteId: "v1" }, passed), true, "even the host can be voted out");
+  assert.equal(mayKick(players, { target: "cal", by: "ben", reason: "vote", voteId: "v1" }, passed), false, "a different player");
+  assert.equal(mayKick(players, { target: "host", by: "ben", reason: "vote", voteId: "v2" }, passed), false, "a vote that didn't pass here");
+  assert.equal(mayKick(players, { target: "ben", by: "host", reason: "vote", voteId: "v9" }, passed), false, "the host can't dress a kick up as a vote");
+});
+
+test("a vote to kick needs three players, no vote already going, and someone else as the target", () => {
+  const three = room("a", "b", "c");
+  assert.equal(voteBlocker({ players: three, me: "a", target: "b" }), null);
+  assert.match(voteBlocker({ players: room("a", "b"), me: "a", target: "b" }), /at least 3/);
+  assert.match(voteBlocker({ players: three, me: "a", target: "a" }), /yourself/);
+  assert.match(voteBlocker({ players: three, me: "a", target: "zed" }), /isn't here/);
+  assert.match(voteBlocker({ players: three, me: "a", target: "b", active: true }), /already/);
+  assert.match(voteBlocker({ players: three, me: "a", target: "b", inGame: true }), /during a game/);
+  assert.match(voteBlocker({ players: three, me: "a", target: "b", cooldownUntil: 2000, now: 1000 }), /just voted on/);
+  assert.equal(voteBlocker({ players: three, me: "a", target: "b", cooldownUntil: 2000, now: 2000 }), null, "the wait is over");
+  assert.equal(VOTE_MIN_PLAYERS, 3);
+});
+
+test("a vote passes only when every player except the one being kicked says yes", () => {
+  const players = room("a", "b", "c", "d");
+  assert.equal(voteOutcome(players, vote("d", ["a", "b", "c"]), 0), "pass");
+  assert.equal(voteOutcome(players, vote("d", ["a", "b"]), 0), "open", "c hasn't voted");
+  assert.equal(voteOutcome(players, vote("d", ["a", "b", "d"]), 0), "open", "the target's own yes doesn't count for anyone else");
+});
+
+test("one no, or the time running out, fails the vote", () => {
+  const players = room("a", "b", "c", "d");
+  assert.equal(voteOutcome(players, vote("d", ["a", "b"], ["c"]), 0), "fail");
+  assert.equal(voteOutcome(players, vote("d", ["a", "b"], [], 1000), 999), "open");
+  assert.equal(voteOutcome(players, vote("d", ["a", "b"], [], 1000), 1000), "fail");
+  assert.equal(voteOutcome(players, vote("d", ["a", "b"], ["d"]), 0), "open", "the target saying no changes nothing");
+});
+
+test("players who leave stop counting, and the vote ends if its target leaves", () => {
+  assert.equal(voteOutcome(room("a", "b", "d"), vote("d", ["a", "b"], ["c"]), 0), "pass", "c said no, then left");
+  assert.equal(voteOutcome(room("a", "b", "c"), vote("d", ["a"]), 0), "gone");
+  assert.equal(voteOutcome(room("a", "b"), vote("d", ["a", "b"], ["c"]), 0), "pass", "everyone left agreed, and the target's page saw it first and left");
+  assert.equal(voteOutcome(room("a", "d"), vote("d", ["a"]), 0), "fail", "too few left to vote");
+});
+
+test("a passed vote is carried out by the longest-present player who isn't the target", () => {
+  assert.equal(voteEnforcer(room("host", "b", "c"), "c"), "host");
+  assert.equal(voteEnforcer(room("host", "b", "c"), "host"), "b", "the next in line, when the host is voted out");
+  assert.equal(voteEnforcer(room("host"), "host"), null);
+});
+
+test("a kick keeps you out of that lobby for the rest of the day only", () => {
+  let kicks = rememberKick({}, "BCDFG", "2026-11-07");
+  assert.equal(wasKicked(kicks, "BCDFG", "2026-11-07"), true);
+  assert.equal(wasKicked(kicks, "XYZWV", "2026-11-07"), false, "other lobbies");
+  assert.equal(wasKicked(kicks, "BCDFG", "2026-11-08"), false, "the next day");
+  kicks = rememberKick(kicks, "XYZWV", "2026-11-08");
+  assert.deepEqual(kicks, { XYZWV: "2026-11-08" }, "old days are forgotten");
+  for (const bad of [null, "x", 5]) assert.equal(wasKicked(bad, "BCDFG", "2026-11-07"), false);
+  assert.deepEqual(rememberKick("junk", "BCDFG", "2026-11-07"), { BCDFG: "2026-11-07" });
+});
