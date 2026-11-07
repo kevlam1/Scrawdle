@@ -1,7 +1,7 @@
 // Run with: node --test tests/drawing.test.js
 const test = require("node:test");
 const assert = require("node:assert/strict");
-const { floodFill, History, dayKey, slotOf } = require("../frontend/drawing.js");
+const { floodFill, blendFill, History, dayKey, slotOf } = require("../frontend/drawing.js");
 const { dailyIndex } = require("../frontend/daily.js");
 
 function image(w, h, rgba = [255, 255, 255, 255]) {
@@ -138,4 +138,23 @@ test("each kind of round saves in its own slot", () => {
   assert.equal(slotOf({ mode: "scrawl", daily: true }), "scrawl");
   assert.equal(slotOf({ mode: "scrawl" }), "scrawl", "Daily Scrawl never shares a save with Free play or today's parts");
   assert.equal(slotOf({ mode: "basic" }), "today", "an older save with no daily flag still counts as today's");
+  assert.equal(slotOf({ mode: "daily", daily: true }), "today", "Daily Scrawl uses today's save, so a refresh and the home screen find it");
+});
+
+test("a fill at partial opacity mixes the new color with what was there", () => {
+  // Two pixels on a row: one the fill changes (white), one it leaves alone (already blue).
+  const before = { width: 2, data: new Uint8ClampedArray([255, 255, 255, 255, 0, 0, 255, 255]) };
+  const image = { width: 2, data: new Uint8ClampedArray([200, 0, 0, 255, 0, 0, 255, 255]) }; // floodFill painted pixel 0 red
+  blendFill(before, image, { x: 0, y: 0, w: 2, h: 1 }, [200, 0, 0, 255], 0.5);
+  assert.deepEqual([...image.data.slice(0, 4)], [228, 128, 128, 255], "half red over white");
+  assert.deepEqual([...image.data.slice(4, 8)], [0, 0, 255, 255], "pixels the fill didn't change stay as they were");
+});
+
+test("a fill at full opacity, or one that changed nothing, is left exactly as floodFill made it", () => {
+  const before = { width: 1, data: new Uint8ClampedArray([255, 255, 255, 255]) };
+  const image = { width: 1, data: new Uint8ClampedArray([10, 20, 30, 255]) };
+  blendFill(before, image, { x: 0, y: 0, w: 1, h: 1 }, [10, 20, 30, 255], 1);
+  assert.deepEqual([...image.data], [10, 20, 30, 255]);
+  blendFill(before, image, null, [10, 20, 30, 255], 0.5);
+  assert.deepEqual([...image.data], [10, 20, 30, 255]);
 });

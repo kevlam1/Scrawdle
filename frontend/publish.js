@@ -166,4 +166,47 @@
     }
     return { hidden: data === true };
   };
+
+  // Today's date as the game writes it (the player's own local date), like a round's `day`.
+  function localDay() {
+    const d = new Date();
+    const pad = (n) => String(n).padStart(2, "0");
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+  }
+
+  // True once this browser has published a Daily Scrawl today. The older Basic and Detailed modes (which
+  // Daily Scrawl replaced) count too, so a drawing posted before the change still unlocks the public page.
+  root.scrawdleHasPosted = function () {
+    const day = localDay();
+    return ["daily", "basic", "detailed"].some((mode) => alreadyPublished(`${day}|${mode}`));
+  };
+
+  // Every drawing posted in the given modes, newest first, for the Public drawings page. Each card is
+  // { id, mode, imageUrl, caption, mine, votes } like scrawdleGallery's, with mine marking any drawing this
+  // browser published. Unlike scrawdleGallery it throws when the load fails, so the page can say so.
+  root.scrawdlePublicGallery = async function ({ modes }) {
+    const { data, error } = await client
+      .from("drawings")
+      .select("id, mode, image_path")
+      .in("mode", modes)
+      .order("created_at", { ascending: false })
+      .limit(500);
+    if (error) {
+      console.error("publish.js public gallery error (raw):", error);
+      throw new Error(error.message || "gallery failed");
+    }
+    let mine = [];
+    try { mine = Object.values(JSON.parse(localStorage.getItem(PUBLISHED_KEY) || "{}")).filter((v) => typeof v === "string"); } catch { /* none */ }
+    const ids = data.map((row) => row.id);
+    let counts = null;
+    if (ids.length) {
+      const { data: rows, error: countError } = await client.rpc("vote_counts", { drawing_ids: ids, voter: voterId() });
+      if (countError) console.error("publish.js vote_counts error (raw):", countError);
+      else counts = root.ScrawdleVotes.countsById(rows, ids);
+    }
+    return data.map((row) => {
+      const { data: urlData } = client.storage.from(BUCKET).getPublicUrl(row.image_path);
+      return { id: row.id, mode: row.mode, imageUrl: urlData && urlData.publicUrl, caption: "", mine: mine.includes(row.id), votes: counts && counts[row.id] };
+    }).filter((card) => card.imageUrl);
+  };
 })(typeof window !== "undefined" ? window : globalThis);

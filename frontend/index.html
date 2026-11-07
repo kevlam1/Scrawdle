@@ -15,6 +15,8 @@
   <link rel="stylesheet" href="party.css" />
   <link rel="stylesheet" href="sketchbook.css" />
   <link rel="stylesheet" href="theme.css" />
+  <link rel="stylesheet" href="home.css" />
+  <link rel="stylesheet" href="tools.css" />
 </head>
 <body>
   <template id="wordmark">
@@ -28,49 +30,62 @@
     <h2>How to play</h2>
     <p>Scrawdle hands you a random mix of animal parts, and your job is to draw the creature they make together.</p>
     <ol>
-      <li>Everyone gets the same parts each day. Pick Basic (head, arms, legs, tail, plus an optional extra) or Detailed (all of that, plus ears, eyes and mouth, with an optional skin pattern and accessory).</li>
+      <li>Open Daily Scrawl. Everyone gets the same parts each day: a head, arms, legs and tail, plus ears, eyes and a mouth, with an optional extra, skin pattern and accessory.</li>
       <li>Watch the slot machine spin. Whatever it lands on is your set of parts.</li>
       <li>Your parts stay above the canvas while you draw. Parts marked optional are yours to use or skip.</li>
       <li>Draw with your mouse, finger or stylus. Your drawing saves in this browser as you go.</li>
       <li>Press Done drawing to publish it, download it, or watch it replay.</li>
       <li>In today's gallery, give other players' drawings a thumbs up or thumbs down. Once anyone gives your published drawing a thumbs up, you win!</li>
     </ol>
-    <p>Want a different creature? Free play gives you random parts any time.</p>
+    <p>Want a different creature? Free Play gives you random parts any time.</p>
     <p>Daily Free Play has no parts: draw anything you like. It saves in your browser and clears each day, like the others.</p>
+    <p>Public drawings shows what everyone has posted. Daily Scrawl's drawings unlock once you post yours. Multiplayer Games makes a private lobby you can invite friends to.</p>
   </dialog>
 
   <main id="setup">
-    <header class="app-header"><span class="wm-slot"></span><div class="header-actions"><button class="quiet" id="theme-toggle" type="button">Dark mode</button><button class="help-open quiet" type="button">How to play</button></div></header>
+    <header class="app-header"><span></span><div class="header-actions"><button class="quiet" id="theme-toggle" type="button">Dark mode</button><button class="help-open quiet" type="button">How to play</button></div></header>
+    <!-- The big word behind everything: sized to the page's width in home.css, and not part of the page for a screen reader. -->
+    <div class="home-bg" aria-hidden="true"><span>Scrawdle</span></div>
     <div class="home-body">
+      <span class="wm-slot home-logo"></span>
       <p class="eyebrow" id="home-date"></p>
       <h1>Ready to draw?</h1>
       <div id="continue-list"></div>
-      <div class="home-actions">
-        <section class="home-choice">
-          <h2>Basic</h2>
-          <p>Head, arms, legs and tail, plus an optional extra.</p>
-          <button class="btn primary" id="mode-basic" type="button">Draw Basic</button>
-        </section>
-        <section class="home-choice">
-          <h2>Detailed</h2>
-          <p>All of Basic, plus ears, eyes and mouth, with an optional skin pattern and accessory.</p>
-          <button class="btn primary" id="mode-detailed" type="button">Draw Detailed</button>
-        </section>
-        <section class="home-choice">
-          <h2>Daily Free Play</h2>
-          <p>No parts, no rules. Draw anything you like today.</p>
-          <button class="btn primary" id="mode-scrawl" type="button">Draw Daily Free Play</button>
-        </section>
-        <section class="home-choice">
-          <h2>Free play</h2>
-          <p>Random parts whenever you want.</p>
-          <button class="btn" id="free-play" type="button">Start free play</button>
-        </section>
+      <div class="menu-stack">
+        <!-- Daily opens into two halves (hover, keyboard focus, or always on a touch screen); each half is its own button. -->
+        <div class="menu-card daily-card" role="group" aria-label="Daily">
+          <span class="menu-name daily-title">Daily</span>
+          <span class="daily-more"><span class="daily-options">
+            <button class="daily-option" id="mode-daily" type="button">
+              <span class="menu-name">Daily Scrawl</span>
+              <span class="menu-text">Everyone gets the same set of animal parts and has to draw a creature with those.</span>
+            </button>
+            <button class="daily-option" id="mode-scrawl" type="button">
+              <span class="menu-name">Daily Free Play</span>
+              <span class="menu-text">No parts, no rules. Draw anything you like today.</span>
+            </button>
+          </span></span>
+        </div>
+        <button class="menu-card" id="multiplayer" type="button">
+          <span class="menu-name">Multiplayer</span>
+          <span class="menu-more"><span class="menu-more-inner">
+            <span class="menu-text">Make a private lobby, then invite friends with a link.</span>
+          </span></span>
+        </button>
+        <button class="menu-card" id="free-play" type="button">
+          <span class="menu-name">Free Play</span>
+          <span class="menu-more"><span class="menu-more-inner">
+            <span class="menu-text">Random parts whenever you want, as many times as you like.</span>
+          </span></span>
+        </button>
       </div>
+      <div id="multiplayer-error"></div>
       <button class="quiet" id="my-drawings" type="button" hidden>My drawings</button>
       <a class="quiet" href="/logs/">Read our build log</a>
       <p id="setup-error" role="alert" hidden></p>
     </div>
+    <!-- Bottom right of the page. Shown only when the Supabase project is connected (see the script below). -->
+    <button class="public-corner" id="public-drawings" type="button" hidden title="See what everyone has posted. Daily Scrawl's drawings unlock once you post yours.">Public drawings</button>
   </main>
 
   <div id="slot" hidden>
@@ -175,10 +190,11 @@
       return promptData;
     }
 
-    // Detailed is everything in Basic plus its own parts. "includes" is documentation, not a part.
+    // Daily Scrawl (and the older Detailed) is everything in Basic plus its own parts. "includes" is
+    // documentation, not a part. Only Basic, which Open Canvas still uses, stops at the short set.
     function partsFor(mode) {
       const parts = Object.entries(promptData.basic);
-      if (mode === "detailed") {
+      if (mode !== "basic") {
         for (const [key, part] of Object.entries(promptData.detailed)) {
           if (key !== "includes") parts.push([key, part]);
         }
@@ -236,7 +252,7 @@
     }
 
     function spin(parts, results, mode, daily) {
-      slotEl.querySelector(".slot-label").textContent = !daily ? "Free play" : mode === "detailed" ? "Today's Detailed parts" : "Today's Basic parts";
+      slotEl.querySelector(".slot-label").textContent = !daily ? "Free Play" : mode === "detailed" ? "Today's Detailed parts" : mode === "basic" ? "Today's Basic parts" : "Today's Daily Scrawl parts";
       slotEl.hidden = false;
       gameEl.inert = true;
       $("slot-sentence").hidden = true;
@@ -267,7 +283,8 @@
     $("slot-start").addEventListener("click", () => { slotEl.hidden = true; gameEl.inert = false; $("back-home").focus({ preventScroll: true }); });
 
     /* ---------- Screens ---------- */
-    // Which saved drawing a round belongs to: Daily Free Play (id "scrawl"), today's Basic/Detailed, or Free play.
+    // Which saved drawing a round belongs to: Daily Free Play (id "scrawl"), today's Daily Scrawl (id "daily", and the
+    // older Basic and Detailed), or Open Canvas (what used to be called Free play; its slot is still "free").
     const slotFor = (round) => (round.mode === "scrawl" ? "scrawl" : round.daily ? "today" : "free");
     // Daily Free Play is a free draw, so its one "prompt" is just a label (this also fills the finished PNG).
     const SCRAWL_PROMPTS = [{ label: "Daily Free Play", value: "Draw anything", optional: false }];
@@ -285,7 +302,7 @@
 
     function showGame() {
       const round = board.round;
-      $("prompt-label").textContent = round.mode === "scrawl" ? "Daily Free Play" : !round.daily ? "Free play" : round.mode === "detailed" ? "Detailed" : "Basic";
+      $("prompt-label").textContent = round.mode === "scrawl" ? "Daily Free Play" : !round.daily ? "Free Play" : round.mode === "detailed" ? "Detailed" : round.mode === "basic" ? "Basic" : "Daily Scrawl";
       showParts(round.prompts);
       $("restart").textContent = round.daily ? "Start over" : "New set";
       sessionStorage.setItem(OPEN_KEY, slotFor(round));
@@ -312,14 +329,15 @@
       spin(parts, results, mode, daily);
     }
 
-    // Today has one save, so picking the other mode replaces it. Picking the same one goes back to it.
-    function startDaily(mode) {
+    // Today has one save. Pressing Daily Scrawl again goes back to it. A drawing started in the older Basic or
+    // Detailed mode is on the same save, so it's replaced (and kept in My drawings) only after asking.
+    function startDaily() {
       const today = saved.today;
       if (today && today.marked) {
-        if (today.mode === mode) return openSaved("today");
-        if (!confirm("Start over with this mode? Your drawing for today will be replaced, and kept in My drawings.")) return;
+        if (today.mode === "daily") return openSaved("today");
+        if (!confirm("Start Daily Scrawl? Your Basic or Detailed drawing for today will be replaced, and kept in My drawings.")) return;
       }
-      start(mode);
+      start("daily");
     }
 
     // Daily Free Play has one save a day and no parts or slot machine. Pressing it again goes back to that drawing.
@@ -330,14 +348,26 @@
       showGame();
     }
 
-    // Free play has one save, so a new set replaces whatever is on it.
+    // Open Canvas has one save, so a new set replaces whatever is on it.
     function startFreePlay(hasDrawing) {
-      if (hasDrawing && !confirm("Replace your Free play drawing with a new set of parts? The old one is kept in My drawings.")) return;
+      if (hasDrawing && !confirm("Replace your Free Play drawing with a new set of parts? The old one is kept in My drawings.")) return;
       start("basic", false);
     }
 
     let saved = {};
     let thumbUrls = [];
+
+    // The "Continue drawing" notices can be closed with an x. That only hides the notice, like reading it:
+    // the drawing stays saved, can still be opened from its card, and stays in My drawings. A notice comes
+    // back if the drawing changes afterward. Remembered in this browser, per drawing slot.
+    const DISMISSED_KEY = "scrawdle-dismissed";
+    const noticeId = (draft) => `${draft.day}|${draft.savedAt}`;
+    function dismissedNotices() {
+      try { return JSON.parse(localStorage.getItem(DISMISSED_KEY) || "{}"); } catch (err) { return {}; }
+    }
+    function dismissNotice(draft) {
+      try { localStorage.setItem(DISMISSED_KEY, JSON.stringify({ ...dismissedNotices(), [draft.slot]: noticeId(draft) })); } catch (err) { /* private browsing: it just comes back */ }
+    }
 
     function continueCard(draft) {
       const url = URL.createObjectURL(draft.image);
@@ -353,11 +383,25 @@
       const title = document.createElement("b");
       title.textContent = "Continue drawing";
       const prompt = document.createElement("small");
-      prompt.textContent = (draft.slot === "free" ? "Free play: " : draft.slot === "scrawl" ? "Daily Free Play: " : "") + draft.prompts.map((p) => p.value).join(", ");
+      prompt.textContent = (draft.slot === "free" ? "Free Play: " : draft.slot === "scrawl" ? "Daily Free Play: " : "") + draft.prompts.map((p) => p.value).join(", ");
       text.append(title, prompt);
       card.append(thumb, text);
       card.addEventListener("click", () => openSaved(draft.slot));
-      return card;
+      const x = document.createElement("button");
+      x.type = "button";
+      x.className = "continue-x";
+      x.setAttribute("aria-label", "Dismiss this reminder");
+      x.title = "Dismiss";
+      x.textContent = "\u00D7";
+      const wrap = document.createElement("div");
+      wrap.className = "continue-wrap";
+      wrap.append(card, x);
+      x.addEventListener("click", () => {
+        dismissNotice(draft);
+        wrap.remove();
+        setupEl.classList.toggle("has-saved", Boolean($("continue-list").children.length));
+      });
+      return wrap;
     }
 
     async function showHome() {
@@ -368,7 +412,8 @@
       saved = await board.drafts();
       thumbUrls.forEach((u) => URL.revokeObjectURL(u));
       thumbUrls = [];
-      const cards = [saved.today, saved.scrawl, saved.free].filter((d) => d && d.marked);
+      const gone = dismissedNotices();
+      const cards = [saved.today, saved.scrawl, saved.free].filter((d) => d && d.marked && gone[d.slot] !== noticeId(d));
       $("continue-list").replaceChildren(...cards.map(continueCard));
       await showMyDrawingsLink();
       setupEl.classList.toggle("has-saved", cards.length > 0);
@@ -392,16 +437,17 @@
       else showHome();
     }
 
-    async function restartRound() {
+    // Start over (the daily modes) erases the canvas and stays on the same drawing with the same parts. It is the
+    // same erase as the Clear button, so Undo brings the drawing back. New set (Free Play) is a different round.
+    function restartRound() {
       const round = board.round;
       if (!round.daily) return startFreePlay(!board.isEmpty);
-      if (!board.isEmpty && !confirm("Start over? Your current drawing will be lost.")) return;
-      await board.discard();
-      goHome();
+      if (board.isEmpty) return;
+      if (!confirm("Start over? This erases your drawing, but Undo can bring it back.")) return;
+      board.clear();
     }
 
-    $("mode-basic").addEventListener("click", () => startDaily("basic"));
-    $("mode-detailed").addEventListener("click", () => startDaily("detailed"));
+    $("mode-daily").addEventListener("click", startDaily);
     $("mode-scrawl").addEventListener("click", startScrawl);
     $("free-play").addEventListener("click", () => startFreePlay(Boolean(saved.free && saved.free.marked)));
     $("restart").addEventListener("click", restartRound);
@@ -481,18 +527,31 @@
     const gallery = ScrawdleGallery.createGallery(board);
     const sketchbook = ScrawdleSketchbook.create(board, { onContinue: openSaved });
     $("my-drawings").addEventListener("click", () => sketchbook.show());
+    $("public-drawings").hidden = typeof window.scrawdlePublicGallery !== "function"; // needs the Supabase project
+    $("public-drawings").addEventListener("click", () => gallery.showPublic());
+
+    // Multiplayer Games goes straight to the lobby screen for now: it presses Create Lobby on the Lobby card that
+    // lobby.js adds (the card itself is hidden in home.css), and its error message shows under these buttons.
+    const lobbyCard = document.querySelector(".lobby-card");
+    if (lobbyCard) {
+      $("multiplayer-error").append(lobbyCard.querySelector(".lobby-error"));
+      $("multiplayer").addEventListener("click", () => lobbyCard.querySelector('[data-act="create"]').click());
+    } else $("multiplayer").hidden = true;
     $("sketchbook").addEventListener("close", showMyDrawingsLink); // in case the last one was deleted
-    ScrawdleDrawing.createFinishScreen(board, gallery, {
+    const finish = ScrawdleDrawing.createFinishScreen(board, gallery, {
       onHome: goHome,
     });
     makeWordmarksLinks(); // after every screen with a wordmark exists
 
-    // A refresh returns to the drawing this tab was on. A new visit starts at home.
+    // A refresh returns to the drawing this tab was on, and to the finish screen if that was open. A new visit
+    // starts at home.
     (async () => {
       const open = sessionStorage.getItem(OPEN_KEY);
       const found = await board.drafts();
-      if (open && found[open] && await board.restore(open)) showGame();
-      else showHome();
+      if (open && found[open] && await board.restore(open)) {
+        showGame();
+        if (sessionStorage.getItem(ScrawdleDrawing.FINISH_KEY) === "1") finish.open();
+      } else showHome();
     })();
   </script>
 </body>

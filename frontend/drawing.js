@@ -141,6 +141,21 @@
     return { x, y, w: Math.min(width - 1, maxX + 1) - x + 1, h: Math.min(height - 1, maxY + 1) - y + 1 };
   }
 
+  // A fill at partial opacity: floodFill paints solid color, so this goes back over the pixels it changed
+  // and mixes the new color with what was there. `before` and `image` are ImageData-like ({ data, width }).
+  function blendFill(before, image, rect, rgba, opacity) {
+    if (!rect || opacity >= 1) return;
+    for (let y = rect.y; y < rect.y + rect.h; y++) {
+      for (let x = rect.x; x < rect.x + rect.w; x++) {
+        const i = (x + y * image.width) * 4;
+        if (image.data[i] === before.data[i] && image.data[i + 1] === before.data[i + 1] &&
+            image.data[i + 2] === before.data[i + 2] && image.data[i + 3] === before.data[i + 3]) continue;
+        for (let c = 0; c < 3; c++) image.data[i + c] = Math.round(before.data[i + c] * (1 - opacity) + rgba[c] * opacity);
+        image.data[i + 3] = 255;
+      }
+    }
+  }
+
   /* ---------- Undo and redo ---------- */
   // Each entry keeps only the rectangle that changed. The oldest entries are dropped once the
   // total goes over the byte budget, but the newest always stays.
@@ -202,7 +217,8 @@
       await this.remove("current");
     },
   };
-  // Daily Scrawl (mode "scrawl") is a free draw with its own save, cleared each day like "today".
+  // Daily Free Play (mode "scrawl") is a free draw with its own save, cleared each day like "today".
+  // Daily Scrawl (mode "daily"), and the older "basic" and "detailed", share the "today" save.
   const slotOf = (round) => (round.mode === "scrawl" ? "scrawl" : round.daily === false ? "free" : "today");
   const draftImage = async (draft) => draft.blob || (await fetch(draft.dataUrl)).blob();
   // A drawing with something in it, as opposed to a round that was opened and left blank.
@@ -248,8 +264,9 @@
     const date = new Date(`${day}T12:00:00`).toLocaleDateString(undefined, { month: "long", day: "numeric" });
     if (mode === "scrawl") return `My Scrawdle Daily Free Play drawing for ${date}. Draw yours: ${url}`;
     const parts = prompts.map((p) => p.value).join(", ");
-    if (daily === false) return `My Scrawdle Free play drawing: ${parts}. Draw yours: ${url}`;
-    return `My Scrawdle ${mode === "detailed" ? "Detailed" : "Basic"} drawing for ${date}: ${parts}. Draw yours: ${url}`;
+    if (daily === false) return `My Scrawdle Open Canvas drawing: ${parts}. Draw yours: ${url}`;
+    const name = mode === "daily" ? "Daily Scrawl" : mode === "detailed" ? "Detailed" : "Basic";
+    return `My Scrawdle ${name} drawing for ${date}: ${parts}. Draw yours: ${url}`;
   }
 
   /* ---------- The finished image: the drawing with its prompts and date underneath ---------- */
@@ -296,6 +313,7 @@
     const H = canvas.height;
     const history = new History(HISTORY_BYTES);
     const sizes = Object.fromEntries(TOOLS.map((t) => [t.id, t.size]));
+    const opacities = Object.fromEntries(TOOLS.map((t) => [t.id, 100])); // percent, kept separately for each tool
     let tool = "pen";
     let brushKind = "round";
     let filterWorks = "filter" in ctx;
@@ -365,8 +383,16 @@
     preview.setAttribute("aria-hidden", "true");
     preview.innerHTML = '<svg viewBox="0 0 48 30" width="48" height="30"><path d="M5 20c8-14 14-14 19-5s11 7 19-5"/></svg>';
     const previewLine = preview.querySelector("path");
+    const opacityInput = el("input", { type: "range", min: 5, max: 100, value: 100, id: `${idPrefix}tool-opacity`, oninput: (e) => {
+      opacities[tool] = Number(e.target.value);
+      refreshToolbar();
+    } });
+    opacityInput.setAttribute("aria-label", "Opacity");
+    const opacityValue = el("output", { className: "opacity-value", textContent: "100%" });
+    opacityValue.htmlFor = `${idPrefix}tool-opacity`;
+    const opacityRow = el("div", { className: "opacity-row" }, el("span", { textContent: "Opacity" }), opacityValue);
     const sizeGroup = el("div", { className: "tray-group tray-sizes" },
-      el("div", { className: "size-top" }, ...presetButtons, preview), sizeInput);
+      el("div", { className: "size-top" }, ...presetButtons, preview), sizeInput, el("div", { className: "tool-opacity" }, opacityRow, opacityInput));
     const brushSelect = el("select", { id: `${idPrefix}brush-kind`, onchange: (e) => { brushKind = e.target.value; } },
       ...BRUSHES.map((b) => el("option", { value: b.id, textContent: b.label })));
     const brushLabel = el("label", { className: "brush-kind", htmlFor: `${idPrefix}brush-kind` }, el("span", { textContent: "Brush type" }), brushSelect);
@@ -427,7 +453,7 @@
       const noSize = sizes[tool] === null;
       sizeInput.disabled = noSize;
       for (const b of presetButtons) b.disabled = noSize;
-      sizeGroup.classList.toggle("off", noSize);
+      sizeGroup.classList.toggle("no-size", noSize);
       const toolName = tool === "brush" ? "Brushes" : TOOLS.find(t => t.id === tool).label;
       settingsTitle.textContent = tool === "eraser" ? toolName : `${toolName} · ${colorName(color)}`;
       brushLabel.hidden = tool !== "brush";
@@ -440,6 +466,9 @@
         SIZE_PRESETS.forEach((p, i) => presetButtons[i].setAttribute("aria-pressed", String(p.size === sizes[tool])));
         previewLine.style.strokeWidth = Math.min(16, Math.max(1.5, sizes[tool] * 0.75));
       }
+      opacityInput.value = opacities[tool];
+      opacityValue.textContent = `${opacities[tool]}%`;
+      previewLine.style.opacity = opacities[tool] / 100;
       // White and the eraser wouldn't show on the tray, so they preview in soft grey.
       previewLine.style.stroke = tool === "eraser" || color === "#ffffff" ? "#c9c2b2" : color;
       undoBtn.disabled = locked || !history.canUndo;
@@ -532,7 +561,7 @@
       ctx.beginPath();
       ctx.rect(r.x, r.y, r.w, r.h);
       ctx.clip();
-      ctx.globalAlpha = look.alpha;
+      ctx.globalAlpha = look.alpha * s.opacity;
       // White can't show through "multiply", so it paints normally.
       if (look.blend && paintColorOf(s) !== "#ffffff") ctx.globalCompositeOperation = look.blend;
       if (look.blur && filterWorks) ctx.filter = `blur(${(s.width * look.blur).toFixed(1)}px)`;
@@ -540,6 +569,24 @@
       ctx.restore();
     }
     const paintColorOf = (s) => s.color;
+    // Runs the drawing code on the stroke's fade layer, which is what `ctx` means for that moment.
+    function onFade(s, fn) {
+      const real = ctx;
+      ctx = s.fade;
+      try { fn(); } finally { ctx = real; }
+    }
+    // Puts back the original where the stroke is, then shows the fade layer over it at the stroke's opacity.
+    function showFade(s) {
+      const r = boxRect(s.box);
+      ctx.putImageData(s.base, 0, 0, r.x, r.y, r.w, r.h);
+      ctx.save();
+      ctx.beginPath();
+      ctx.rect(r.x, r.y, r.w, r.h);
+      ctx.clip();
+      ctx.globalAlpha = s.opacity;
+      ctx.drawImage(s.fade.canvas, 0, 0);
+      ctx.restore();
+    }
 
     function dab(x, y, radius) {
       ctx.beginPath();
@@ -729,6 +776,7 @@
       const op = {
         type: "stroke", tool, kind: tool === "brush" ? brushKind : null, color: paintColor(),
         width: sizes[tool] * SCALE, widthMode: "bounded", seed: Math.floor(Math.random() * 4294967296), points: [p],
+        opacity: opacities[tool] / 100,
       };
       openStroke(op);
       stroke.id = e.pointerId;
@@ -743,8 +791,20 @@
       const { tool: strokeTool, kind, width } = op;
       ctx.fillStyle = ctx.strokeStyle = op.color;
       ctx.lineCap = ctx.lineJoin = "round";
-      stroke = { widthMode: op.widthMode, tool: strokeTool, kind, color: op.color, width, random: seededRandom(op.seed), base: ctx.getImageData(0, 0, W, H), start: p, last: p, mid: p, radius: op.widthMode === "bounded" ? width / 2 * brushWidthFactor(op.widthMode, p.pressure) : strokeTool === "brush" ? width * 0.4 : width / 2, speed: 0, travel: 0, moved: false, box: { minX: p.x, maxX: p.x, minY: p.y, maxY: p.y } };
+      const opacity = op.opacity === undefined ? 1 : op.opacity; // older saved strokes have none
+      stroke = { opacity, widthMode: op.widthMode, tool: strokeTool, kind, color: op.color, width, random: seededRandom(op.seed), base: ctx.getImageData(0, 0, W, H), start: p, last: p, mid: p, radius: op.widthMode === "bounded" ? width / 2 * brushWidthFactor(op.widthMode, p.pressure) : strokeTool === "brush" ? width * 0.4 : width / 2, speed: 0, travel: 0, moved: false, box: { minX: p.x, maxX: p.x, minY: p.y, maxY: p.y } };
       grow(p.x, p.y, width * 1.5 + 3);
+      // Below full opacity, a stroke that isn't already layered is drawn on its own transparent layer
+      // and shown over the original, so crossing itself doesn't darken it (like marker and watercolor).
+      if (opacity < 1 && !LAYERED[kind]) {
+        const layer = document.createElement("canvas");
+        layer.width = W;
+        layer.height = H;
+        const l = layer.getContext("2d", { willReadFrequently: true });
+        l.strokeStyle = l.fillStyle = op.color;
+        l.lineCap = l.lineJoin = "round";
+        stroke.fade = l;
+      }
       if (LAYERED[kind]) {
         const layer = document.createElement("canvas");
         layer.width = W;
@@ -757,6 +817,25 @@
         l.fill();
         stroke.layer = l;
         showLayer();
+      } else if (stroke.fade) {
+        onFade(stroke, () => {
+          if (kind === "bristle") {
+            const count = Math.max(6, Math.round(width / 2));
+            stroke.hairs = Array.from({ length: count }, () => ({
+              at: (stroke.random() - 0.5) * width,
+              width: 0.8 + stroke.random() * 2.2,
+              alpha: 0.45 + stroke.random() * 0.55,
+              reach: 300 + stroke.random() * 1500,
+            }));
+            draw.bristle({ ...p, x: p.x + 0.8 });
+          } else if (kind === "calligraphy") draw.calligraphy(p);
+          else if (kind === "crayon") draw.crayon(p);
+          else if (kind === "spray") draw.spray(p);
+          else if (strokeTool === "brush") dab(p.x, p.y, stroke.radius);
+          else if (strokeTool === "pencil") draw.pencil(p);
+          else if (strokeTool !== "line") dab(p.x, p.y, width / 2);
+        });
+        showFade(stroke);
       } else if (kind === "bristle") {
         const count = Math.max(6, Math.round(width / 2));
         stroke.hairs = Array.from({ length: count }, () => ({
@@ -787,6 +866,9 @@
         s.moved = true;
         if (s.quiet) drawLine(s); else paintSoon(s);
         return;
+      } else if (s.fade) {
+        onFade(s, () => { if (s.tool === "pencil") draw.pencil(p); else if (s.tool === "brush") draw.brush(p); else draw.smooth(p); });
+        if (!s.quiet) paintSoon(s);
       } else if (s.tool === "pencil") draw.pencil(p);
       else if (s.tool === "brush") draw.brush(p);
       else draw.smooth(p);
@@ -795,6 +877,16 @@
     }
     // Puts back only where the last preview was, then draws the line to the newest point.
     function drawLine(s) {
+      if (s.fade) {
+        s.fade.clearRect(0, 0, W, H);
+        s.fade.lineWidth = s.width;
+        s.fade.beginPath();
+        s.fade.moveTo(s.start.x, s.start.y);
+        s.fade.lineTo(s.last.x, s.last.y);
+        s.fade.stroke();
+        showFade(s);
+        return;
+      }
       if (s.drawn) ctx.putImageData(s.base, 0, 0, s.drawn.x, s.drawn.y, s.drawn.w, s.drawn.h);
       ctx.strokeStyle = s.color;
       ctx.lineWidth = s.width;
@@ -818,7 +910,7 @@
     }
     function paint(s) {
       s.dirty = false;
-      if (s.tool === "line") drawLine(s); else showLayer();
+      if (s.tool === "line") drawLine(s); else if (s.fade) showFade(s); else showLayer();
     }
     function move(e) {
       if (!stroke || e.pointerId !== stroke.id) return;
@@ -834,17 +926,19 @@
     }
     function closeStroke() {
       const s = stroke;
+      const target = s.fade || ctx; // the fade layer takes the stroke's drawing, then is shown over the original
       if (s.moved && (s.tool === "pen" || s.tool === "eraser")) {
-        ctx.lineWidth = s.width;
-        ctx.lineCap = "round";
-        ctx.beginPath();
-        ctx.moveTo(s.mid.x, s.mid.y);
-        ctx.lineTo(s.last.x, s.last.y);
-        ctx.stroke();
+        target.lineWidth = s.width;
+        target.lineCap = "round";
+        target.beginPath();
+        target.moveTo(s.mid.x, s.mid.y);
+        target.lineTo(s.last.x, s.last.y);
+        target.stroke();
       }
       cancelAnimationFrame(s.frame);
       if (s.tool === "line" && s.dirty) paint(s);
-      if (s.tool === "line" && !s.moved) dab(s.start.x, s.start.y, s.width / 2);
+      if (s.tool === "line" && !s.moved) { if (s.fade) onFade(s, () => dab(s.start.x, s.start.y, s.width / 2)); else dab(s.start.x, s.start.y, s.width / 2); }
+      if (s.fade) showFade(s);
       if (s.layer) {
         s.layer.lineWidth = s.width;
         s.layer.beginPath();
@@ -857,16 +951,18 @@
       stroke = null;
       return s;
     }
-    function fillAt(x, y, fillColor) {
+    function fillAt(x, y, fillColor, opacity = 1) {
       const image = ctx.getImageData(0, 0, W, H);
       const before = ctx.getImageData(0, 0, W, H);
       const rect = floodFill(image.data, W, H, x, y, rgba(fillColor), 40);
+      blendFill(before, image, rect, rgba(fillColor), opacity);
       if (rect) ctx.putImageData(image, 0, 0);
       return { rect, before };
     }
     function fill(p) {
-      const { rect, before } = fillAt(p.x, p.y, color);
-      if (rect) record(rect, crop(before, rect), { type: "fill", x: p.x, y: p.y, color });
+      const opacity = opacities.bucket / 100;
+      const { rect, before } = fillAt(p.x, p.y, color, opacity);
+      if (rect) record(rect, crop(before, rect), { type: "fill", x: p.x, y: p.y, color, opacity });
     }
 
     /* --- replay: redraws the recorded strokes on another canvas, with the same code --- */
@@ -902,12 +998,13 @@
           const op = steps[opIndex];
           budget--;
           if (op.type === "clear") { blank(); opIndex++; }
-          else if (op.type === "fill") { fillAt(op.x, op.y, op.color); opIndex++; }
+          else if (op.type === "fill") { fillAt(op.x, op.y, op.color, op.opacity === undefined ? 1 : op.opacity); opIndex++; }
           else if (!stroke) { openStroke(op); stroke.quiet = true; pointIndex = 1; }
           else if (pointIndex < op.points.length) extend(op.points[pointIndex++]);
           else { closeStroke(); opIndex++; }
         }
         if (stroke && stroke.layer) showLayer();
+        else if (stroke && stroke.fade && stroke.tool !== "line") showFade(stroke);
       };
       const tick = (now) => {
         // Eases in, glides through the middle, and settles on the finished drawing.
@@ -1026,7 +1123,7 @@
           }
           const image = await draftImage(draft);
           (await createImageBitmap(image)).close();
-          found[slot] = { slot, mode: draft.mode, daily: draft.daily !== false, day: draft.day, prompts: draft.prompts, image, marked: isMarked(draft) };
+          found[slot] = { slot, mode: draft.mode, daily: draft.daily !== false, day: draft.day, prompts: draft.prompts, image, marked: isMarked(draft), savedAt: draft.savedAt || 0 };
         } catch (err) { // a damaged save shouldn't stop the game from opening
           await draftStore.remove(slot).catch(() => {});
         }
@@ -1088,6 +1185,7 @@
     return {
       start, drafts, restore, flush, discard, undo, redo, exportCanvas, canvasBlob, replay,
       save, setLocked,
+      clear: clearAll, // erases the canvas but keeps the round and its parts; Undo brings the drawing back
       get locked() { return locked; },
       get canReplay() { return canReplay && opsAt > 0; },
       get round() { return round; },
@@ -1097,6 +1195,8 @@
   }
 
   /* ---------- Finish screen ---------- */
+  // Set while the finish screen is open in this tab, so a refresh comes back to it (see index.html).
+  const FINISH_KEY = "scrawdle-finish";
   function createFinishScreen(board, gallery, { onHome } = {}) {
     const dialog = document.createElement("dialog");
     dialog.id = "finish";
@@ -1223,7 +1323,8 @@
       try {
         const blob = await board.canvasBlob();
         await window.scrawdlePublish({ blob, ...board.round });
-        note.textContent = "Your drawing is published. See it in today's drawings.";
+        // Publishing a Daily Scrawl (not Daily Free Play) is what unlocks Daily Scrawl on the Public drawings page.
+        note.textContent = "Your drawing is published. See it in today's drawings." + (board.round.mode === "scrawl" ? "" : " Everyone's Daily Scrawl drawings are now unlocked on the Public drawings page.");
         published.set(key, note.textContent);
         showPublish("done");
       } catch (err) {
@@ -1235,7 +1336,7 @@
       }
     });
 
-    board.onDone = async () => {
+    const open = async () => {
       const [view, full] = await Promise.all([
         board.canvasBlob(),
         new Promise((resolve) => board.exportCanvas().toBlob(resolve, "image/png")),
@@ -1262,10 +1363,14 @@
       dialog.querySelector(".finish-date").textContent = new Date(`${day}T12:00:00`).toLocaleDateString(undefined, { weekday: "long", year: "numeric", month: "long", day: "numeric" });
       note.textContent = empty ? "Draw something first." : (ready && publishedNote) || "";
       dialog.showModal();
+      try { sessionStorage.setItem(FINISH_KEY, "1"); } catch (err) { /* private browsing: a refresh just goes back to the drawing */ }
     };
+    board.onDone = open;
+    dialog.addEventListener("close", () => { try { sessionStorage.removeItem(FINISH_KEY); } catch (err) { /* see above */ } });
+    return { open };
   }
 
-  const api = { floodFill, History, dayKey, brushWidthFactor, slotOf, COLORS, COLOR_NAMES, bookKey, keysToDrop, BOOK_MAX, shareLine };
+  const api = { floodFill, blendFill, FINISH_KEY, History, dayKey, brushWidthFactor, slotOf, COLORS, COLOR_NAMES, bookKey, keysToDrop, BOOK_MAX, shareLine };
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   else root.ScrawdleDrawing = { ...api, createBoard, createFinishScreen, HISTORY_BYTES, myDrawings, letterDrawing };
 })(typeof window !== "undefined" ? window : globalThis);

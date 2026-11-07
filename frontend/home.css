@@ -1,0 +1,198 @@
+/* The home screen's cards (a short description opens on hover, or on keyboard focus), the dismissable
+ * "Continue drawing" notices, and the bubbles on the Public drawings page. Loaded after theme.css, so
+ * the dark-mode colors for these live here too. */
+
+/* ---------- Cards ---------- */
+/* Chunky cards: a thick outline, a hard offset shadow, a tint of their own, and on hover they lift, tilt,
+ * and open up to show what's inside. Only the hovered card grows (the row aligns to the top). */
+/* Multiplayer Games presses this card's Create Lobby button (see index.html), so the card itself is hidden. */
+.lobby-card { display: none; }
+.menu-stack { display: flex; flex-direction: column; align-items: center; gap: 18px; margin: 0 0 26px; }
+.menu-stack .menu-card { width: min(440px, 100%); min-height: 0; padding: 18px 20px; }
+.menu-card {
+  --tint: #e3f0ff;
+  width: 260px;
+  min-height: 96px;
+  padding: 22px 20px;
+  background: #fff;
+  border: 4px solid var(--ink);
+  border-radius: 18px;
+  box-shadow: 6px 6px 0 var(--ink);
+  color: var(--ink);
+  text-align: center;
+  transition: transform .15s ease, box-shadow .15s ease, background .15s ease;
+}
+#free-play { --tint: #e4f6dc; }
+#multiplayer { --tint: #efe7ff; }
+.menu-card:hover, .menu-card:focus-visible {
+  transform: translate(-3px, -3px) rotate(-1deg);
+  box-shadow: 9px 9px 0 var(--ink);
+  background: var(--tint);
+}
+.menu-card:nth-child(even):hover, .menu-card:nth-child(even):focus-visible { transform: translate(-3px, -3px) rotate(1deg); }
+.menu-card:focus-visible { outline: 2.5px solid var(--ink); outline-offset: 4px; }
+.menu-name { display: block; font: 700 30px/1.2 var(--hand); }
+
+/* The description opens inside the card. */
+.menu-more { display: grid; grid-template-rows: 0fr; opacity: 0; transition: grid-template-rows .3s ease, opacity .25s ease; }
+.menu-card:hover .menu-more, .menu-card:focus-visible .menu-more { grid-template-rows: 1fr; opacity: 1; }
+.menu-more-inner { display: block; min-height: 0; overflow: hidden; text-align: left; font: 17px/1.4 var(--hand); }
+.menu-text { display: block; margin-top: 12px; }
+.menu-line { display: block; }
+.menu-line:first-of-type { margin-top: 12px; }
+.menu-text + .menu-line { margin-top: 8px; }
+.menu-line::before { content: "\270E  "; }
+.menu-line.optional { font-style: italic; }
+
+/* Touch screens can't hover, so the descriptions are simply shown. */
+@media (hover: none) {
+  .menu-more { grid-template-rows: 1fr; opacity: 1; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .menu-card, .menu-more { transition: none; }
+}
+@media (max-width: 640px) {
+  .menu-card { width: 100%; }
+}
+#multiplayer-error:empty { display: none; }
+
+/* ---------- Logo, and the big word behind the page ---------- */
+#setup { position: relative; }
+#setup > .app-header, #setup > .home-body { position: relative; z-index: 1; }
+.home-logo { display: block; margin-bottom: 4px; }
+#setup .home-logo .wordmark { font-size: 84px !important; line-height: 1.1; }
+/* The word is sized in vw so it spans the page (its width is 3.81 times its font size, measured in Chrome
+ * with the real font); 25vw makes it about 95% of the width. It bleeds a little off the bottom. */
+.home-bg { position: absolute; inset: 0; z-index: 0; overflow: hidden; pointer-events: none; }
+.home-bg span { position: absolute; left: 2.5vw; bottom: -.12em; font-family: var(--marker); font-size: 25vw; line-height: 1; white-space: nowrap; color: #f2c9c0; opacity: .55; }
+
+/* ---------- Daily: one card that opens into two halves ---------- */
+.menu-stack .daily-card { padding: 0; overflow: hidden; }
+.daily-card:hover, .daily-card:focus-within { background: #fff; transform: translate(-3px, -3px); box-shadow: 9px 9px 0 var(--ink); }
+.daily-title { padding: 18px 20px; }
+.daily-more { display: grid; grid-template-rows: 0fr; opacity: 0; transition: grid-template-rows .3s ease, opacity .25s ease; }
+.daily-card:hover .daily-more, .daily-card:focus-within .daily-more { grid-template-rows: 1fr; opacity: 1; }
+.daily-options { display: grid; grid-template-columns: 1fr 1fr; min-height: 0; overflow: hidden; border-top: 3px solid var(--ink); }
+.daily-option { display: flex; flex-direction: column; align-items: center; justify-content: flex-start; padding: 14px 16px 18px; border: 0; background: transparent; color: var(--ink); font: inherit; text-align: center; cursor: pointer; }
+.daily-option + .daily-option { border-left: 3px solid var(--ink); }
+.daily-option .menu-name { font-size: 24px; }
+.daily-option .menu-text { margin-top: 8px; font: 17px/1.35 var(--hand); }
+#mode-daily:hover, #mode-daily:focus-visible { background: #ffe9e9; }
+#mode-scrawl:hover, #mode-scrawl:focus-visible { background: #fff0cf; }
+.daily-option:focus-visible { outline: 2.5px solid var(--ink); outline-offset: -6px; }
+/* Touch screens can't hover, so both halves are simply shown. */
+@media (hover: none) {
+  .daily-more { grid-template-rows: 1fr; opacity: 1; }
+}
+@media (max-width: 640px) {
+  .daily-options { grid-template-columns: 1fr; }
+  .daily-option + .daily-option { border-left: 0; border-top: 3px solid var(--ink); }
+  #setup .home-logo .wordmark { font-size: 60px !important; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .daily-more { transition: none; }
+}
+
+/* ---------- Public drawings, bottom right ---------- */
+.public-corner {
+  position: fixed;
+  right: 24px;
+  bottom: 22px;
+  z-index: 2;
+  min-height: 44px;
+  padding: 0 20px;
+  background: #fff;
+  border: 3px solid var(--ink);
+  border-radius: 14px;
+  box-shadow: 4px 4px 0 var(--ink);
+  color: var(--ink);
+  font: 700 20px var(--hand);
+  cursor: pointer;
+  transition: transform .15s ease, box-shadow .15s ease, background .15s ease;
+}
+.public-corner:hover, .public-corner:focus-visible { background: #fff0cf; transform: translate(-2px, -2px); box-shadow: 6px 6px 0 var(--ink); }
+.public-corner:focus-visible { outline: 2.5px solid var(--ink); outline-offset: 4px; }
+@media (max-width: 640px) {
+  .public-corner { position: relative; right: auto; bottom: auto; align-self: center; margin: 0 0 20px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .public-corner { transition: none; }
+}
+
+/* ---------- "Continue drawing" notices ---------- */
+.continue-wrap { position: relative; }
+.continue-wrap .continue { padding-right: 52px; }
+.continue-x {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--ink-soft);
+  font: 22px/1 Arial, sans-serif;
+}
+.continue-x::after { content: ""; position: absolute; inset: -7px; } /* a 44px target around the small circle */
+.continue-x:hover { background: rgba(48, 47, 43, .12); color: var(--ink); }
+
+/* ---------- Public drawings ---------- */
+.public-filters { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 10px; max-width: 600px; margin: 0 auto 16px; }
+.bubble {
+  min-height: 44px;
+  padding: 0 22px;
+  background: var(--cream);
+  border: var(--line);
+  border-radius: 999px;
+  font: 14px Arial, sans-serif;
+}
+.bubble:hover { border-color: var(--ink); }
+.bubble[aria-pressed="true"] { background: var(--yellow); border-color: #dfb84b; }
+.bubble.locked { border-style: dashed; color: var(--ink-soft); cursor: not-allowed; }
+.bubble.locked:hover { border-color: #d9d2c4; }
+.help-dot { position: relative; width: 28px; height: 28px; padding: 0; border: var(--line); border-radius: 50%; background: var(--cream); font: 700 14px Arial, sans-serif; }
+.help-dot::after { content: ""; position: absolute; inset: -8px; }
+.help-dot:hover { border-color: var(--ink); }
+.lock-why { flex-basis: 100%; margin: 0; font: 13px/1.5 Arial, sans-serif; text-align: center; color: var(--ink-soft); }
+
+/* ---------- Dark mode ---------- */
+html[data-theme="dark"] :is(.bubble, .help-dot) { background: var(--surface); }
+html[data-theme="dark"] .menu-card { background: var(--surface); border-color: #857d70; box-shadow: 6px 6px 0 #000; }
+html[data-theme="dark"] .menu-card:hover, html[data-theme="dark"] .menu-card:focus-visible { background: var(--picked); border-color: var(--picked-edge); box-shadow: 9px 9px 0 #000; }
+html[data-theme="dark"] .daily-card:hover, html[data-theme="dark"] .daily-card:focus-within { background: var(--surface); border-color: #857d70; }
+html[data-theme="dark"] .daily-options, html[data-theme="dark"] .daily-option + .daily-option { border-color: #857d70; }
+html[data-theme="dark"] .daily-option { color: inherit; }
+html[data-theme="dark"] :is(#mode-daily, #mode-scrawl):is(:hover, :focus-visible) { background: var(--picked); }
+html[data-theme="dark"] .public-corner { background: var(--surface); border-color: #857d70; box-shadow: 4px 4px 0 #000; color: inherit; }
+html[data-theme="dark"] .public-corner:hover, html[data-theme="dark"] .public-corner:focus-visible { background: var(--picked); border-color: var(--picked-edge); }
+html[data-theme="dark"] .home-bg span { color: #5a4540; opacity: .4; }
+html[data-theme="dark"] .lock-why { color: var(--soft-text); }
+html[data-theme="dark"] :is(.bubble, .help-dot) { border-color: #857d70; }
+html[data-theme="dark"] .bubble[aria-pressed="true"] { background: var(--picked); border-color: var(--picked-edge); }
+html[data-theme="dark"] .continue-x:hover { background: var(--hover); }
+
+/* ---------- The parts above the drawing: one bubble each ---------- */
+/* showParts() in index.html makes a .part for each (a small category label, then the part). Optional parts get a green dashed bubble. */
+#prompt-text { gap: 6px 8px; }
+#prompt-text .part { display: inline-flex; align-items: baseline; gap: 5px; padding: 2px 11px 3px; font-size: .88em; background: #fff; border: 1.5px solid #d9d2c4; border-radius: 999px; box-shadow: 0 2px 0 #e7e1d3; }
+#prompt-text .part small { margin: 0; }
+#prompt-text .part.optional { background: #eef6e8; border-style: dashed; border-color: #a9c79b; }
+html[data-theme="dark"] #prompt-text .part { background: var(--surface); border-color: #857d70; box-shadow: none; }
+html[data-theme="dark"] #prompt-text .part.optional { background: var(--surface); border-color: #8fae82; }
+
+/* ---------- Doodles behind every page ---------- */
+/* Little line drawings (frontend/doodles/*.svg) laid over each page's paper: the page itself and the full-screen ones
+ * (the parts screen, finish, lobby, lobby game, Public drawings, My drawings). There is a wide layout and a tall one for
+ * phones, each in dark ink or, in dark mode, pale ink. They are very faint, and everything else draws on top. */
+:root { --doodles: url("doodles/doodles-wide.svg"); }
+html[data-theme="dark"] { --doodles: url("doodles/doodles-wide-dark.svg"); }
+@media (max-aspect-ratio: 4/5) {
+  :root { --doodles: url("doodles/doodles-tall.svg"); }
+  html[data-theme="dark"] { --doodles: url("doodles/doodles-tall-dark.svg"); }
+}
+body { background: transparent; } /* flow.css gives body its own paper, which would hide the doodles on the page behind it */
+html { background-image: var(--doodles), var(--grain); background-size: cover, auto; background-repeat: no-repeat, repeat; background-position: center, 0 0; background-attachment: fixed, scroll; }
+#slot, #finish, #lobby, #lobby-game { background-image: var(--doodles), var(--grain); background-size: cover, auto; background-repeat: no-repeat, repeat; background-position: center, 0 0; }
+#gallery, #sketchbook { background-image: var(--doodles); background-size: cover; background-repeat: no-repeat; background-position: center; }

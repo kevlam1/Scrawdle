@@ -14,7 +14,7 @@
 create table if not exists drawings (
   id uuid primary key default gen_random_uuid(),
   day date not null,
-  mode text not null check (mode in ('basic', 'detailed', 'scrawl')), -- scrawl = Daily Scrawl (free draw)
+  mode text not null check (mode in ('basic', 'detailed', 'scrawl', 'daily')), -- scrawl = Daily Free Play (free draw); daily = Daily Scrawl (the merged Basic + Detailed, update 004)
   prompts jsonb not null, -- the exact set drawn: [{ key, label, value, optional }]
   image_path text not null unique, -- path inside the "drawings" storage bucket
   hidden boolean not null default false, -- set by three players' reports (report_drawing below) or by a teammate
@@ -42,7 +42,7 @@ create policy "public can read today's visible drawings"
 create policy "public can publish a drawing for today"
   on drawings for insert
   to anon
-  with check (day between current_date - 1 and current_date + 1 and mode in ('basic', 'detailed', 'scrawl'));
+  with check (day between current_date - 1 and current_date + 1 and mode in ('basic', 'detailed', 'scrawl', 'daily'));
 
 -- Storage: a public bucket for the PNGs. Run once, by hand, after the project exists
 -- (the Supabase dashboard's Storage tab can also create this bucket).

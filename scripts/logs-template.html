@@ -122,6 +122,31 @@
         font-weight: 600;
       }
 
+      /* A button back to the game, above the title */
+      .back-home {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.45rem;
+        height: 40px;
+        margin: 0 0 1.4rem;
+        padding: 0 1.1rem;
+        border: 2px solid var(--text);
+        border-radius: 12px;
+        background: #fffdf7;
+        box-shadow: 3px 3px 0 var(--text);
+        color: var(--text);
+        font-size: 0.92rem;
+        font-weight: 700;
+        text-decoration: none;
+        transition: transform 0.15s var(--ease), box-shadow 0.15s var(--ease), background 0.15s var(--ease);
+      }
+
+      .back-home:hover {
+        background: rgb(255 220 115 / 0.45);
+        box-shadow: 5px 5px 0 var(--text);
+        transform: translate(-2px, -2px);
+      }
+
       .links {
         display: flex;
         flex-wrap: wrap;
@@ -579,6 +604,7 @@
   <body>
     <main>
       <header>
+        <a class="back-home" href="/"><span aria-hidden="true">&larr;</span> Back to Scrawdle</a>
         <p class="eyebrow">TCSS 490 · Artifact 4</p>
         <h1>Scrawdle: build log</h1>
         <p class="intro">

@@ -7,8 +7,8 @@
  */
 (function (root) {
   "use strict";
-  const MODE_NAMES = { basic: "Basic", detailed: "Detailed", scrawl: "Daily Free Play" };
-  const modeName = (d) => (d.mode === "scrawl" ? MODE_NAMES.scrawl : d.daily === false ? "Free play" : MODE_NAMES[d.mode] || "Drawing");
+  const MODE_NAMES = { daily: "Daily Scrawl", basic: "Basic", detailed: "Detailed", scrawl: "Daily Free Play" };
+  const modeName = (d) => (d.mode === "scrawl" ? MODE_NAMES.scrawl : d.daily === false ? "Free Play" : MODE_NAMES[d.mode] || "Drawing");
   const dateOf = (day) => new Date(`${day}T12:00:00`).toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric" });
   const partsOf = (d) => (d.mode === "scrawl" ? "" : (d.prompts || []).map((p) => p.value).join(", "));
 
@@ -25,7 +25,7 @@
     const note = dialog.querySelector(".gallery-note");
     const grid = dialog.querySelector(".gallery-grid");
     const KEPT_NOTE = "Kept in this browser only, so clearing your browser data deletes them.";
-    const EMPTY_NOTE = "Nothing here yet. A drawing is kept here when its day ends, and so is a Free play drawing when you start a new set. Kept in this browser only.";
+    const EMPTY_NOTE = "Nothing here yet. A drawing is kept here when its day ends, and so is a Free Play drawing when you start a new set. Kept in this browser only.";
     let urls = [];
     let request = 0;
     const release = () => { urls.forEach((u) => URL.revokeObjectURL(u)); urls = []; };

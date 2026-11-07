@@ -1080,6 +1080,148 @@ Artifact 4 is "For Someone Else," due Sunday, November 8. Our team of four (Kevi
 
 ---
 
+## 56. Daily Scrawl, hover cards, and Multiplayer Games on the home screen (2026-11-06) — Angie
+
+**What I asked for**
+- Use the hover-to-learn-more format again on the buttons of the first screen. Get rid of Basic and Detailed and make one mode called "Daily Scrawl", with three main buttons (Daily Scrawl, Daily Free Play, and Open Canvas, which is Free play renamed) and a "Multiplayer Games" button below them that for now just goes to the create-lobby screen we already have.
+
+**What changed**
+- `frontend/index.html` and a new `frontend/home.css`: the home screen is now five cards (Daily Scrawl, Daily Free Play, Open Canvas, Multiplayer Games, Public drawings, which is entry 57). Hovering a card, or tabbing to it, opens a short description under it, and for Daily Scrawl the list of parts. The description floats over what's below instead of pushing it down. On touch screens, where there's no hover, the descriptions are always shown. The small links (My drawings, the build log, How to play, Dark mode) are left as links.
+- Daily Scrawl is a new mode id, `daily`, as `CLAUDE.md` asks for the merge, and it uses every part (the old Detailed set, 10 parts, three of them optional). Which parts the merged mode uses was still open in `CLAUDE.md`, so that was my call; it's one line in `partsFor` to change. It shares today's save slot, so a refresh and the "Continue drawing" notice find it. A Basic or Detailed drawing already started today still opens from its notice, and pressing Daily Scrawl over one asks first, then keeps the old one in My drawings.
+- Open Canvas is only a new name. It still gives random Basic parts and keeps the `free` slot. The name also changed in the share text and in My drawings.
+- Multiplayer Games presses Create Lobby on the Lobby card that `lobby.js` adds. That card is hidden in `home.css` and its error message now shows under the new buttons. I did not edit `lobby.js`, since `CLAUDE.md` says to leave it to Kevin.
+- `backend/supabase/updates/004-daily-scrawl.sql`, and the same change in `schema.sql`: the database allows the mode `daily`. `basic`, `detailed` and `scrawl` stay allowed, as `CLAUDE.md` says, for at least a day. Added 004 to "Pending database updates" in `CLAUDE.md`.
+- `frontend/sketchbook.js` and `frontend/drawing.js`: Daily Scrawl's name in My drawings and in the share text.
+
+**What I checked**
+- 84 logic tests pass, including new ones for the share text and the save slot.
+- 22 checks in headless Chrome against the real page (see entry 58 for the rest): the three main cards and the old two being gone, the hover description opening, the Daily Scrawl slot machine rolling all 10 parts, the game labelled Daily Scrawl, and Daily Scrawl reopening the same drawing with its strokes still on it. I looked at screenshots of the home screen with a card hovered, and at a phone width.
+- Not checked: the SQL against a Postgres, since it only changes the allowed values; nothing was run against the live Supabase project. Until Kevin runs 004, publishing a Daily Scrawl drawing is refused. The lobby button was not pressed, because that creates a lobby on the real project. The always-shown descriptions on touch screens were not tried on a real phone (headless Chrome's phone mode still reports hover).
+
+**Decisions**
+- Daily Scrawl uses all the parts. The other choices were Basic's short set or a new one; the team can change it.
+- Open Canvas keeps random Basic parts for now. It's a rename only, because nobody asked for it to change.
+
+---
+
+## 57. A Public drawings page (2026-11-06) — Angie
+
+**What I asked for**
+- A button on the main menu that shows every drawing posted, with a bubble to switch Daily Scrawl on and another for Daily Free Play, so both can show at once. The Daily Scrawl bubble stays locked until I post my own Daily Scrawl, with a small ? that says why.
+
+**What changed**
+- `frontend/gallery.js`: `showPublic()`, which reuses the gallery page. Two bubbles at the top; Daily Free Play starts on and Daily Scrawl starts on only if it's unlocked. While it's locked it has a dashed look and a lock, and the ? (and clicking the bubble) shows "Post your own Daily Scrawl drawing to unlock everyone else's." Drawings from the older Basic and Detailed modes show under the Daily Scrawl bubble. Each card has the same thumbs up/down and Report as today's gallery; your own drawings are marked and have neither. Pictures load lazily.
+- `frontend/publish.js`: `scrawdlePublicGallery` (loads up to 500 drawings in the asked-for modes, with vote counts, and says so if the load fails) and `scrawdleHasPosted` (true once this browser has published a Daily Scrawl today; an older Basic or Detailed from today counts). The Public drawings card stays hidden if Supabase isn't set up.
+- `frontend/home.css`: the bubbles and the ?.
+
+**What I checked**
+- Four new logic tests with the Supabase stand-in: Daily Free Play, or a Daily Scrawl from another day, doesn't unlock it; today's Daily Scrawl, Basic or Detailed does; the public gallery returns the asked-for modes and marks only the player's own; a failed load is reported instead of shown as empty.
+- Not checked: the page itself in a browser, because opening it reads the live Supabase project. The lock is only in the page: anyone can read published drawings through the database's public key, so this is a courtesy, not security. "Every single drawing" really means every drawing still in the database, since old ones are wiped daily, and the page caps at 500.
+
+**Decisions**
+- It asks only for the modes that are unlocked, so a locked player's page never even loads Daily Scrawl drawings.
+
+---
+
+## 58. Dismissable notices, staying on the export screen, Opacity, and a plainer history bar (2026-11-06) — Angie
+
+**What I asked for**
+- An x on each "Continue drawing" notice that only hides it. Refreshing at the export screen should stay there. A nicer, still colorless, Undo/Redo/Clear. An Opacity slider under Size for every tool.
+
+**What changed**
+- `frontend/index.html`: each notice has an x. It only hides the notice; the drawing stays saved, still opens from its card or from Daily Scrawl, and stays in My drawings. It's remembered in this browser per drawing, and the notice comes back if the drawing is changed later (it then counts as a new one in progress).
+- `frontend/drawing.js`: the finish screen records in the tab that it's open and `index.html` reopens it after a refresh. Closing it clears that, so a refresh then goes to the drawing.
+- `frontend/drawing.js`: an Opacity slider (5 to 100%) under Size, remembered separately for each tool. A stroke below 100% is drawn on its own transparent layer and shown over the picture at that opacity, so crossing itself doesn't darken it. The paint bucket mixes its color with what was there. Opacity is stored with each stroke, so replay matches, and older saved drawings with no opacity count as 100%. Marker and watercolor multiply their own softness by it. The bucket has no size, so only its Size controls dim.
+- `frontend/tools.css`: Undo, Redo and Clear are one outlined pill with thin dividers, in the page's own ink color so they stay plain in light and dark mode. Opacity slider styles are there too.
+
+**What I checked**
+- 84 logic tests pass, including one for the bucket's blending.
+- In headless Chrome, with real mouse input: a stroke at 100% is black (41,43,44) and one at 40% is 169, as expected; a stroke that crosses itself at 40% stays 169; opacity is kept per tool; the bucket's Opacity slider works while its Size is off; refreshing on the export screen stays on it, and after closing it a refresh goes to the drawing; the x removes the notice and it stays gone after a refresh; Daily Scrawl reopens the drawing with its strokes. I looked at screenshots of the toolbar in light and dark mode.
+- Not checked: opacity with each of the seven brush types, the Line tool and replay by eye (the code covers them, but I only drew with the pen), and the phone layout of the new slider.
+
+**Decisions**
+- A dismissed notice returns when the drawing changes, rather than staying hidden for the day.
+
+---
+
+## 59. The home cards go back to the chunky look (2026-11-06) — Angie
+
+**What I asked for**
+- Make the home cards look like my first version: thick outlines, a hard shadow, and a tint on hover, with the details opening inside the card.
+
+**What changed**
+- `frontend/home.css`: the cards have a 4px dark outline, a hard offset shadow, bold names, and their own tint (blue, pink, green, lavender, and yellow). On hover they lift, tilt a little, and open the description inside the card, so only the hovered card grows. This replaces the soft cards that opened a floating box underneath (entry 56). Dark mode keeps the dark surface with a black shadow.
+
+**What I checked**
+- Looked at screenshots in headless Chrome with Daily Scrawl and Multiplayer Games hovered: the outline, shadow, tilt, tint, and the list opening inside the card all show. Did not check dark mode or the phone layout by eye, and the 84 logic tests don't cover styling.
+
+**Decisions**
+- Kept the site's own handwriting font instead of the first version's Comic Sans look, so the cards match the rest of the page.
+
+---
+
+## 60. A calmer home screen: logo on top, three buttons, Daily opens into two (2026-11-06) — Angie
+
+**What I asked for**
+- Fewer distracting buttons on the first screen. After looking at mock-up images (kept outside the repo), I chose the stacked layout with three buttons, Daily, Multiplayer, and Free Play, the Scrawdle logo on top, and a big pink "Scrawdle" behind the page that spans its whole width. Hovering Daily should open it into two halves, Daily Scrawl and Daily Free Play, each with its description, and I click the half I want. Multiplayer and Free Play keep their hover descriptions. Public drawings goes at the bottom right.
+
+**What changed**
+- `frontend/index.html`: the home screen is now one column. The header's small logo is gone; the logo sits above the date and heading instead. Daily is one card holding two buttons, which keep the ids `mode-daily` (Daily Scrawl) and `mode-scrawl` (Daily Free Play), so the click handlers did not change. Multiplayer and Free Play (the old Open Canvas, still slot `free`) are buttons with their descriptions. Public drawings is a corner button, still hidden unless the Supabase project is connected. The big background word is a decorative element a screen reader skips. The "How to play" text says Free Play now.
+- `frontend/home.css`: the stacked layout, the Daily card that opens on hover or keyboard focus (and is always open on a touch screen, which can't hover), the background word sized in vw (its width is 3.81 times its font size, measured in Chrome, so 25vw is about 95% of the page), the corner button, and dark-mode versions of all of them. On a phone the two halves stack and Public drawings sits under the build-log link instead of floating.
+- `frontend/index.html` and `frontend/sketchbook.js`: the on-screen name "Open Canvas" is now "Free Play" (prompt label, slot label, the replace-drawing confirm, My drawings). The share text in `drawing.js` and its test still say "Open Canvas"; I left those alone.
+
+**What I checked**
+- The 84 logic tests pass. In headless Chrome I looked at screenshots at desktop width (light and dark, with Daily forced open) and at 500px wide, and checked the background word's real width. I did not hover with a real mouse, only forced the open state with CSS, and I did not click through to the games after the change. Not checked: keyboard use by hand, and Safari.
+
+**Decisions**
+- No new ids or database change. Free Play (random parts, slot `free`) and Daily Free Play (draw anything, id `scrawl`) now have close names; the ids keep them apart in code.
+- Public drawings lost its hover description (it is a tooltip now), because a description opening upward from the corner looked wrong.
+
+---
+
+## 61. Doodles behind every page (2026-11-06) — Angie
+
+**What I asked for**
+- After seeing a mock-up image, add little doodles to the background of the main menu, and to the other pages too. I also said the Free Play button wasn't working and asked Claude to check that it is connected to what Open Canvas / Free play was connected to before.
+
+**What changed**
+- New `frontend/doodles/`: four plain SVG files, `doodles-wide.svg` and `doodles-tall.svg` (for phones), each also in a pale-ink version for dark mode. They hold about 19 (wide) or 10 (tall) line drawings: stars, a cat, a fish, a bird, a pencil, hearts, a cloud, a moon, a flower, and squiggles. They are faint, and the middle of the wide one is left mostly empty. Claude first tried a generator script for them; I declined that, so they are written out as ready-made files and are edited by hand.
+- `frontend/home.css`: lays the right file under the paper of the page itself and of each full-screen page (the parts screen, finish, lobby, lobby game, Public drawings, My drawings). `body` no longer paints its own paper, because that hid the doodles on the page behind it. The game screen sits on the page itself, so it gets them too. The build-log page at `/logs` is separate and does not have them.
+- Free Play: no code change. In `frontend/index.html` the button is still wired to `startFreePlay`, which starts random parts exactly as the old Open Canvas button did.
+
+**What I checked**
+- The 84 logic tests pass. In headless Chrome, with a local copy served on a throwaway server, I looked at screenshots of the home screen (light, dark, and a 500px-wide window), the parts screen, the drawing screen, and Public drawings, and the doodles show behind each. Not looked at: My drawings, the lobby, the finish screen, and Safari or a real phone.
+- For Free Play, I clicked it with a script and with real mouse events (also moving down from the open Daily card) at 1280×800, 1280×600, and 1366×650, and it opened the parts screen each time. At 1000×560 the button sits below the visible area, so it was not clicked there. I could not make it fail, so I cannot say what went wrong on your side.
+
+**Decisions**
+- Plain SVG files instead of one long CSS rule or a generator, so there is no tooling to rerun and a doodle can be changed in one small file. The cost is that a change has to be made by hand in all four files.
+- The doodles use a CSS variable that switches the file for dark mode and phone shapes, so a page needs no extra markup.
+
+---
+
+## 62. Start over stays put, part bubbles, a way back from the build log (2026-11-06) — Angie
+
+**What I asked for**
+- Start over on a daily drawing should just erase it, not send me to the main page. The part categories at the top of the drawing screen should each be in their own bubble. The build log needs a button back to the Scrawdle main page. And the Daily Scrawl filter on the Public drawings page should unlock when I publish my own Daily Scrawl.
+- Before that, I had said the Free Play button and the build log link didn't work. They were fine when the page was served properly; I was opening `index.html` as a file, so the browser blocked `prompts.json` and `/logs/` pointed at the drive's root. Claude served `frontend/` on a local web server and the buttons worked.
+
+**What changed**
+- `frontend/index.html` and `frontend/drawing.js`: Start over (Daily Scrawl and Daily Free Play) now calls a new `board.clear`, which is the same erase as the Clear button. It keeps the same round and parts, stays on the drawing, and Undo brings the drawing back. If the board is already blank it does nothing. The question now says so. New set (Free Play) is unchanged.
+- `frontend/home.css`: each part above the drawing is a rounded bubble with its small category label inside. Optional parts are green with a dashed edge, and dark mode has its own colors. I made them small enough that the ten Daily Scrawl parts fit in two rows, so the drawing board doesn't move down.
+- `scripts/logs-template.html` and the regenerated `frontend/logs/index.html`: a "← Back to Scrawdle" button above the title, linking to `/`. The page already had a small "Play Scrawdle" text link under the intro; the button is easier to see.
+- `frontend/drawing.js`: after publishing a Daily Scrawl, the message adds that everyone's Daily Scrawl drawings are now unlocked on the Public drawings page.
+
+**What I checked**
+- The 84 logic tests pass. In headless Chrome on a local server I drew a stroke, pressed Start over, and counted the ink: 4,753 dark pixels before, 0 after; the same Daily Scrawl screen and the same parts stayed up; Undo brought back all 4,753. I looked at screenshots of the bubbles in light mode and of the build log's new button.
+- Unlock: the lock already worked in the code (`scrawdleHasPosted`, with tests). In the browser I faked the "published" marker instead of publishing for real, so nothing reached the live project. With nothing published, or only Daily Free Play, Daily Scrawl stayed locked; with a Daily Scrawl marked as published, it opened. I did not do a real publish, so a failure on my side that I didn't find is still possible.
+- Not checked: the bubbles in dark mode and on a phone, and the new build log button on a phone.
+
+**Decisions**
+- Start over erases instead of throwing the round away, so the parts you got stay, and Undo is a safety net. The old behavior (discard, then go home) is gone.
+- The unlock still depends on this browser remembering your own publish. A drawing published from another browser, a private window, or a different address (for example the file you opened versus `localhost`) does not count, and neither does publishing only Daily Free Play.
+
+---
+
 ## Where AI misread me, or I had to correct course
 
 - Claude's first version of the start page put "What is this?" in the top right, where it collided with the "New set" button on the game screen. I caught it by running the page; Claude hadn't opened it in a browser.
@@ -1097,6 +1239,9 @@ Artifact 4 is "For Someone Else," due Sunday, November 8. Our team of four (Kevi
 
 - **A phone screenshot that wasn't the screen I thought (Claude's slip, entry 33):** Claude's browser check printed the right text for the phone home screen and moved on, but the screenshot it took was the game screen, because the page had restored the drawing left open by the desktop run. Claude noticed when it looked at the image instead of trusting the printed values, cleared the saved state, and retook it.
 - **The lobby code stayed on screen after I asked to drop it (entries 52 and 54):** when I said I wasn't a fan of the code, only the invite message changed at first, and the big code and the Join box stayed because the lobby was Kevin's design. It should have been checked whether I meant all of it. Fixed in entry 54.
+- **A guessed measurement in a code comment (Claude's slip, entry 60):** the first CSS comment said the big background word is "about 3.05 times its font size" wide, which Claude had not measured. Measuring it in Chrome gave 3.81, so the word ran off the page until the size and the comment were corrected.
+- **I said Free Play was broken and Claude could not find it (entry 61):** I reported that the Free Play button didn't work. Claude checked it in a real browser with scripted clicks and with real mouse movements, at several window sizes, and it opened the parts screen every time, wired to the same `startFreePlay` as the old Open Canvas button. The cause is not found yet. One guess is the "Replace your Free Play drawing?" question, which only appears when a Free Play drawing already exists.
+- **My own edit helper dropped changes without saying so (Claude's slip, entries 56 to 58):** a script that patched the Supabase test stand-in returned the old text, so three of its edits vanished and the new tests failed with "is not a function". The failing tests caught it, nothing was committed, and the edits were redone. A check at the time of the home-screen change also looked at the export screen 700 ms after pressing Done drawing, before it had finished opening, and reported a failure that was only timing.
 
 ---
 
@@ -1105,3 +1250,4 @@ Artifact 4 is "For Someone Else," due Sunday, November 8. Our team of four (Kevi
 - Nothing abandoned yet. Team roles, exact prompt format, branch workflow, and the Supabase-vs-Firebase pick are all still open (see `CLAUDE.md`), not decided and discarded.
 - (Kevin, 2026-11-04, entry 33) The free-draw mode is "Daily Free Play" on screen but keeps the id `scrawl` underneath, and the name "Daily Scrawl" is saved for the Basic + Detailed merge a teammate will build, which gets its own new id. Dropped: renaming the id now, because that needs a database update for a cosmetic gain.
 - (Kevin, 2026-11-04, entry 33) Basic and Detailed will go away as separate modes and become the one "Daily Scrawl". When that ships, their database values stay allowed for a day and are removed in a later update; they are not renamed in place. Noted in `CLAUDE.md`.
+- (Angie, 2026-11-06, entry 56) Daily Scrawl (id `daily`) is live in the page and uses the full Detailed set of parts. Basic and Detailed are gone from the home screen, but their database values are still allowed (update 004 keeps them) until a later numbered update drops them once the daily wipe has cleared the old rows. Open Canvas is only Free play renamed.

@@ -1,0 +1,46 @@
+/* The drawing toolbar's newer pieces: the Undo / Redo / Clear bar, and the Opacity slider under Size.
+ * Loaded after theme.css so it can restyle what the earlier files set. */
+
+/* ---------- Undo, Redo, Clear ---------- */
+/* One plain outlined bar with a thin divider between the buttons. No color on purpose, so it stays
+ * out of the way of the drawing. The buttons keep their icons and labels. */
+.history-actions {
+  gap: 0;
+  border: 1.5px solid var(--ink);
+  border-radius: 999px;
+  overflow: hidden;
+  box-shadow: 0 2px 0 var(--ink);
+}
+.history-actions .tool {
+  min-height: 42px;
+  padding: 0 16px 0 14px;
+  gap: 7px;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  transition: background .12s ease;
+}
+.history-actions .tool + .tool { border-left: 1.5px solid var(--ink); }
+.history-actions .tool:hover:not(:disabled) { background: rgba(48, 47, 43, .08); }
+.history-actions .tool:active:not(:disabled) { background: rgba(48, 47, 43, .16); }
+.history-actions .tool:disabled { opacity: .35; cursor: default; }
+.history-actions .tool:focus-visible { outline-offset: -4px; }
+.history-actions .tool-label { font: 13px/1 Arial, sans-serif; letter-spacing: .03em; }
+.history-actions .tool-icon svg { stroke-width: 1.8; }
+html[data-theme="dark"] .history-actions .tool { background: transparent; border-color: transparent; }
+html[data-theme="dark"] .history-actions .tool + .tool { border-left-color: var(--ink); }
+html[data-theme="dark"] .history-actions .tool:hover:not(:disabled) { background: var(--hover); }
+
+/* ---------- Opacity ---------- */
+/* The Size slider's own group dims for the paint bucket (it has no size), but the Opacity slider next to it
+ * still works, so only the Size parts dim. */
+.tray-sizes.no-size .size-top, .tray-sizes.no-size #tool-size, .tray-sizes.no-size #party-tool-size, .tray-sizes.no-size .size-value { opacity: .4; }
+.tool-opacity { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.opacity-row { display: flex; align-items: baseline; gap: .35em; font-size: 12px; }
+.opacity-row span::after { content: " \00B7"; }
+.opacity-value { font-size: 12px; }
+.tool-opacity input[type="range"] { width: 100%; height: 18px; margin: 0; min-height: 32px; accent-color: #d4ac42; }
+html[data-theme="dark"] .tool-opacity input[type="range"] { accent-color: var(--yellow); }
+@media (max-width: 999px) {
+  .tool-opacity { flex: 1 1 0; }
+}

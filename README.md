@@ -11,7 +11,7 @@ TCSS 490 Artifact 4, built by a team of four: [kevlam1](https://github.com/kevla
 **Checked on the live site (2026-11-04, with `curl`):** `scrawdle.vercel.app/` loads (the earlier 404 at the root is fixed by `vercel.json`), and the deployed `lobby.js` is byte-for-byte the one in this repo, so the latest push deployed.
 
 **Built**
-- **Home screen** with Basic, Detailed, Daily Free Play, Free play, and Lobby, and a reveal screen that spins through parts from `frontend/prompts.json`.
+- **Home screen** with cards for Daily Scrawl, Daily Free Play, Open Canvas (random parts any time), Multiplayer Games, and Public drawings, each opening a short description on hover, and a reveal screen that spins through parts from `frontend/prompts.json`.
 - **Daily parts:** everyone playing on the same date gets the same ones, with no server needed. Free play gives random parts any time.
 - **Drawing tools:** pen, pencil, line, eraser, paint bucket, and a brush with seven types (round, marker, calligraphy, crayon, watercolor, spray, dry bristle). 12 colors plus a custom color, a size for each tool, illustrated tool icons, a Brushes panel that previews each brush, and undo and redo.
 - **Auto-save in the browser:** Basic/Detailed (one drawing a day), Daily Free Play, and Free play each save separately and survive a refresh. When the day changes, all three move to My drawings, where they can be downloaded.

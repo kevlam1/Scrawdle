@@ -14,6 +14,7 @@ function fakeSupabase({ votingReady = true } = {}) {
       filters: [],
       select() { return q; },
       eq(col, val) { q.filters.push((r) => r[col] === val); return q; },
+      in(col, vals) { q.filters.push((r) => vals.includes(r[col])); return q; },
       order() { return q; },
       limit(n) { q.n = n; return q; },
       then(resolve) {
@@ -75,9 +76,9 @@ function player(client) {
   globalThis.supabase = { createClient: () => client };
   globalThis.localStorage = fakeStorage();
   globalThis.ScrawdleVotes = require("../frontend/votes.js");
-  delete globalThis.scrawdlePublish; delete globalThis.scrawdleGallery; delete globalThis.scrawdleVote;
+  delete globalThis.scrawdlePublish; delete globalThis.scrawdleGallery; delete globalThis.scrawdleVote; delete globalThis.scrawdleHasPosted; delete globalThis.scrawdlePublicGallery;
   require(file);
-  const p = { publish: globalThis.scrawdlePublish, gallery: globalThis.scrawdleGallery, vote: globalThis.scrawdleVote };
+  const p = { publish: globalThis.scrawdlePublish, gallery: globalThis.scrawdleGallery, vote: globalThis.scrawdleVote, hasPosted: globalThis.scrawdleHasPosted, publicGallery: globalThis.scrawdlePublicGallery };
   const storage = globalThis.localStorage;
   // Each player keeps their own browser storage.
   return Object.fromEntries(Object.entries(p).map(([k, fn]) => [k, (...a) => { globalThis.localStorage = storage; return fn(...a); }]));
@@ -187,4 +188,57 @@ test("each browser keeps one voter id", async () => {
   await ben.vote({ drawingId: id, value: 1 });
   await ben.vote({ drawingId: id, value: 1 });
   assert.equal(db.votes.size, 1, "the same browser voting twice is still one vote");
+});
+
+// The Public drawings page. Daily Scrawl's bubble unlocks on scrawdleHasPosted; scrawdlePublicGallery loads the lot.
+const todayLocal = () => {
+  const d = new Date();
+  const pad = (n) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+};
+
+test("Daily Scrawl is unlocked only after this browser posts one today", async () => {
+  const { client } = fakeSupabase();
+  const ana = player(client);
+  const day = todayLocal();
+  assert.equal(ana.hasPosted(), false, "nothing posted yet");
+  await ana.publish({ blob, day, mode: "scrawl", prompts: round.prompts });
+  assert.equal(ana.hasPosted(), false, "Daily Free Play doesn't unlock it");
+  await ana.publish({ blob, day: "2020-01-01", mode: "daily", prompts: round.prompts });
+  assert.equal(ana.hasPosted(), false, "a Daily Scrawl from another day doesn't either");
+  await ana.publish({ blob, day, mode: "daily", prompts: round.prompts });
+  assert.equal(ana.hasPosted(), true);
+});
+
+test("a drawing posted as the older Basic or Detailed today still unlocks Daily Scrawl", async () => {
+  const { client } = fakeSupabase();
+  const ana = player(client);
+  await ana.publish({ blob, day: todayLocal(), mode: "detailed", prompts: round.prompts });
+  assert.equal(ana.hasPosted(), true);
+});
+
+test("the public gallery returns every drawing in the asked-for modes and marks the player's own", async () => {
+  const { db, client } = fakeSupabase();
+  const ana = player(client);
+  const ben = player(client);
+  const day = todayLocal();
+  await ana.publish({ blob, day, mode: "daily", prompts: round.prompts });
+  await ben.publish({ blob, day, mode: "daily", prompts: round.prompts });
+  await ben.publish({ blob, day, mode: "scrawl", prompts: round.prompts });
+  assert.equal(db.drawings.length, 3);
+
+  const all = await ana.publicGallery({ modes: ["daily", "basic", "detailed", "scrawl"] });
+  assert.equal(all.length, 3);
+  assert.deepEqual(all.map((c) => c.mine).sort(), [false, false, true], "only Ana's own is marked mine");
+  assert.ok(all.every((c) => c.imageUrl && c.votes), "every card has a picture and vote counts");
+
+  const free = await ana.publicGallery({ modes: ["scrawl"] });
+  assert.deepEqual(free.map((c) => c.mode), ["scrawl"], "Daily Scrawl drawings stay out when only Daily Free Play is asked for");
+});
+
+test("the public gallery says so when it can't load, instead of showing an empty page", async () => {
+  const { client } = fakeSupabase();
+  const ana = player(client);
+  client.from = () => ({ select: () => ({ in: () => ({ order: () => ({ limit: async () => ({ data: null, error: { message: "boom" } }) }) }) }) });
+  await assert.rejects(ana.publicGallery({ modes: ["scrawl"] }), /boom/);
 });
