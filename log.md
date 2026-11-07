@@ -1333,6 +1333,30 @@ Artifact 4 is "For Someone Else," due Sunday, November 8. Our team of four (Kevi
 
 ---
 
+## 68. Yesterday's winner (2026-11-07) — Trenten
+
+**What I asked for**
+- Show yesterday's winner, planned first. Claude found that the daily wipe keeps yesterday's drawings for the whole of the player's local day, but the database only lets the game read drawings within a day of its own (UTC) date, so in US time the player's yesterday stops being readable every evening. So it needs one small database update. I went with its recommendations: show it on the home screen and the leaderboard, show everyone tied for first, and write the update for Kevin.
+
+**What changed**
+- `backend/supabase/updates/005-yesterdays-winner.sql` (new) and `schema.sql`: a function, `top_drawings(target_day, modes, max_count)`, that returns a day's best drawing(s): the most thumbs up (at least one), then the fewest thumbs down, with every drawing tied on both, oldest first, up to `max_count` (three by default, never more than ten). Hidden drawings never count, and it only answers for days the daily wipe still keeps. It changes no table and no policy and stores nothing. It took the number `005`, so the planned update that drops `basic` and `detailed` from the mode constraint becomes `006`.
+- `frontend/publish.js`: `scrawdleYesterdayWinners()` asks for yesterday by the player's local date, once for Daily Scrawl (with the older Basic and Detailed) and once for Daily Free Play, and marks a winner as yours the same way the gallery does. It returns nothing when the function isn't on the database yet.
+- `frontend/leaderboard.js` and `leaderboard.css`: "Yesterday's winners" (or "🏆 Your drawing won yesterday!") with each winner's picture, yesterday's parts (two lines, the full list in a tooltip) and its thumbs up. On the leaderboard it's above today's lists and shows up to three tied winners per list; there's no lock, since yesterday can't spoil today's parts. On the home screen (`index.html`), a compact copy with one winner per list sits under the Continue cards, with a link to the leaderboard.
+- `CLAUDE.md`: update 005 is under "Pending database updates" with steps for Kevin's session. `README.md`, `frontend/README.md`, `backend/README.md` updated.
+
+**What I checked**
+- The SQL in PGlite (a real Postgres) on top of the original schema and updates 001 to 004: 9 of 9 checks pass. It runs twice without error; the winner is the most thumbs up, then fewest thumbs down; a hidden drawing with more votes never wins; each list sees only its own modes; ties come back oldest first up to the limit; a day with no thumbs up has no winner; days the wipe has cleared return nothing even if the rows are still there; the public key still can't read old drawings or the votes table; and a fresh project's `schema.sql` has the function. Breaking the SQL on purpose in a copy (letting hidden drawings count, and dropping the day limit) failed 2 checks, as it should. The test script and PGlite stayed in a temporary folder, not the repo.
+- 3 new Node tests that load the real `publish.js` against a stand-in, and 2 more in `tests/leaderboard.test.js`. All 126 tests pass.
+- The real page against the live project, which doesn't have the function yet: no winner shows, nothing breaks, and the console says `top_drawings` wasn't found.
+- With stand-in winners: the home card (including "🏆 Your drawing won yesterday!") and the leaderboard section with three tied winners, at 1280 by 800 and phone width, with nothing scrolling sideways, and in dark mode. This caught Daily Scrawl's long parts list being cut off after a few words; it now wraps to two lines with the full list in a tooltip.
+- Not checked: the live function (Kevin hasn't run the update), Safari or Firefox.
+
+**Decisions**
+- A function that returns only the winners, rather than widening who can read drawings, so the read rule stays as Kevin wrote it.
+- Nothing extra is stored or kept: the winners are drawings the daily wipe already keeps through the player's whole yesterday-plus-today.
+
+---
+
 ## Where AI misread me, or I had to correct course
 
 - Claude's first version of the start page put "What is this?" in the top right, where it collided with the "New set" button on the game screen. I caught it by running the page; Claude hadn't opened it in a browser.

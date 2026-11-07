@@ -169,6 +169,40 @@ $$;
 
 grant execute on function public.report_drawing(uuid, uuid) to anon;
 
+-- Yesterday's winner: the best drawing(s) of a given day. Same as updates/005-yesterdays-winner.sql;
+-- the reasoning is in the comments there. It exists because the read policy above only covers a day
+-- either side of UTC today, which in US time drops the player's yesterday each evening.
+create or replace function public.top_drawings(target_day date, modes text[], max_count int default 3)
+returns table (id uuid, mode text, image_path text, prompts jsonb, up int, down int)
+language sql
+security definer
+set search_path = ''
+stable
+as $$
+  with counted as (
+    select d.id, d.mode, d.image_path, d.prompts, d.created_at,
+           (count(v.value) filter (where v.value = 1))::int as up,
+           (count(v.value) filter (where v.value = -1))::int as down
+    from public.drawings d
+    left join public.votes v on v.drawing_id = d.id
+    where d.day = target_day
+      and d.mode = any (modes)
+      and not d.hidden
+      and target_day between current_date - 2 and current_date + 1
+    group by d.id
+  ),
+  best as (
+    select c.up, c.down from counted c where c.up >= 1 order by c.up desc, c.down asc limit 1
+  )
+  select c.id, c.mode, c.image_path, c.prompts, c.up, c.down
+  from counted c
+  join best b on c.up = b.up and c.down = b.down
+  order by c.created_at, c.id
+  limit least(greatest(coalesce(max_count, 3), 1), 10);
+$$;
+
+grant execute on function public.top_drawings(date, text[], int) to anon;
+
 
 -- Lobbies: private rooms joined by a 5-letter code (https://scrawdle.vercel.app/?ABCDE).
 -- The table only records that a code exists, so a mistyped code can be told apart from a real

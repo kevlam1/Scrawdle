@@ -63,3 +63,22 @@ test("the top ten shows every drawing tied for tenth, not just the first of them
   assert.equal(L.topOf(L.rank(ups.slice(0, 5).map((u, i) => d("y" + i, u)))).length, 5, "fewer than ten is fine");
   assert.deepEqual(L.topOf(null), []);
 });
+
+/* ---------- Yesterday's winners ---------- */
+test("a winner's caption is yesterday's parts, or Daily Free Play's prompt", () => {
+  assert.equal(L.winnerCaption({ mode: "daily", prompts: [{ value: "Cat" }, { value: "Crab claws" }] }), "Daily Scrawl · Cat, Crab claws");
+  assert.equal(L.winnerCaption({ mode: "basic", prompts: [{ value: "Owl" }] }), "Daily Scrawl · Owl", "the older modes count as Daily Scrawl");
+  assert.equal(L.winnerCaption({ mode: "scrawl", prompts: [{ value: "Draw anything" }] }), "Daily Free Play · Draw anything");
+  assert.equal(L.winnerCaption({ mode: "daily", prompts: null }), "Daily Scrawl");
+  assert.equal(L.winnerCaption(null), "");
+});
+
+test("the headline says when your own drawing won, and nothing shows with no winners", () => {
+  const w = (daily, free) => ({ day: "2026-11-06", daily, free });
+  assert.equal(L.yesterdayHeadline(w([d("a", 3)], [])), "Yesterday's winners");
+  assert.equal(L.yesterdayHeadline(w([d("a", 3)], [d("b", 1, 0, { mine: true })])), "🏆 Your drawing won yesterday!");
+  assert.equal(L.yesterdayHeadline(w([], [])), "");
+  assert.equal(L.hasWinners(w([], [d("b", 1)])), true);
+  assert.equal(L.hasWinners(w([], [])), false);
+  assert.equal(L.hasWinners(null), false, "update 005 not run yet");
+});

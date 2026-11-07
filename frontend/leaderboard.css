@@ -45,3 +45,27 @@ html[data-theme="dark"] .lb-podium-entry:not(:nth-child(-n+3)) .lb-place, html[d
   .lb-podium { grid-template-columns: 1fr; }
   .lb-list .lb-entry img { width: 96px; }
 }
+
+/* ---------- Yesterday's winners: on the leaderboard (full) and the home screen (compact) ---------- */
+.yesterday { padding: 16px; border: var(--line); border-radius: 14px; background: var(--surface, #fffcf7); text-align: left; }
+.yesterday-title { margin: 0 0 12px; font: 400 26px/1.2 var(--hand); }
+.yesterday-grid { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px; }
+.yesterday-card { display: flex; flex-direction: column; background: white; border: var(--line); border-radius: 10px; overflow: hidden; }
+.yesterday-card.mine { box-shadow: inset 0 0 0 2px var(--picked-edge, #c59a2e); background: #fff3d0; }
+.yesterday-card img { display: block; width: 100%; aspect-ratio: 3 / 2; object-fit: contain; background: white; }
+.yesterday-text { margin: 0; padding: 8px 10px; display: flex; flex-direction: column; gap: 2px; font-size: 13px; color: #3d3a35; }
+/* Daily Scrawl has up to ten parts, so the caption gets two lines; the full list is in its tooltip. */
+.yesterday-caption { overflow: hidden; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; }
+.yesterday-votes { color: #6b665d; }
+.yesterday-link { display: inline-block; margin-top: 10px; font-size: 13px; }
+
+/* The home screen's copy sits under the Continue cards, at the width of the home column. */
+#yesterday-slot:empty { display: none; }
+#yesterday-slot { width: min(720px, 100%); margin: 0 auto 20px; }
+.yesterday.compact .yesterday-grid { grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); }
+.yesterday.compact .yesterday-title { font-size: 22px; }
+
+html[data-theme="dark"] .yesterday-card { background: var(--surface); }
+html[data-theme="dark"] .yesterday-card.mine { background: var(--picked); }
+html[data-theme="dark"] .yesterday-text { color: var(--ink); }
+html[data-theme="dark"] .yesterday-votes { color: var(--ink-soft); }

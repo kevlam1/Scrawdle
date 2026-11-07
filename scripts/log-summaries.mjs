@@ -73,6 +73,7 @@ export const SUMMARIES = {
   65: "Trenten added kicking to lobbies: the host can kick a player, even during a game, and with three or more players anyone can call a vote to kick that passes only if everyone else agrees.",
   66: "Trenten added a streak of days in a row with a finished daily drawing, kept in the browser and shown on the home screen, the finish screen, and the share text.",
   67: "Trenten added Today's leaderboard, a page ranking today's published drawings by thumbs up for Daily Scrawl and Daily Free Play, built on the data the Public drawings page already loads, with no database change.",
+  68: "Trenten added yesterday's winner to the home screen and the leaderboard, with a small database update for Kevin, because the database stops letting the game read the player's yesterday each evening in US time.",
   misread: 'Where the AI got something wrong or we had to correct course, and what happened next.',
   decisions: 'What we decided and what we dropped along the way.',
 }

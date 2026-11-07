@@ -609,7 +609,7 @@
         <h1>Scrawdle: build log</h1>
         <p class="intro">
           A daily drawing game, built by a team of four with Claude Code: a new set of parts to draw each day, a gallery of what
-          other people drew, and private lobbies. Here are the 67 entries of our log with one sentence on each and the name of
+          other people drew, and private lobbies. Here are the 68 entries of our log with one sentence on each and the name of
           whoever wrote it. Open an entry to read everything they wrote for it.
         </p>
         <ul class="facts" aria-label="Project facts">
@@ -739,12 +739,13 @@
   </ul></div>
 </div>
 <div class="toc-group is-open">
-  <button class="toc-head" type="button" aria-expanded="true">Saturday 7 November <span class="count">4</span></button>
+  <button class="toc-head" type="button" aria-expanded="true">Saturday 7 November <span class="count">5</span></button>
   <div class="toc-list-wrap"><ul class="toc-list">
     <li><a href="#entry-64"><span class="n">64</span><span>Scrawdle's own color picker</span></a></li>
     <li><a href="#entry-65"><span class="n">65</span><span>Kicking players, and votes to kick</span></a></li>
     <li><a href="#entry-66"><span class="n">66</span><span>A streak of days in a row</span></a></li>
     <li><a href="#entry-67"><span class="n">67</span><span>Today's leaderboard</span></a></li>
+    <li><a href="#entry-68"><span class="n">68</span><span>Yesterday's winner</span></a></li>
   </ul></div>
 </div>
 <div class="toc-group is-open">
@@ -1888,6 +1889,23 @@
 <ul><li>8 Node tests for the ranking (order, tie-breaks, shared places, unranked drawings, your standing, which list each mode goes in, and ties at 10th). All 121 tests pass.</li><li>The page against the live project, read-only (it only loads): no Daily Free Play drawings posted yet today, and Daily Scrawl locked, because this browser hadn't posted one.</li><li>With stand-in data (14 Daily Scrawl drawings with ties and one of them yours, and Daily Free Play drawings with no thumbs up): the places, the shared places, &quot;Yours is #7 of 12 today&quot;, the unranked message, the lock (Daily Scrawl not even requested), and the message when loading fails. Measured at 1280 by 800 (podium side by side) and phone width (stacked), with nothing scrolling sideways, and checked dark mode. Both new links appear and point to <code>leaderboard/</code>.</li><li>That first stand-in test caught a tie problem: three drawings tied for 10th, but only one showed. Fixed so everyone tied for the last place shown appears, with a test.</li><li>Not checked: the page with real votes (there were none today when it was tested), Safari or Firefox. The small local test server doesn't serve a folder's <code>index.html</code> the way Vercel does, so the page was opened as <code>/leaderboard/index.html</code> locally; <code>/leaderboard/</code> relies on the same Vercel behavior as <code>/public-drawings/</code>.</li></ul>
 <p class="sub"><strong>Decisions</strong></p>
 <ul><li>Drawings, not players, so there's no database update and no public player names to moderate. Ranking players later would mean storing a name with each published drawing (a new update for Kevin).</li><li>Its own page rather than a section of Public drawings, so Angie's and Kevin's page only gained one link.</li></ul>
+  </div></div></div>
+</article>
+<article class="entry" id="entry-68">
+  <h3 class="entry-head"><button type="button" aria-expanded="false" aria-controls="entry-68-body">
+    <span class="num">68</span>
+    <span><span class="title">Yesterday's winner<span class="by">by Trenten</span></span><span class="sum">Trenten added yesterday's winner to the home screen and the leaderboard, with a small database update for Kevin, because the database stops letting the game read the player's yesterday each evening in US time.</span></span>
+    <span class="caret" aria-hidden="true"></span>
+  </button></h3>
+  <div class="body" id="entry-68-body"><div class="body-in"><div class="body-pad">
+<p class="sub"><strong>What I asked for</strong></p>
+<ul><li>Show yesterday's winner, planned first. Claude found that the daily wipe keeps yesterday's drawings for the whole of the player's local day, but the database only lets the game read drawings within a day of its own (UTC) date, so in US time the player's yesterday stops being readable every evening. So it needs one small database update. I went with its recommendations: show it on the home screen and the leaderboard, show everyone tied for first, and write the update for Kevin.</li></ul>
+<p class="sub"><strong>What changed</strong></p>
+<ul><li><code>backend/supabase/updates/005-yesterdays-winner.sql</code> (new) and <code>schema.sql</code>: a function, <code>top_drawings(target_day, modes, max_count)</code>, that returns a day's best drawing(s): the most thumbs up (at least one), then the fewest thumbs down, with every drawing tied on both, oldest first, up to <code>max_count</code> (three by default, never more than ten). Hidden drawings never count, and it only answers for days the daily wipe still keeps. It changes no table and no policy and stores nothing. It took the number <code>005</code>, so the planned update that drops <code>basic</code> and <code>detailed</code> from the mode constraint becomes <code>006</code>.</li><li><code>frontend/publish.js</code>: <code>scrawdleYesterdayWinners()</code> asks for yesterday by the player's local date, once for Daily Scrawl (with the older Basic and Detailed) and once for Daily Free Play, and marks a winner as yours the same way the gallery does. It returns nothing when the function isn't on the database yet.</li><li><code>frontend/leaderboard.js</code> and <code>leaderboard.css</code>: &quot;Yesterday's winners&quot; (or &quot;🏆 Your drawing won yesterday!&quot;) with each winner's picture, yesterday's parts (two lines, the full list in a tooltip) and its thumbs up. On the leaderboard it's above today's lists and shows up to three tied winners per list; there's no lock, since yesterday can't spoil today's parts. On the home screen (<code>index.html</code>), a compact copy with one winner per list sits under the Continue cards, with a link to the leaderboard.</li><li><code>CLAUDE.md</code>: update 005 is under &quot;Pending database updates&quot; with steps for Kevin's session. <code>README.md</code>, <code>frontend/README.md</code>, <code>backend/README.md</code> updated.</li></ul>
+<p class="sub"><strong>What I checked</strong></p>
+<ul><li>The SQL in PGlite (a real Postgres) on top of the original schema and updates 001 to 004: 9 of 9 checks pass. It runs twice without error; the winner is the most thumbs up, then fewest thumbs down; a hidden drawing with more votes never wins; each list sees only its own modes; ties come back oldest first up to the limit; a day with no thumbs up has no winner; days the wipe has cleared return nothing even if the rows are still there; the public key still can't read old drawings or the votes table; and a fresh project's <code>schema.sql</code> has the function. Breaking the SQL on purpose in a copy (letting hidden drawings count, and dropping the day limit) failed 2 checks, as it should. The test script and PGlite stayed in a temporary folder, not the repo.</li><li>3 new Node tests that load the real <code>publish.js</code> against a stand-in, and 2 more in <code>tests/leaderboard.test.js</code>. All 126 tests pass.</li><li>The real page against the live project, which doesn't have the function yet: no winner shows, nothing breaks, and the console says <code>top_drawings</code> wasn't found.</li><li>With stand-in winners: the home card (including &quot;🏆 Your drawing won yesterday!&quot;) and the leaderboard section with three tied winners, at 1280 by 800 and phone width, with nothing scrolling sideways, and in dark mode. This caught Daily Scrawl's long parts list being cut off after a few words; it now wraps to two lines with the full list in a tooltip.</li><li>Not checked: the live function (Kevin hasn't run the update), Safari or Firefox.</li></ul>
+<p class="sub"><strong>Decisions</strong></p>
+<ul><li>A function that returns only the winners, rather than widening who can read drawings, so the read rule stays as Kevin wrote it.</li><li>Nothing extra is stored or kept: the winners are drawings the daily wipe already keeps through the player's whole yesterday-plus-today.</li></ul>
   </div></div></div>
 </article>
       </section>

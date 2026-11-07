@@ -54,7 +54,22 @@
   // The top TOP places. Drawings tied for the last place shown all show, so a tie isn't cut in half.
   const topOf = (ranked) => (ranked || []).filter((it) => it.place <= TOP);
 
-  const pure = { GROUPS, TOP, rank, myStanding, standingText, groupOf, topOf };
+  /* ----- Yesterday's winners (publish.js's scrawdleYesterdayWinners, database update 005) ----- */
+  // What a winner was drawn to: yesterday's parts, or "Draw anything" for Daily Free Play.
+  function winnerCaption(card) {
+    if (!card) return "";
+    if (card.mode === "scrawl") return "Daily Free Play · Draw anything";
+    const parts = (card.prompts || []).map((p) => p && p.value).filter(Boolean).join(", ");
+    return parts ? `Daily Scrawl · ${parts}` : "Daily Scrawl";
+  }
+  const hasWinners = (w) => Boolean(w && ((w.daily && w.daily.length) || (w.free && w.free.length)));
+  function yesterdayHeadline(w) {
+    if (!hasWinners(w)) return "";
+    const all = [...(w.daily || []), ...(w.free || [])];
+    return all.some((c) => c.mine) ? "🏆 Your drawing won yesterday!" : "Yesterday's winners";
+  }
+
+  const pure = { GROUPS, TOP, rank, myStanding, standingText, groupOf, topOf, winnerCaption, hasWinners, yesterdayHeadline };
   if (typeof module !== "undefined" && module.exports) { module.exports = pure; return; }
 
   /* ---------- The page ---------- */
@@ -114,6 +129,41 @@
     return sec;
   }
 
+  // Yesterday's winners as a section, or null when there are none. `compact` (the home screen) shows
+  // one winner per list; the leaderboard shows everyone tied for first, up to three per list.
+  function yesterdaySection(w, { compact = false, link = null } = {}) {
+    if (!hasWinners(w)) return null;
+    const sec = el("section", compact ? "yesterday compact" : "yesterday");
+    sec.setAttribute("aria-labelledby", compact ? "yesterday-home-title" : "yesterday-title");
+    const h = el("h2", "yesterday-title", yesterdayHeadline(w));
+    h.id = compact ? "yesterday-home-title" : "yesterday-title";
+    sec.append(h);
+    const grid = el("ul", "yesterday-grid");
+    for (const [key, label] of [["daily", "Daily Scrawl"], ["free", "Daily Free Play"]]) {
+      const cards = (w[key] || []).slice(0, compact ? 1 : 3);
+      for (const card of cards) {
+        const li = el("li", card.mine ? "yesterday-card mine" : "yesterday-card");
+        const img = el("img");
+        img.src = card.imageUrl;
+        img.alt = card.mine ? `Your winning ${label} drawing from yesterday` : `Yesterday's winning ${label} drawing`;
+        img.loading = "lazy";
+        const text = el("p", "yesterday-text");
+        const caption = el("span", "yesterday-caption", winnerCaption(card));
+        caption.title = winnerCaption(card);
+        text.append(caption, el("span", "yesterday-votes", `👍 ${card.votes.up}${card.mine ? " · Yours" : ""}`));
+        li.append(img, text);
+        grid.append(li);
+      }
+    }
+    sec.append(grid);
+    if (link) {
+      const a = el("a", "quiet yesterday-link", link.text);
+      a.href = link.href;
+      sec.append(a);
+    }
+    return sec;
+  }
+
   async function show(container) {
     const header = el("header", "app-header");
     header.append(el("span", "wordmark", "Scrawdle"));
@@ -145,7 +195,14 @@
     }
     note.textContent = "Ranked by thumbs up. It starts over at midnight.";
     body.replaceChildren(...GROUPS.map((g) => section(g, items, { locked: g.id === "daily" && !posted })));
+    // Yesterday's winners go above today's lists. They can't spoil today's parts, so there's no lock.
+    if (typeof root.scrawdleYesterdayWinners === "function") {
+      try {
+        const yesterday = yesterdaySection(await root.scrawdleYesterdayWinners());
+        if (yesterday) body.prepend(yesterday);
+      } catch (err) { /* no winners shown; today's lists still work */ }
+    }
   }
 
-  root.ScrawdleLeaderboard = { ...pure, show };
+  root.ScrawdleLeaderboard = { ...pure, show, yesterdaySection };
 })(typeof window !== "undefined" ? window : globalThis);
