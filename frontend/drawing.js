@@ -1218,7 +1218,7 @@
         <p class="finish-note" role="status"></p>
         <div class="finish-secondary">
           <button type="button" class="quiet" data-act="keep">Keep drawing</button>
-          <button type="button" class="quiet" data-act="gallery">See today’s drawings</button>
+          <button type="button" class="quiet" data-act="gallery">See public drawings</button>
         </div>
       </div>`;
     document.body.appendChild(dialog);
@@ -1261,10 +1261,10 @@
       showPlay(false);
       delete dialog.dataset.replayed;
     });
+    // Opens the same Public drawings page as the home screen's button, starting on this drawing's own kind.
     galleryBtn.addEventListener("click", () => {
-      const shown = viewUrl;
       dialog.close();
-      gallery.show(shown);
+      gallery.showPublic({ focus: board.round.mode === "scrawl" ? "free" : "daily" });
     });
     let viewUrl = null; // the drawing on its own, for the screen
     let exportUrl = null; // the drawing with its prompt and date, for the download
@@ -1324,7 +1324,7 @@
         const blob = await board.canvasBlob();
         await window.scrawdlePublish({ blob, ...board.round });
         // Publishing a Daily Scrawl (not Daily Free Play) is what unlocks Daily Scrawl on the Public drawings page.
-        note.textContent = "Your drawing is published. See it in today's drawings." + (board.round.mode === "scrawl" ? "" : " Everyone's Daily Scrawl drawings are now unlocked on the Public drawings page.");
+        note.textContent = "Your drawing is published. See it under Public drawings." + (board.round.mode === "scrawl" ? "" : " Everyone's Daily Scrawl drawings are now unlocked there.");
         published.set(key, note.textContent);
         showPublish("done");
       } catch (err) {
@@ -1355,7 +1355,7 @@
       showPublish(publishedNote ? "done" : "ready");
       publishBtn.classList.toggle("primary", ready);
       downloadBtn.classList.toggle("primary", !ready);
-      galleryBtn.hidden = !daily || empty || typeof window.scrawdleGallery !== "function";
+      galleryBtn.hidden = !daily || empty || typeof window.scrawdlePublicGallery !== "function";
       replayBtn.hidden = empty || !board.canReplay;
       shareBtn.hidden = empty;
       keepBtn.textContent = board.locked ? "Back" : "Keep drawing";

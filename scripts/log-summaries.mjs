@@ -68,6 +68,7 @@ export const SUMMARIES = {
   60: 'Angie simplified the home screen to the logo and three buttons (Daily, Multiplayer, Free Play) over a page-wide Scrawdle background, made Daily open into Daily Scrawl and Daily Free Play, and moved Public drawings to the bottom right.',
   61: 'Angie added faint line doodles behind the home screen and every other page, in light, dark, and phone versions, and Claude could not reproduce the Free Play button problem Angie reported.',
   62: 'Angie made Start over erase the drawing and stay on the page, put each part in its own bubble, added a Back to Scrawdle button to the build log, and checked that posting a Daily Scrawl unlocks the Public drawings filter.',
+  63: 'Angie made the finish screen open the same Public drawings page as the home screen, added a breaking-padlock animation when Daily Scrawl unlocks, and Claude found that the live database has no Daily Scrawl drawings, so update 004 is probably the reason it never unlocked.',
   misread: 'Where the AI got something wrong or we had to correct course, and what happened next.',
   decisions: 'What we decided and what we dropped along the way.',
 }

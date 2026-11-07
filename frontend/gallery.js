@@ -152,15 +152,45 @@
       { id: "free", label: "Daily Free Play", modes: ["scrawl"] },
     ];
     const LOCK_WHY = "Post your own Daily Scrawl drawing to unlock everyone else's.";
-    async function showPublic() {
+    // A padlock drawn in two halves, so it can break: the shackle pops off and the body splits (see home.css).
+    const LOCK_SVG = '<svg class="lock-icon" viewBox="0 0 24 24" aria-hidden="true"><path class="lock-shackle" d="M7.5 11V8a4.5 4.5 0 0 1 9 0v3" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/><path class="lock-half left" d="M4.5 11H12v10H6.5a2 2 0 0 1-2-2z" fill="currentColor"/><path class="lock-half right" d="M12 11h7.5v8a2 2 0 0 1-2 2H12z" fill="currentColor"/></svg>';
+    // The breaking lock plays once for each day's unlock, the first time the page opens after you've posted. This
+    // browser remembers which day it last played for.
+    const UNLOCK_SEEN_KEY = "scrawdle-unlock-seen";
+    const BREAK_MS = 1150;
+    const localDay = () => {
+      const d = new Date();
+      const pad = (n) => String(n).padStart(2, "0");
+      return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+    };
+    // Your own drawing on the public page shows how it did, like the old Today's drawings page did.
+    function addResult(li, votes) {
+      const result = document.createElement("p");
+      result.className = "vote-result";
+      result.classList.toggle("won", root.ScrawdleVotes.isWin(votes));
+      result.textContent = root.ScrawdleVotes.resultText(votes);
+      li.append(result);
+    }
+    // `focus` ("daily" or "free") starts with only that kind showing, for opening the page from a finished drawing.
+    // From the home screen there is no focus, so every unlocked kind shows.
+    async function showPublic({ focus } = {}) {
       const token = ++request;
       const posted = typeof root.scrawdleHasPosted === "function" && root.scrawdleHasPosted();
       title.textContent = "Public drawings";
       grid.replaceChildren();
       filters.replaceChildren();
       filters.hidden = false;
-      const on = { daily: posted, free: true };
+      const startsOn = (id) => !focus || focus === id;
+      let seenDay = null;
+      try { seenDay = localStorage.getItem(UNLOCK_SEEN_KEY); } catch (err) { /* private browsing: it just plays each time */ }
+      const reduceMotion = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      const breaking = posted && seenDay !== localDay() && !reduceMotion;
+      const on = { daily: posted && !breaking && startsOn("daily"), free: startsOn("free") }; // Daily Scrawl joins in when the lock has broken
+      if (posted && seenDay !== localDay()) {
+        try { localStorage.setItem(UNLOCK_SEEN_KEY, localDay()); } catch (err) { /* see above */ }
+      }
       let items = null;
+      let lockBreaking = breaking; // true until the lock has finished breaking
       const bubbles = {};
       const why = document.createElement("p");
       why.className = "lock-why";
@@ -171,8 +201,8 @@
         b.type = "button";
         b.className = "bubble";
         b.textContent = g.label;
-        const locked = g.id === "daily" && !posted;
-        if (locked) { b.classList.add("locked"); b.setAttribute("aria-disabled", "true"); b.textContent = `${g.label} \u{1F512}`; }
+        let locked = g.id === "daily" && (!posted || breaking); // while it breaks, it still looks locked
+        if (locked) { b.classList.add("locked"); b.setAttribute("aria-disabled", "true"); b.setAttribute("aria-label", `${g.label}, locked`); b.insertAdjacentHTML("beforeend", LOCK_SVG); }
         b.setAttribute("aria-pressed", String(on[g.id]));
         b.addEventListener("click", () => {
           if (locked) { why.hidden = false; return; }
@@ -182,7 +212,7 @@
         });
         bubbles[g.id] = b;
         filters.append(b);
-        if (locked) {
+        if (locked && !breaking) {
           const q = document.createElement("button");
           q.type = "button";
           q.className = "help-dot";
@@ -191,6 +221,36 @@
           q.setAttribute("aria-label", "Why is Daily Scrawl locked?");
           q.addEventListener("click", () => { why.hidden = !why.hidden; });
           filters.append(q);
+        }
+        if (g.id === "daily" && breaking) {
+          // The lock shakes, breaks, and the bubble opens up.
+          requestAnimationFrame(() => b.classList.add("breaking"));
+          setTimeout(() => {
+            if (token !== request) return;
+            locked = false;
+            lockBreaking = false;
+            b.classList.remove("locked", "breaking");
+            b.removeAttribute("aria-disabled");
+            b.removeAttribute("aria-label");
+            b.querySelector(".lock-icon").remove();
+            on.daily = startsOn("daily");
+            b.setAttribute("aria-pressed", String(on.daily));
+            b.classList.add("unlocked-pop");
+            for (let i = 0; i < 8; i++) {
+              const spark = document.createElement("i");
+              spark.className = "spark";
+              spark.style.setProperty("--angle", `${i * 45}deg`);
+              b.append(spark);
+            }
+            why.textContent = "Unlocked! Everyone's Daily Scrawl drawings are here now.";
+            why.hidden = false;
+            render();
+            setTimeout(() => {
+              b.classList.remove("unlocked-pop");
+              b.querySelectorAll(".spark").forEach((s) => s.remove());
+              if (token === request) why.hidden = true;
+            }, 3500);
+          }, BREAK_MS);
         }
       }
       filters.append(why);
@@ -201,13 +261,17 @@
         const canVote = typeof root.scrawdleVote === "function";
         const canReport = typeof root.scrawdleReport === "function";
         for (const item of shown) {
+          // Daily Scrawl drawings (and the older Basic and Detailed) go under Daily Scrawl; Daily Free Play under its own.
           const kind = GROUPS.find((g) => g.modes.includes(item.mode)).label;
           const li = addCard(item.imageUrl, item.mine ? `Your drawing · ${kind}` : kind, item.mine);
-          if (item.mine) continue; // your own drawing has no vote or report buttons, as in today's gallery
+          if (item.mine) { // your own drawing has no vote or report buttons; its votes show as your result
+            if (item.votes) addResult(li, item.votes);
+            continue;
+          }
           if (canVote && item.votes) addVotes(li, item);
           if (canReport && item.id) addReport(li, item);
         }
-        note.textContent = shown.length ? "" : !on.daily && !on.free ? "Turn on a bubble to see drawings." : "No drawings to show yet.";
+        note.textContent = shown.length || lockBreaking ? "" : !on.daily && !on.free ? "Turn on a bubble to see drawings." : "No drawings to show yet.";
       }
       dialog.showModal();
       note.textContent = "Loading\u2026";
