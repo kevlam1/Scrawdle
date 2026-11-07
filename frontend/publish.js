@@ -181,14 +181,18 @@
     return ["daily", "basic", "detailed"].some((mode) => alreadyPublished(`${day}|${mode}`));
   };
 
-  // Every drawing posted in the given modes, newest first, for the Public drawings page. Each card is
-  // { id, mode, imageUrl, caption, mine, votes } like scrawdleGallery's, with mine marking any drawing this
-  // browser published. Unlike scrawdleGallery it throws when the load fails, so the page can say so.
+  // Every drawing posted today in the given modes, newest first, for the Public drawings page. "Today" is
+  // the viewer's own local date, the same day the game itself resets on (a drawing's `day` is the local
+  // date of whoever posted it), so the page starts over at local midnight, together with Daily Scrawl and
+  // Daily Free Play. Each card is { id, mode, imageUrl, caption, mine, votes } like scrawdleGallery's, with
+  // mine marking any drawing this browser published. Unlike scrawdleGallery it throws when the load fails,
+  // so the page can say so.
   root.scrawdlePublicGallery = async function ({ modes }) {
     const { data, error } = await client
       .from("drawings")
       .select("id, mode, image_path")
       .in("mode", modes)
+      .eq("day", localDay())
       .order("created_at", { ascending: false })
       .limit(500);
     if (error) {

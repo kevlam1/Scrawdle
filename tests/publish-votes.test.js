@@ -239,6 +239,22 @@ test("the public gallery returns every drawing in the asked-for modes and marks 
 test("the public gallery says so when it can't load, instead of showing an empty page", async () => {
   const { client } = fakeSupabase();
   const ana = player(client);
-  client.from = () => ({ select: () => ({ in: () => ({ order: () => ({ limit: async () => ({ data: null, error: { message: "boom" } }) }) }) }) });
+  client.from = () => ({ select: () => ({ in: () => ({ eq: () => ({ order: () => ({ limit: async () => ({ data: null, error: { message: "boom" } }) }) }) }) }) });
   await assert.rejects(ana.publicGallery({ modes: ["scrawl"] }), /boom/);
+});
+
+test("the public gallery shows only today's drawings, for Daily Scrawl and Daily Free Play alike", async () => {
+  const { db, client } = fakeSupabase();
+  const ana = player(client);
+  const day = todayLocal();
+  const yesterday = (() => { const d = new Date(); d.setDate(d.getDate() - 1); const pad = (n) => String(n).padStart(2, "0"); return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`; })();
+  // Rows as the database would hold them: one from today and one from yesterday in each mode.
+  const row = (id, mode, rowDay) => ({ id, day: rowDay, mode, prompts: round.prompts, image_path: `${rowDay}/${mode}/${id}.png` });
+  db.drawings.push(row("daily-new", "daily", day), row("daily-old", "daily", yesterday));
+  db.drawings.push(row("free-new", "scrawl", day), row("free-old", "scrawl", yesterday));
+
+  const all = await ana.publicGallery({ modes: ["daily", "basic", "detailed", "scrawl"] });
+  assert.deepEqual(all.map((c) => c.id).sort(), ["daily-new", "free-new"], "yesterday's drawings are left out");
+  const free = await ana.publicGallery({ modes: ["scrawl"] });
+  assert.deepEqual(free.map((c) => c.id), ["free-new"]);
 });
