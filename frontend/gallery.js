@@ -11,11 +11,12 @@
     const dialog = document.createElement("dialog");
     dialog.id = "gallery";
     dialog.setAttribute("aria-labelledby", "gallery-title");
-    dialog.innerHTML = '<header class="app-header"><span class="wordmark">Scrawdle</span><button class="quiet" type="button">Back</button></header><div class="gallery-heading"><h2 id="gallery-title"></h2></div><p class="gallery-note" role="status"></p><ul class="gallery-grid"></ul>';
+    dialog.innerHTML = '<header class="app-header"><span class="wordmark">Scrawdle</span><button class="quiet" type="button">Back</button></header><div class="gallery-heading"><h2 id="gallery-title"></h2></div><div class="public-filters" hidden></div><p class="gallery-note" role="status"></p><ul class="gallery-grid"></ul>';
     const closeBtn = dialog.querySelector("button");
     closeBtn.addEventListener("click", () => dialog.close());
     const title = dialog.querySelector("h2");
     const note = dialog.querySelector(".gallery-note");
+    const filters = dialog.querySelector(".public-filters");
     const grid = dialog.querySelector(".gallery-grid");
     let request = 0;
     dialog.addEventListener("close", () => { request++; });
@@ -26,6 +27,7 @@
       const img = document.createElement("img");
       img.src = url;
       img.alt = caption ? `Drawing: ${caption}` : "A player's drawing";
+      img.loading = "lazy"; // the public page can hold a lot of drawings
       li.append(img);
       if (caption) {
         const p = document.createElement("p");
@@ -111,6 +113,7 @@
       const round = board.round;
       const token = ++request;
       title.textContent = "Today's drawings";
+      filters.hidden = true;
       grid.replaceChildren();
       const myCard = addCard(myImageUrl, "Your drawing · saved locally", true);
       dialog.showModal();
@@ -141,7 +144,82 @@
         if (token === request && dialog.open) note.textContent = "Couldn't load today's drawings. Close and reopen the gallery to try again.";
       }
     }
-    return { show };
+    // Public drawings: everything posted, with a bubble for each kind. Daily Scrawl stays locked until
+    // this player has posted their own (publish.js's scrawdleHasPosted). That's a courtesy in the page,
+    // not security: the database lets anyone read published drawings.
+    const GROUPS = [
+      { id: "daily", label: "Daily Scrawl", modes: ["daily", "basic", "detailed"] },
+      { id: "free", label: "Daily Free Play", modes: ["scrawl"] },
+    ];
+    const LOCK_WHY = "Post your own Daily Scrawl drawing to unlock everyone else's.";
+    async function showPublic() {
+      const token = ++request;
+      const posted = typeof root.scrawdleHasPosted === "function" && root.scrawdleHasPosted();
+      title.textContent = "Public drawings";
+      grid.replaceChildren();
+      filters.replaceChildren();
+      filters.hidden = false;
+      const on = { daily: posted, free: true };
+      let items = null;
+      const bubbles = {};
+      const why = document.createElement("p");
+      why.className = "lock-why";
+      why.textContent = LOCK_WHY;
+      why.hidden = true;
+      for (const g of GROUPS) {
+        const b = document.createElement("button");
+        b.type = "button";
+        b.className = "bubble";
+        b.textContent = g.label;
+        const locked = g.id === "daily" && !posted;
+        if (locked) { b.classList.add("locked"); b.setAttribute("aria-disabled", "true"); b.textContent = `${g.label} \u{1F512}`; }
+        b.setAttribute("aria-pressed", String(on[g.id]));
+        b.addEventListener("click", () => {
+          if (locked) { why.hidden = false; return; }
+          on[g.id] = !on[g.id];
+          b.setAttribute("aria-pressed", String(on[g.id]));
+          render();
+        });
+        bubbles[g.id] = b;
+        filters.append(b);
+        if (locked) {
+          const q = document.createElement("button");
+          q.type = "button";
+          q.className = "help-dot";
+          q.textContent = "?";
+          q.title = LOCK_WHY;
+          q.setAttribute("aria-label", "Why is Daily Scrawl locked?");
+          q.addEventListener("click", () => { why.hidden = !why.hidden; });
+          filters.append(q);
+        }
+      }
+      filters.append(why);
+      function render() {
+        grid.replaceChildren();
+        if (!items) return;
+        const shown = items.filter((item) => GROUPS.some((g) => on[g.id] && g.modes.includes(item.mode)));
+        const canVote = typeof root.scrawdleVote === "function";
+        const canReport = typeof root.scrawdleReport === "function";
+        for (const item of shown) {
+          const kind = GROUPS.find((g) => g.modes.includes(item.mode)).label;
+          const li = addCard(item.imageUrl, item.mine ? `Your drawing · ${kind}` : kind, item.mine);
+          if (item.mine) continue; // your own drawing has no vote or report buttons, as in today's gallery
+          if (canVote && item.votes) addVotes(li, item);
+          if (canReport && item.id) addReport(li, item);
+        }
+        note.textContent = shown.length ? "" : !on.daily && !on.free ? "Turn on a bubble to see drawings." : "No drawings to show yet.";
+      }
+      dialog.showModal();
+      note.textContent = "Loading\u2026";
+      try {
+        items = await root.scrawdlePublicGallery({ modes: posted ? GROUPS.flatMap((g) => g.modes) : GROUPS[1].modes });
+        if (token !== request || !dialog.open) return;
+        render();
+      } catch (err) {
+        if (token === request && dialog.open) note.textContent = "Couldn't load the public drawings. Close and reopen this page to try again.";
+      }
+    }
+    return { show, showPublic };
   }
   if (typeof module === "undefined" || !module.exports) root.ScrawdleGallery = { createGallery };
 })(typeof window !== "undefined" ? window : globalThis);

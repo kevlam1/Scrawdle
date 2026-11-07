@@ -61,6 +61,13 @@ export const SUMMARIES = {
   53: 'Zainab made the Scrawdle name in the top-left go home from every screen, closing what is open and leaving a lobby first.',
   54: 'Zainab took the lobby code off the screen and the code box off the home screen, so friends join only by tapping the invite link.',
   55: 'Zainab made Copy link a small copy icon inside the lobby\'s link box and turned the invite options into a small pop-up list.',
+  56: "Angie replaced Basic and Detailed with one Daily Scrawl, gave the home screen hover cards for Daily Scrawl, Daily Free Play, Open Canvas, and Multiplayer Games, and wrote database update 004 for the new mode id.",
+  57: "Angie added a Public drawings page with bubbles for Daily Scrawl and Daily Free Play, where Daily Scrawl stays locked until the player posts their own.",
+  58: "Angie added dismissable Continue notices, kept a refresh on the export screen, added an Opacity slider for every tool, and gave Undo, Redo, and Clear a plainer outlined look.",
+  59: 'Angie brought back the chunky home cards, with thick outlines, hard shadows, tints, and a description that opens inside the card on hover.',
+  60: 'Angie simplified the home screen to the logo and three buttons (Daily, Multiplayer, Free Play) over a page-wide Scrawdle background, made Daily open into Daily Scrawl and Daily Free Play, and moved Public drawings to the bottom right.',
+  61: 'Angie added faint line doodles behind the home screen and every other page, in light, dark, and phone versions, and Claude could not reproduce the Free Play button problem Angie reported.',
+  62: 'Angie made Start over erase the drawing and stay on the page, put each part in its own bubble, added a Back to Scrawdle button to the build log, and checked that posting a Daily Scrawl unlocks the Public drawings filter.',
   misread: 'Where the AI got something wrong or we had to correct course, and what happened next.',
   decisions: 'What we decided and what we dropped along the way.',
 }

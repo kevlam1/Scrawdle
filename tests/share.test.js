@@ -12,13 +12,18 @@ test("a daily drawing names its mode, date, and parts, and links to the game", (
   assert.match(shareLine({ mode: "detailed", daily: true, prompts: parts, day: "2026-11-05" }, URL_), /Detailed drawing/);
 });
 
+test("Daily Scrawl is named as itself, not as Basic or Detailed", () => {
+  const line = shareLine({ mode: "daily", daily: true, prompts: parts, day: "2026-11-05" }, URL_);
+  assert.match(line, /^My Scrawdle Daily Scrawl drawing for .*5: Parrot, Dinosaur tail\. Draw yours: /);
+});
+
 test("Daily Free Play doesn't list its placeholder prompt", () => {
   const line = shareLine({ mode: "scrawl", daily: true, prompts: [{ label: "Daily Free Play", value: "Draw anything" }], day: "2026-11-05" }, URL_);
   assert.match(line, /^My Scrawdle Daily Free Play drawing for /);
   assert.doesNotMatch(line, /Draw anything/);
 });
 
-test("Free play has no date, since it isn't a daily drawing", () => {
+test("Open Canvas has no date, since it isn't a daily drawing", () => {
   const line = shareLine({ mode: "basic", daily: false, prompts: parts, day: "2026-11-05" }, URL_);
-  assert.equal(line, "My Scrawdle Free play drawing: Parrot, Dinosaur tail. Draw yours: " + URL_);
+  assert.equal(line, "My Scrawdle Open Canvas drawing: Parrot, Dinosaur tail. Draw yours: " + URL_);
 });
