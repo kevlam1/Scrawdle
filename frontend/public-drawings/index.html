@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Public drawings · Scrawdle</title>
+  <!-- Dark mode is set before anything draws, so the page doesn't flash light first. -->
+  <script>try { if (localStorage.getItem("scrawdle-theme") === "dark") document.documentElement.dataset.theme = "dark"; } catch (err) {}</script>
+  <link rel="preload" href="../fonts/patrick-hand.woff2" as="font" type="font/woff2" crossorigin />
+  <link rel="preload" href="../fonts/gochi-hand.woff2" as="font" type="font/woff2" crossorigin />
+  <!-- The same stylesheets as the home screen, in the same order, so the page looks like the rest of the game.
+       Paths start with ../ so they work with or without a trailing slash on this page's address. -->
+  <link rel="stylesheet" href="../drawing.css" />
+  <link rel="stylesheet" href="../studio.css" />
+  <link rel="stylesheet" href="../flow.css" />
+  <link rel="stylesheet" href="../lobby.css" />
+  <link rel="stylesheet" href="../party.css" />
+  <link rel="stylesheet" href="../sketchbook.css" />
+  <link rel="stylesheet" href="../theme.css" />
+  <link rel="stylesheet" href="../home.css" />
+  <link rel="stylesheet" href="../tools.css" />
+</head>
+<body>
+  <!-- The Public drawings page. gallery.js draws it into this element (see createGallery's container option),
+       so it is the same page the home screen's dialog used to show, now at its own address.
+       The link on the home screen is shown only when the Supabase project is connected. -->
+  <div id="page"></div>
+  <noscript><p style="padding:24px;text-align:center">Public drawings needs JavaScript.</p></noscript>
+
+  <script src="../votes.js"></script>
+  <script src="../gallery.js"></script>
+  <!-- Supabase's client from its CDN, the project's keys, then publish.js, which sets window.scrawdlePublicGallery,
+       window.scrawdleVote, window.scrawdleReport and window.scrawdleHasPosted. Same order as the home screen. -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="../supabase-config.js"></script>
+  <script src="../publish.js"></script>
+  <script>
+    (() => {
+      // ?focus=daily or ?focus=free opens with only that kind showing, for the link from a finished drawing.
+      const asked = new URLSearchParams(location.search).get("focus");
+      const focus = asked === "daily" || asked === "free" ? asked : undefined;
+      const gallery = ScrawdleGallery.createGallery(null, { container: document.getElementById("page") });
+      if (typeof window.scrawdlePublicGallery !== "function") {
+        document.getElementById("gallery-title").textContent = "Public drawings";
+        document.querySelector(".gallery-note").textContent = "Public drawings isn't connected on this copy of the game.";
+      } else {
+        gallery.showPublic({ focus });
+      }
+    })();
+  </script>
+</body>
+</html>

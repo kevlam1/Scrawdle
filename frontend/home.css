@@ -109,7 +109,12 @@
   font: 700 20px var(--hand);
   cursor: pointer;
   transition: transform .15s ease, box-shadow .15s ease, background .15s ease;
+  /* It is a link to the Public drawings page, so it needs these to look like the button it replaced. */
+  display: inline-flex;
+  align-items: center;
+  text-decoration: none;
 }
+.public-corner[hidden] { display: none; }
 .public-corner:hover, .public-corner:focus-visible { background: #fff0cf; transform: translate(-2px, -2px); box-shadow: 6px 6px 0 var(--ink); }
 .public-corner:focus-visible { outline: 2.5px solid var(--ink); outline-offset: 4px; }
 @media (max-width: 640px) {
@@ -118,6 +123,13 @@
 @media (prefers-reduced-motion: reduce) {
   .public-corner { transition: none; }
 }
+
+/* Public drawings as its own page (frontend/public-drawings/). gallery.js draws #gallery into the page there instead
+   of into a dialog, so it grows with its drawings instead of being one screen tall, and the wordmark is a link home. */
+#gallery.gallery-page { width: auto; height: auto; min-height: 100dvh; } /* not 100vw: that counts the scrollbar, so a long page scrolled sideways */
+a.wordmark { color: inherit; text-decoration: none; }
+a.wordmark:hover { opacity: .75; }
+a.wordmark:focus-visible { outline: 2.5px solid var(--ink); outline-offset: 4px; border-radius: 6px; }
 
 /* ---------- "Continue drawing" notices ---------- */
 .continue-wrap { position: relative; }

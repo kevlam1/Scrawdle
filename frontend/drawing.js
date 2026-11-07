@@ -1261,10 +1261,10 @@
       showPlay(false);
       delete dialog.dataset.replayed;
     });
-    // Opens the same Public drawings page as the home screen's button, starting on this drawing's own kind.
+    // Goes to the same Public drawings page as the home screen's link (public-drawings/), starting on this
+    // drawing's own kind. The drawing is already saved, so leaving the game screen loses nothing.
     galleryBtn.addEventListener("click", () => {
-      dialog.close();
-      gallery.showPublic({ focus: board.round.mode === "scrawl" ? "free" : "daily" });
+      location.href = `public-drawings/?focus=${board.round.mode === "scrawl" ? "free" : "daily"}`;
     });
     let viewUrl = null; // the drawing on its own, for the screen
     let exportUrl = null; // the drawing with its prompt and date, for the download

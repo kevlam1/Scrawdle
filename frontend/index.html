@@ -39,7 +39,7 @@
     </ol>
     <p>Want a different creature? Free Play gives you random parts any time.</p>
     <p>Daily Free Play has no parts: draw anything you like. It saves in your browser and clears each day, like the others.</p>
-    <p>Public drawings shows what everyone has posted. Daily Scrawl's drawings unlock once you post yours. Multiplayer Games makes a private lobby you can invite friends to.</p>
+    <p>Public drawings shows what everyone has posted today, and starts over each day. Daily Scrawl's drawings unlock once you post yours. Multiplayer Games makes a private lobby you can invite friends to.</p>
   </dialog>
 
   <main id="setup">
@@ -85,7 +85,7 @@
       <p id="setup-error" role="alert" hidden></p>
     </div>
     <!-- Bottom right of the page. Shown only when the Supabase project is connected (see the script below). -->
-    <button class="public-corner" id="public-drawings" type="button" hidden title="See what everyone has posted. Daily Scrawl's drawings unlock once you post yours.">Public drawings</button>
+    <a class="public-corner" id="public-drawings" href="public-drawings/" hidden title="See what everyone has posted. Daily Scrawl's drawings unlock once you post yours.">Public drawings</a>
   </main>
 
   <div id="slot" hidden>
@@ -527,8 +527,7 @@
     const gallery = ScrawdleGallery.createGallery(board);
     const sketchbook = ScrawdleSketchbook.create(board, { onContinue: openSaved });
     $("my-drawings").addEventListener("click", () => sketchbook.show());
-    $("public-drawings").hidden = typeof window.scrawdlePublicGallery !== "function"; // needs the Supabase project
-    $("public-drawings").addEventListener("click", () => gallery.showPublic());
+    $("public-drawings").hidden = typeof window.scrawdlePublicGallery !== "function"; // needs the Supabase project; it links to public-drawings/
 
     // Multiplayer Games goes straight to the lobby screen for now: it presses Create Lobby on the Lobby card that
     // lobby.js adds (the card itself is hidden in home.css), and its error message shows under these buttons.

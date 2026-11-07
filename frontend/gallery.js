@@ -7,20 +7,36 @@
  */
 (function (root) {
   "use strict";
-  function createGallery(board) {
-    const dialog = document.createElement("dialog");
+  // With no options the gallery is a dialog over the page (today's drawings, opened from the finish screen).
+  // With { container } it is the page itself: the Public drawings route (frontend/public-drawings/) puts it
+  // in that element, and Back leaves the page instead of closing a dialog.
+  function createGallery(board, { container } = {}) {
+    const page = Boolean(container);
+    const dialog = document.createElement(page ? "main" : "dialog");
     dialog.id = "gallery";
     dialog.setAttribute("aria-labelledby", "gallery-title");
-    dialog.innerHTML = '<header class="app-header"><span class="wordmark">Scrawdle</span><button class="quiet" type="button">Back</button></header><div class="gallery-heading"><h2 id="gallery-title"></h2></div><div class="public-filters" hidden></div><p class="gallery-note" role="status"></p><ul class="gallery-grid"></ul>';
+    if (page) dialog.className = "gallery-page";
+    const wordmark = page ? '<a class="wordmark" href="../" aria-label="Scrawdle, back to the home screen">Scrawdle</a>' : '<span class="wordmark">Scrawdle</span>';
+    dialog.innerHTML = '<header class="app-header">' + wordmark + '<button class="quiet" type="button">Back</button></header><div class="gallery-heading"><h2 id="gallery-title"></h2></div><div class="public-filters" hidden></div><p class="gallery-note" role="status"></p><ul class="gallery-grid"></ul>';
     const closeBtn = dialog.querySelector("button");
-    closeBtn.addEventListener("click", () => dialog.close());
+    const open = () => { if (!page) dialog.showModal(); };
+    const isOpen = () => page || dialog.open;
+    // On the page, Back goes to where you came from on this site (like the browser's Back), or home if you
+    // arrived some other way, such as a pasted link.
+    function leavePage() {
+      let fromThisSite = false;
+      try { fromThisSite = Boolean(document.referrer) && new URL(document.referrer).origin === location.origin; } catch (err) { /* no usable referrer */ }
+      if (fromThisSite && history.length > 1) history.back();
+      else location.href = "../";
+    }
+    closeBtn.addEventListener("click", () => (page ? leavePage() : dialog.close()));
     const title = dialog.querySelector("h2");
     const note = dialog.querySelector(".gallery-note");
     const filters = dialog.querySelector(".public-filters");
     const grid = dialog.querySelector(".gallery-grid");
     let request = 0;
     dialog.addEventListener("close", () => { request++; });
-    document.body.appendChild(dialog);
+    (page ? container : document.body).appendChild(dialog);
     function addCard(url, caption, mine) {
       const li = document.createElement("li");
       if (mine) li.className = "mine";
@@ -116,11 +132,11 @@
       filters.hidden = true;
       grid.replaceChildren();
       const myCard = addCard(myImageUrl, "Your drawing · saved locally", true);
-      dialog.showModal();
+      open();
       note.textContent = "Loading…";
       try {
         const items = await root.scrawdleGallery({ day: round.day, mode: round.mode, prompts: round.prompts });
-        if (token !== request || !dialog.open) return;
+        if (token !== request || !isOpen()) return;
         const mine = items.find((item) => item.mine);
         const others = items.filter((item) => !item.mine);
         // Your result: won once anyone gives your published drawing a thumbs up (see votes.js).
@@ -141,7 +157,7 @@
           if (canReport && item.id) addReport(li, item);
         }
       } catch (err) {
-        if (token === request && dialog.open) note.textContent = "Couldn't load today's drawings. Close and reopen the gallery to try again.";
+        if (token === request && isOpen()) note.textContent = "Couldn't load today's drawings. Close and reopen the gallery to try again.";
       }
     }
     // Public drawings: everything posted, with a bubble for each kind. Daily Scrawl stays locked until
@@ -273,14 +289,14 @@
         }
         note.textContent = shown.length || lockBreaking ? "" : !on.daily && !on.free ? "Turn on a bubble to see drawings." : "No drawings to show yet.";
       }
-      dialog.showModal();
+      open();
       note.textContent = "Loading\u2026";
       try {
         items = await root.scrawdlePublicGallery({ modes: posted ? GROUPS.flatMap((g) => g.modes) : GROUPS[1].modes });
-        if (token !== request || !dialog.open) return;
+        if (token !== request || !isOpen()) return;
         render();
       } catch (err) {
-        if (token === request && dialog.open) note.textContent = "Couldn't load the public drawings. Close and reopen this page to try again.";
+        if (token === request && isOpen()) note.textContent = page ? "Couldn't load the public drawings. Reload this page to try again." : "Couldn't load the public drawings. Close and reopen this page to try again.";
       }
     }
     return { show, showPublic };

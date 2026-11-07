@@ -7,7 +7,8 @@
 - `drawing.css`, `studio.css`, and `flow.css`: the look of the game, loaded in that order. Later files override earlier ones.
 - `fonts/`: Patrick Hand and Gochi Hand.
 - `assets/tools/`: the illustrated icons for the drawing tools.
-- `gallery.js`: today's gallery, with thumbs up/down buttons and a Report button on other players' drawings, and your result on your own.
+- `gallery.js`: today's gallery (a dialog over the finish screen), with thumbs up/down buttons and a Report button on other players' drawings, and your result on your own. It also draws the Public drawings page: `createGallery(null, { container })` puts it in a page instead of a dialog.
+- `public-drawings/index.html`: the Public drawings page, served at `/public-drawings/` (the home screen links to it, and so does the finish screen, with `?focus=daily` or `?focus=free` to start on one kind). It loads the same stylesheets as the home screen, `votes.js`, `gallery.js`, and Supabase's client with `publish.js`, then calls `showPublic`. Its paths start with `../`, so they work with or without the trailing slash. It shows only today's drawings by the viewer's local date.
 - `votes.js`: the vote rules, including the win condition (one thumbs up wins). Change the rule here; no database update needed. Tested in `../tests/votes.test.js`.
 - `sketchbook.js` and `sketchbook.css`: My drawings, the player's own drawings kept in this browser.
 - `supabase-config.js`: the Supabase project URL and anon key. Filled in with Kevin's real project; safe to commit (the key is meant to be public, see `../CLAUDE.md`). Running the page locally publishes to that same real project.
