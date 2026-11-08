@@ -1420,6 +1420,25 @@ Artifact 4 is "For Someone Else," due Sunday, November 8. Our team of four (Kevi
 
 ---
 
+## 72. The drawing screen fits phones again (2026-11-08) — Zainab
+
+**What I asked for**
+- Check the drawing screen on phones and fix what's wrong, one thing at a time, starting with what's most broken.
+
+**What changed**
+- `frontend/flow.css`: on phones, the settings box under the tools fit "Pen · Black", Size and its slider, and Opacity and its slider all on one line. Since the Opacity slider joined that line, it didn't fit anymore: the Opacity label and slider stuck out past the right edge of the screen, so phones zoomed the whole drawing screen out to fit it (a 375-pixel-wide iPhone showed it as if it were 426 pixels wide), and the Opacity slider got squeezed into a tiny dot at the edge. Now, on phones and tablets, Size and Opacity each get their own line with the slider next to the label, and nothing sticks out past the edge. Laptops and bigger screens don't change.
+
+**What I checked**
+- In Chrome, Firefox and Safari's engine, on seven phone and tablet sizes (iPhone SE, a small Android, iPhone 14, Pixel, iPhone Pro Max, iPad, and a phone held sideways), in Daily Scrawl, Free Play and Daily Free Play, with the Pen, the Brush and the Bucket: the drawing screen fits the screen every time, 252 of 252 checks. Before the fix, none of them did. Tapping the Size and Opacity sliders changes them.
+- All 133 tests pass.
+- Found while checking, not changed here: with a phone held sideways, the canvas covers the row of tools, so they can't be tapped. That was already happening before this change. It's on the list for the next phone fixes, along with making the parts take less room.
+- Not checked: a real phone.
+
+**Decisions**
+- Only phones and tablets change. On laptops the settings box stays the way it was.
+
+---
+
 ## Where AI misread me, or I had to correct course
 
 - Claude's first version of the start page put "What is this?" in the top right, where it collided with the "New set" button on the game screen. I caught it by running the page; Claude hadn't opened it in a browser.

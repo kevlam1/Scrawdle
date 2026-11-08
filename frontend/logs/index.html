@@ -609,11 +609,11 @@
         <h1>Scrawdle: build log</h1>
         <p class="intro">
           A daily drawing game, built by a team of four with Claude Code: a new set of parts to draw each day, a gallery of what
-          other people drew, and private lobbies. Here are the 71 entries of our log with one sentence on each and the name of
+          other people drew, and private lobbies. Here are the 72 entries of our log with one sentence on each and the name of
           whoever wrote it. Open an entry to read everything they wrote for it.
         </p>
         <ul class="facts" aria-label="Project facts">
-          <li>28 October to 7 November 2026</li>
+          <li>28 October to 8 November 2026</li>
           <li>Team of four</li>
           <li>Claude Code</li>
           <li>Plain canvas + Supabase</li>
@@ -749,6 +749,12 @@
     <li><a href="#entry-69"><span class="n">69</span><span>Time Challenge</span></a></li>
     <li><a href="#entry-70"><span class="n">70</span><span>Drawings save in Safari private windows</span></a></li>
     <li><a href="#entry-71"><span class="n">71</span><span>Size buttons on laptops</span></a></li>
+  </ul></div>
+</div>
+<div class="toc-group is-open">
+  <button class="toc-head" type="button" aria-expanded="true">Sunday 8 November <span class="count">1</span></button>
+  <div class="toc-list-wrap"><ul class="toc-list">
+    <li><a href="#entry-72"><span class="n">72</span><span>The drawing screen fits phones again</span></a></li>
   </ul></div>
 </div>
 <div class="toc-group is-open">
@@ -1960,6 +1966,24 @@
 <ul><li>In Chrome, Firefox and Safari's engine at 1440x900, 1366x768, 1280x800, 1280x720, 1024x768 and 1920x1080, with the Pen and with the Brush: the three buttons show and set the size (Large sets it to 24), nothing in the settings panel is cut off, and nothing scrolls sideways.</li><li>The page never scrolls further than before. On the shortest screen (1280x720) with the Brush picked it now scrolls a little less: 20 pixels instead of 27 in Chrome and Firefox, and 13 instead of 22 in Safari's engine.</li><li>All 133 tests pass.</li><li>Not checked: phones and tablets (narrower than 1000 pixels), where the size buttons are still hidden on purpose and only the slider shows. That's part of the next fix, for phones.</li></ul>
 <p class="sub"><strong>Decisions</strong></p>
 <ul><li>The change only applies to laptop-height screens. Taller screens keep the layout they had.</li></ul>
+  </div></div></div>
+</article>
+<h3 class="day">Sunday 8 November</h3>
+<article class="entry" id="entry-72">
+  <h3 class="entry-head"><button type="button" aria-expanded="false" aria-controls="entry-72-body">
+    <span class="num">72</span>
+    <span><span class="title">The drawing screen fits phones again<span class="by">by Zainab</span></span><span class="sum">Zainab fixed the drawing screen zooming out on phones by giving Size and Opacity their own lines, so the Opacity slider no longer sticks out past the edge of the screen.</span></span>
+    <span class="caret" aria-hidden="true"></span>
+  </button></h3>
+  <div class="body" id="entry-72-body"><div class="body-in"><div class="body-pad">
+<p class="sub"><strong>What I asked for</strong></p>
+<ul><li>Check the drawing screen on phones and fix what's wrong, one thing at a time, starting with what's most broken.</li></ul>
+<p class="sub"><strong>What changed</strong></p>
+<ul><li><code>frontend/flow.css</code>: on phones, the settings box under the tools fit &quot;Pen · Black&quot;, Size and its slider, and Opacity and its slider all on one line. Since the Opacity slider joined that line, it didn't fit anymore: the Opacity label and slider stuck out past the right edge of the screen, so phones zoomed the whole drawing screen out to fit it (a 375-pixel-wide iPhone showed it as if it were 426 pixels wide), and the Opacity slider got squeezed into a tiny dot at the edge. Now, on phones and tablets, Size and Opacity each get their own line with the slider next to the label, and nothing sticks out past the edge. Laptops and bigger screens don't change.</li></ul>
+<p class="sub"><strong>What I checked</strong></p>
+<ul><li>In Chrome, Firefox and Safari's engine, on seven phone and tablet sizes (iPhone SE, a small Android, iPhone 14, Pixel, iPhone Pro Max, iPad, and a phone held sideways), in Daily Scrawl, Free Play and Daily Free Play, with the Pen, the Brush and the Bucket: the drawing screen fits the screen every time, 252 of 252 checks. Before the fix, none of them did. Tapping the Size and Opacity sliders changes them.</li><li>All 133 tests pass.</li><li>Found while checking, not changed here: with a phone held sideways, the canvas covers the row of tools, so they can't be tapped. That was already happening before this change. It's on the list for the next phone fixes, along with making the parts take less room.</li><li>Not checked: a real phone.</li></ul>
+<p class="sub"><strong>Decisions</strong></p>
+<ul><li>Only phones and tablets change. On laptops the settings box stays the way it was.</li></ul>
   </div></div></div>
 </article>
       </section>
