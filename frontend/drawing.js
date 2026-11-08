@@ -187,6 +187,13 @@
   }
 
   /* ---------- Saved draft (IndexedDB, in this browser only) ---------- */
+  // A picture as text (a data: URL), for browsers that won't store a picture file.
+  const blobToDataUrl = (blob) => new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = () => reject(reader.error);
+    reader.readAsDataURL(blob);
+  });
   const draftStore = {
     open() {
       return new Promise((resolve, reject) => {
@@ -199,14 +206,35 @@
     async run(mode, action) {
       const db = await this.open();
       return new Promise((resolve, reject) => {
-        const tx = db.transaction("drafts", mode);
-        const req = action(tx.objectStore("drafts"));
+        let tx, req;
+        try {
+          tx = db.transaction("drafts", mode);
+          req = action(tx.objectStore("drafts"));
+        } catch (err) {
+          db.close();
+          reject(err);
+          return;
+        }
         tx.oncomplete = () => { db.close(); resolve(req.result); };
-        tx.onerror = tx.onabort = () => { db.close(); reject(tx.error); };
+        tx.onerror = tx.onabort = () => { db.close(); reject(tx.error || new Error("The save was cancelled")); };
       });
     },
     get(slot) { return this.run("readonly", (s) => s.get(slot)); },
-    put(draft, slot) { return this.run("readwrite", (s) => s.put(draft, slot)); },
+    // Safari's private windows won't store a picture file in IndexedDB (the save is cancelled), but
+    // they do store text. So if a save with a picture file fails, it's saved again with the picture as
+    // text. draftImage and myDrawings.list read either kind. `stillWanted` lets a caller skip that
+    // second try if a newer save has happened meanwhile, so an older drawing never lands on top of it.
+    async put(draft, slot, stillWanted = () => true) {
+      try {
+        return await this.run("readwrite", (s) => s.put(draft, slot));
+      } catch (err) {
+        if (!draft || !(draft.blob instanceof Blob) || !stillWanted()) throw err;
+        const { blob, ...rest } = draft;
+        const asText = { ...rest, dataUrl: await blobToDataUrl(blob) };
+        if (!stillWanted()) throw err;
+        return this.run("readwrite", (s) => s.put(asText, slot));
+      }
+    },
     remove(slot) { return this.run("readwrite", (s) => s.delete(slot)); },
     keys() { return this.run("readonly", (s) => s.getAllKeys()); },
     // Saves from before Today and Free play had their own slots were all kept under "current".
@@ -261,7 +289,8 @@
       const out = [];
       for (const key of keys) {
         const entry = await draftStore.get(key);
-        if (entry && entry.blob) out.push({ key, ...entry });
+        // Kept as text in a Safari private window: turned back into a picture file for the page.
+        if (entry && (entry.blob || entry.dataUrl)) out.push({ key, ...entry, blob: await draftImage(entry) });
       }
       return out;
     },
@@ -1078,12 +1107,12 @@
       try {
         const blob = await canvasBlob();
         if (generation !== saveGeneration || !round) return;
-        await draftStore.put(draftOf({ blob }), slotOf(round));
+        await draftStore.put(draftOf({ blob }), slotOf(round), () => generation === saveGeneration);
         if (generation !== saveGeneration) return;
         unsaved = false;
         setStatus("Saved in this browser", "saved");
       } catch (err) {
-        setStatus("Couldn't save", "failed");
+        if (generation === saveGeneration) setStatus("Couldn't save", "failed"); // a newer save sets the status itself
       }
     }
     // Finishes any waiting save before leaving this drawing.

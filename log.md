@@ -1380,6 +1380,27 @@ Artifact 4 is "For Someone Else," due Sunday, November 8. Our team of four (Kevi
 
 ---
 
+## 70. Drawings save in Safari private windows (2026-11-07) — Zainab
+
+**What I asked for**
+- Check the game in Firefox, Safari and Chrome, since we'd only ever tested Chrome, and fix whatever is broken, one thing at a time.
+
+**What changed**
+- `frontend/drawing.js`: in a Safari private window, drawings never saved. The status under the canvas said "Couldn't save", refreshing the page lost the drawing, and finished drawings never showed up in My drawings. Safari's private windows won't keep a picture file in the browser's storage, but they do keep text. Now, if saving the picture file doesn't work, the game saves the same picture as text instead, and it can read either one back, both when reopening a drawing and in My drawings. It skips that second try if a newer save has already happened, so an older copy of a drawing can't replace a newer one. Chrome, Firefox and normal Safari windows keep saving the same way as before.
+
+**What I checked**
+- All 133 tests pass.
+- In Chrome, Firefox and Safari's engine, each in a private window and a normal one: drawing says "Saved in this browser", a refresh brings the drawing back, and a Free Play drawing replaced with New set shows up in My drawings. Before the fix the Safari private window failed 4 of these 33 checks; now all 33 pass, and the other browsers still save picture files. Downloading from My drawings in a Safari private window works too.
+- A walkthrough of the whole game (home, dark mode, How to play, Daily Scrawl, all six tools, Undo and Redo, Opacity, the color picker, the finish screen, Download, Share, Replay, Free Play, Time Challenge, the leaderboard, Public drawings and the build log) passes in Chrome, Firefox and Safari's engine at laptop and phone sizes. I didn't find anything that breaks only in Firefox.
+- A code review of the change found one rare case: in a Safari private window, leaving the tab in the split second while a save was being retried could put back a slightly older copy of the drawing. The retry now checks for a newer save first, and the save checks above were run again after that change.
+- While testing, clicking Multiplayer made a few empty test rooms in the live database, since it creates a room right away. They're removed after a day like any other room.
+- Not checked: a real iPhone or the real Safari app (only Safari's engine), and publishing, voting or rooms with other players, because those write to the live database.
+
+**Decisions**
+- The text copy is only used when saving the picture file fails, so nothing changes in browsers that were already saving fine.
+
+---
+
 ## Where AI misread me, or I had to correct course
 
 - Claude's first version of the start page put "What is this?" in the top right, where it collided with the "New set" button on the game screen. I caught it by running the page; Claude hadn't opened it in a browser.
