@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 124">
+  <!-- A ball-top arcade joystick, just for looks: arcade.css stands it on the drawing screen's control deck. -->
+  <defs>
+    <radialGradient id="ball" cx=".4" cy=".34" r=".72">
+      <stop offset="0" stop-color="#FF8577"/>
+      <stop offset=".42" stop-color="#E5352A"/>
+      <stop offset=".86" stop-color="#B21E16"/>
+      <stop offset="1" stop-color="#86130D"/>
+    </radialGradient>
+    <linearGradient id="shaft" x1="0" x2="1">
+      <stop offset="0" stop-color="#7E8086"/>
+      <stop offset=".32" stop-color="#F1F2F4"/>
+      <stop offset=".6" stop-color="#C3C5CA"/>
+      <stop offset="1" stop-color="#6E7076"/>
+    </linearGradient>
+  </defs>
+  <ellipse cx="52" cy="115" rx="46" ry="8" fill="#000" opacity=".35"/>
+  <path d="M6 102v7a44 13 0 0 0 88 0v-7z" fill="#151517" stroke="#000" stroke-width="3" stroke-linejoin="round"/>
+  <ellipse cx="50" cy="102" rx="44" ry="13" fill="#404147" stroke="#000" stroke-width="3"/>
+  <ellipse cx="50" cy="102" rx="31" ry="8" fill="#2A2B2F" stroke="#696B71" stroke-width="2"/>
+  <rect x="44" y="56" width="12" height="47" rx="3" fill="url(#shaft)" stroke="#000" stroke-width="3"/>
+  <ellipse cx="50" cy="102.5" rx="12" ry="4.5" fill="#1C1D20" stroke="#000" stroke-width="2.5"/>
+  <circle cx="50" cy="33" r="30" fill="url(#ball)" stroke="#000" stroke-width="3.5"/>
+  <ellipse cx="39" cy="20" rx="11" ry="6.5" fill="#fff" fill-opacity=".85" transform="rotate(-32 39 20)"/>
+</svg>

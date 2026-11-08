@@ -29,8 +29,12 @@
 .party-timer { margin: 0; min-width: 72px; padding: 4px 12px; border: var(--line); border-radius: 9px; background: white; font: 400 26px/1.2 var(--hand); text-align: center; font-variant-numeric: tabular-nums; }
 .party-timer.hurry { background: var(--alert); color: var(--alert-ink); }
 .party-stage { grid-area: stage; display: flex; align-items: center; justify-content: center; min-width: 0; }
-.party-board { display: block; width: min(100%, 1000px, calc((100dvh - 330px) * 1.5)); height: auto; aspect-ratio: 3 / 2; background: white; border: 1px solid #d8d0c0; border-radius: 10px; cursor: crosshair; touch-action: none; }
+.party-board { display: block; width: min(100%, 1000px, calc((100dvh - 372px) * 1.5)); height: auto; aspect-ratio: 3 / 2; background: white; border: 1px solid #d8d0c0; border-radius: 10px; cursor: crosshair; touch-action: none; }
 .party-board[data-tool="bucket"] { cursor: cell; }
+/* While drawing, the Party bar (round, End game / Leave game) sits tight on top so the canvas keeps its room. */
+/* The host's Players button sits in the bottom-left corner (lobby.css), so Undo, Redo and Clear start after it. */
+@media (min-width: 641px) { #lobby-game:has(.lobby-stage-players:not([hidden])) .party-draw .studio-footer { padding-left: 120px; } }
+.party-bar:has(+ .party-draw) { padding-top: 8px; }
 .party-settings { grid-area: settings; align-self: stretch; display: flex; flex-direction: column; gap: 14px; padding: 20px 16px; background: #fffcf7; border: var(--line); border-radius: 10px; min-width: 0; }
 .party-settings .tray-sizes { border-left: 0; border-top: var(--line); padding: 14px 0 0; width: 100%; gap: 12px; margin-top: auto; flex-direction: column; align-items: stretch; flex: none; }
 #party-tool-size { accent-color: #d4ac42; min-height: 32px; }

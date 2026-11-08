@@ -12,11 +12,11 @@ test("one thumbs up wins, whatever the thumbs down", () => {
   assert.equal(isWin(undefined), false);
 });
 
-test("the result text says won, waiting, or not yet", () => {
-  assert.equal(resultText({ up: 2, down: 1, mine: 0 }), "You won! 👍 2 · 👎 1");
-  assert.equal(resultText({ up: 0, down: 0, mine: 0 }), "Waiting for votes.");
-  assert.equal(resultText({ up: 0, down: 2, mine: 0 }), "No thumbs up yet. 👍 0 · 👎 2");
-  assert.equal(resultText(null), "Publish it to get votes.");
+test("the result text says won, or nothing until someone likes it (the heart shows the count)", () => {
+  assert.equal(resultText({ up: 2, down: 1, mine: 0 }), "You won!");
+  assert.equal(resultText({ up: 0, down: 0, mine: 0 }), "");
+  assert.equal(resultText({ up: 0, down: 2, mine: 0 }), "");
+  assert.equal(resultText(null), "Publish it so others can like it.");
 });
 
 test("a first vote is added", () => {

@@ -1,0 +1,439 @@
+/* =========================================================================================
+ * The arcade drawing screen (Zainab's design). A dark arcade cabinet with a navy marquee strip; the
+ * parts on a pinned sticky note with a box to tick for each; the tools as chunky keys in a black caddy;
+ * the canvas in a wooden frame on an easel, with the colors standing as markers on its ledge; Small, Medium
+ * and Large as paint cards; and a control deck with a joystick, round Undo / Redo / Clear buttons and a
+ * big red Done drawing.
+ *
+ * Every rule starts with #game (the drawing screen), so the home screen, the reveal, the finish screen,
+ * Public drawings, the leaderboard and Scrawdle Party keep their own look. The one exception is the page
+ * background, which is the cabinet only while the drawing screen shows.
+ * ":is(html, html[data-theme="dark"]) #game" gives a rule the same weight in light and dark mode, so theme.css's
+ * dark-mode colors don't reach inside. The cabinet has its own light and dark version instead: the colors that change
+ * are the variables at the top (light) and under html[data-theme="dark"] #game (dark).
+ * ========================================================================================= */
+@font-face { font-family: "Fredoka"; src: url("fonts/fredoka.woff2") format("woff2"); font-weight: 400 700; font-display: swap; }
+
+#game {
+  /* Light mode: a cream cabinet with a light deck. */
+  --a-cabinet: #E9E2D4;   /* the cabinet's body */
+  --a-side: #CBC1AE;      /* its side panels */
+  --a-caddy: #D4CBBA;     /* the box the tool keys sit in */
+  --a-rim: #8E8678;       /* the caddy's rim */
+  --a-deck: #D8CFBF;      /* the control deck */
+  --a-deck-lit: #F2ECE0;  /* the deck's lit top edge */
+  --a-deck-line: #1F1F1F; /* the line above the deck */
+  --a-text: #2B2A27;      /* words on the cabinet */
+  --a-soft: #5E5A52;      /* quieter words on the cabinet */
+  --a-deck-text: #2B2A27; /* words on the deck */
+  --a-saved: #245A2A;     /* "Saved in this browser" */
+  --a-failed: #8E2A23;    /* "Couldn't save" */
+  --a-focus: #3454D1;     /* the keyboard focus ring */
+  --a-ink: #1F1F1F;
+  /* The marquee: navy in both modes. */
+  --a-navy: #1F3A68;
+  --a-navy-shadow: #0E1B33;
+  --a-marquee-text: #F7F3EA;
+  /* One unit for every size on this screen: 1px in a 1440x900 window, and in step with the window otherwise, so the
+     note, the keys, the cards and the deck keep their proportions to the canvas at any window size or browser zoom
+     (the canvas already sized itself that way). Phones use plain pixels (see the phone block). */
+  --a-u: clamp(.5px, min(.06945vw, .11112vh), 2px); /* a hair over 1/1440 and 1/900, so a 3-unit border still rounds to 3px */
+  --a-wood: #7A5638;      /* the frame around the canvas */
+  --a-ledge: #C9935D;     /* the tray the colors stand in */
+  --a-lip: #A8703F;       /* the tray's front */
+  --a-slate: #3A3B3F;     /* the easel's post (the clamp picture uses the same greys) */
+  --a-metal: #8C8E94;     /* the easel's legs */
+  --a-key: #E9E6DF;       /* tool keys and round buttons */
+  --a-cream: #F3EBD8;     /* header buttons */
+  --a-paper: #FBF8F1;     /* the size cards */
+  --a-note: #FFE36E;      /* the sticky note */
+  --a-yellow: #F4CC54;
+  --a-red: #D93426;       /* white words on it reach 4.7:1 */
+  --a-font: "Fredoka", "Trebuchet MS", sans-serif;
+  --a-hand: "Gochi Hand", "Patrick Hand", "Trebuchet MS", sans-serif;
+  /* the bevel on every key and round button: a light inner ring and a darker bottom lip */
+  --a-bevel: inset 0 0 0 calc(3 * var(--a-u)) rgba(255, 255, 255, .45), inset 0 calc(-8 * var(--a-u)) 0 rgba(0, 0, 0, .18);
+}
+/* Dark mode: the dark arcade cabinet. */
+html[data-theme="dark"] #game {
+  --a-cabinet: #2F3033;
+  --a-side: #1F1F1F;
+  --a-caddy: #1F1F1F;
+  --a-rim: #5B5D63;
+  --a-deck: #1F1F1F;
+  --a-deck-lit: #3A3B3F;
+  --a-deck-line: #000;
+  --a-text: #F7F3EA;
+  --a-soft: #C9C5BC;
+  --a-deck-text: #F7F3EA;
+  --a-saved: #A8D5A2;
+  --a-failed: #FFB4A2;
+  --a-focus: #F4CC54;
+}
+
+/* ---------- The cabinet ---------- */
+/* While the parts reveal shows, the drawing screen behind it is hidden, not just switched off (index.html makes it
+   inert): on a phone the page could otherwise scroll down past the reveal into the tools and Done drawing. */
+html:has(#slot:not([hidden])) #game { display: none; }
+/* While drawing, the page behind is the cabinet instead of the doodles (they stay on every other screen). */
+html:has(#game:not([hidden])) { background: #E9E2D4; }
+html[data-theme="dark"]:has(#game:not([hidden])) { background: #2F3033; }
+:is(html, html[data-theme="dark"]) #game {
+  display: grid; width: 100%; max-width: none; min-width: 0; min-height: 100dvh; height: auto; margin: 0; padding: 0 calc(12 * var(--a-u));
+  grid-template-columns: minmax(0, 1fr); grid-template-rows: none;
+  grid-template-areas: "header" "note" "stage" "tools" "settings" "footer";
+  gap: calc(16 * var(--a-u)) 0; align-content: start; align-items: stretch;
+  background: var(--a-cabinet); color: var(--a-text);
+}
+:is(html, html[data-theme="dark"]) #game :focus-visible { outline: calc(3 * var(--a-u)) solid var(--a-focus); outline-offset: calc(3 * var(--a-u)); }
+:is(html, html[data-theme="dark"]) #game .game-top :focus-visible { outline-color: var(--a-yellow); } /* the blue ring doesn't show on navy */
+:is(html, html[data-theme="dark"]) #game .tray { display: contents; } /* its tools go to their own spot; the colors are on the easel's ledge */
+/* Which layout: the cabinet (three columns) on anything 1000px wide, and also on a landscape window from 820px wide,
+   so a laptop zoomed in to 150% or 175% keeps the easel instead of switching to the phone layout. Phones held upright,
+   and anything narrower or shorter than that, get the one-column layout further down. */
+@media (min-width: 1000px), (min-width: 820px) and (min-height: 500px) and (orientation: landscape) {
+  :is(html, html[data-theme="dark"]) #game {
+    height: 100dvh; min-height: 0; padding: 0 2.5vw;
+    grid-template-columns: clamp(calc(210 * var(--a-u)), 17vw, calc(340 * var(--a-u))) minmax(0, 1fr) clamp(calc(200 * var(--a-u)), 15vw, calc(310 * var(--a-u)));
+    grid-template-rows: auto auto minmax(0, 1fr) auto;
+    grid-template-areas: "header header header" "note stage settings" "tools stage settings" "footer footer footer";
+    column-gap: 2vw; row-gap: calc(16 * var(--a-u)); align-content: stretch; align-items: start;
+    box-shadow: inset 1.1vw 0 0 var(--a-side), inset -1.1vw 0 0 var(--a-side); /* the cabinet's side panels */
+  }
+}
+
+/* ---------- The marquee: a navy strip with the name, the Time Challenge clock, the home button, Start over and help ---------- */
+:is(html, html[data-theme="dark"]) #game .game-top {
+  grid-area: header; display: flex; align-items: center; justify-content: space-between; gap: calc(16 * var(--a-u)); min-height: 0;
+  margin: 0 calc(-12 * var(--a-u)); padding: calc(10 * var(--a-u)) calc(16 * var(--a-u)); background: var(--a-navy); border-bottom: calc(4 * var(--a-u)) solid var(--a-ink);
+}
+@media (min-width: 1000px), (min-width: 820px) and (min-height: 500px) and (orientation: landscape) { :is(html, html[data-theme="dark"]) #game .game-top { margin: 0 -2.5vw; padding: calc(10 * var(--a-u)) 2.5vw; } }
+:is(html, html[data-theme="dark"]) #game .game-top .wordmark { font-size: calc(34 * var(--a-u)) !important; color: var(--a-marquee-text); } /* flow.css sets the name's size with !important */
+:is(html, html[data-theme="dark"]) #game .game-nav { display: flex; align-items: center; gap: calc(12 * var(--a-u)); margin-left: auto; }
+:is(html, html[data-theme="dark"]) #game .game-nav :is(#back-home, #restart) {
+  display: inline-flex; align-items: center; gap: calc(6 * var(--a-u)); width: auto; max-width: none; min-height: calc(44 * var(--a-u)); margin: 0; padding: 0 calc(16 * var(--a-u));
+  background: var(--a-cream); color: var(--a-ink); border: calc(3 * var(--a-u)) solid var(--a-ink); border-radius: calc(12 * var(--a-u)); box-shadow: calc(4 * var(--a-u)) calc(4 * var(--a-u)) 0 var(--a-navy-shadow);
+  font: 700 max(11px, calc(15 * var(--a-u)))/1 var(--a-font); text-decoration: none; white-space: nowrap; transition: transform 80ms ease, box-shadow 80ms ease;
+}
+:is(html, html[data-theme="dark"]) #game .game-nav :is(#back-home, #restart):hover { background: var(--a-cream); transform: translateY(calc(-2 * var(--a-u))); box-shadow: calc(4 * var(--a-u)) calc(6 * var(--a-u)) 0 var(--a-navy-shadow); }
+:is(html, html[data-theme="dark"]) #game .game-nav :is(#back-home, #restart):active { transform: translate(calc(4 * var(--a-u)), calc(4 * var(--a-u))); box-shadow: none; }
+:is(html, html[data-theme="dark"]) #game .game-nav svg { stroke: var(--a-ink); fill: none; stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; }
+/* Back to home is just a house: as square as the help button. */
+:is(html, html[data-theme="dark"]) #game .game-nav #back-home { width: calc(44 * var(--a-u)); height: calc(44 * var(--a-u)); padding: 0; justify-content: center; }
+:is(html, html[data-theme="dark"]) #game #help-btn {
+  display: grid; place-items: center; width: calc(44 * var(--a-u)); height: calc(44 * var(--a-u)); min-height: 0; padding: 0;
+  background: var(--a-yellow); color: var(--a-ink); border: calc(3 * var(--a-u)) solid var(--a-ink); border-radius: calc(12 * var(--a-u));
+  box-shadow: var(--a-bevel), calc(4 * var(--a-u)) calc(4 * var(--a-u)) 0 var(--a-navy-shadow); font: 700 700 calc(22 * var(--a-u))/1 var(--a-font);
+}
+/* The Time Challenge clock: an arcade number display; red for the last ten seconds (.hurry). */
+:is(html, html[data-theme="dark"]) #game .challenge-timer {
+  min-width: calc(84 * var(--a-u)); padding: calc(6 * var(--a-u)) calc(14 * var(--a-u)); background: #111; color: #FFB547; border: calc(3 * var(--a-u)) solid var(--a-ink); border-radius: calc(10 * var(--a-u));
+  box-shadow: inset 0 0 0 calc(2 * var(--a-u)) #3A3B3F, calc(3 * var(--a-u)) calc(3 * var(--a-u)) 0 var(--a-navy-shadow); font: 700 700 calc(24 * var(--a-u))/1 var(--a-font); letter-spacing: .06em; text-align: center;
+}
+:is(html, html[data-theme="dark"]) #game .challenge-timer.hurry { background: #111; color: #FF5A4E; }
+
+/* ---------- The Mission briefing: a yellow sticky note, pinned and a little crooked, with a box to tick per part ---------- */
+:is(html, html[data-theme="dark"]) #game .mission { grid-area: note; position: relative; min-width: 0; margin-top: calc(16 * var(--a-u)); }
+:is(html, html[data-theme="dark"]) #game #prompt-bar {
+  position: relative; display: block; min-width: 0; max-width: none; margin: 0; padding: calc(18 * var(--a-u)) calc(16 * var(--a-u)) calc(14 * var(--a-u)); text-align: left;
+  background: var(--a-note); color: var(--a-ink); border: calc(3 * var(--a-u)) solid var(--a-ink); border-radius: calc(4 * var(--a-u)); box-shadow: calc(5 * var(--a-u)) calc(6 * var(--a-u)) 0 rgba(0, 0, 0, .45); transform: rotate(-2deg);
+}
+#game #prompt-bar::before { /* the pin */
+  content: ""; position: absolute; top: calc(-10 * var(--a-u)); left: 50%; width: calc(18 * var(--a-u)); height: calc(18 * var(--a-u)); margin-left: calc(-9 * var(--a-u));
+  background: radial-gradient(circle at 35% 35%, #FF8A80 0 calc(3 * var(--a-u)), var(--a-red) calc(4 * var(--a-u))); border: calc(3 * var(--a-u)) solid var(--a-ink); border-radius: 50%;
+}
+:is(html, html[data-theme="dark"]) #game .mission-title { margin: 0 0 calc(4 * var(--a-u)); font: calc(28 * var(--a-u))/1 var(--a-hand); color: var(--a-ink); }
+:is(html, html[data-theme="dark"]) #game #prompt-label {
+  display: inline-block; margin: 0 0 calc(10 * var(--a-u)); padding: calc(2 * var(--a-u)) calc(8 * var(--a-u)); background: #fff; border: calc(2 * var(--a-u)) solid var(--a-ink); border-radius: calc(6 * var(--a-u));
+  font: 700 max(11px, calc(13 * var(--a-u)))/1.3 var(--a-font) !important; letter-spacing: 0; text-transform: none; color: var(--a-ink) !important;
+}
+/* One line per part: the box, then "Head" and the part, and a long part wraps under its own words. */
+:is(html, html[data-theme="dark"]) #game #prompt-text {
+  display: grid !important; gap: calc(5 * var(--a-u)); margin: 0; padding: 0; text-align: left; justify-content: stretch; font: inherit; color: var(--a-ink);
+}
+:is(html, html[data-theme="dark"]) #game #prompt-text .part {
+  position: relative; display: block; margin: 0; padding: calc(1 * var(--a-u)) 0 0 calc(30 * var(--a-u)); min-height: calc(22 * var(--a-u)); text-align: left;
+  background: none; border: 0; border-radius: 0; box-shadow: none; font: calc(18 * var(--a-u))/1.15 var(--a-hand); color: var(--a-ink); cursor: pointer;
+}
+:is(html, html[data-theme="dark"]) #game #prompt-text .part small { margin: 0 calc(5 * var(--a-u)) 0 0; font: 600 max(11px, calc(12 * var(--a-u)))/1.2 var(--a-font) !important; color: #4A4740; }
+:is(html, html[data-theme="dark"]) #game #prompt-text .part.optional small { color: #3F6B35; }
+:is(html, html[data-theme="dark"]) #game #prompt-text .part.optional .part-value { opacity: .85; }
+:is(html, html[data-theme="dark"]) #game #prompt-text .part.free { padding-left: 0; cursor: default; }
+:is(html, html[data-theme="dark"]) #game #prompt-text .part input {
+  position: absolute; left: 0; top: calc(1 * var(--a-u)); appearance: none; -webkit-appearance: none; display: grid; place-content: center;
+  width: calc(22 * var(--a-u)); height: calc(22 * var(--a-u)); margin: 0; background: #fff; border: calc(3 * var(--a-u)) solid var(--a-ink); border-radius: calc(5 * var(--a-u)); cursor: pointer;
+}
+#game #prompt-text .part input:checked::after { content: "\2713"; font: 700 700 calc(24 * var(--a-u))/1 var(--a-hand); color: var(--a-red); transform: rotate(-10deg) translate(calc(1 * var(--a-u)), calc(-4 * var(--a-u))); }
+:is(html, html[data-theme="dark"]) #game #prompt-text .part input:focus-visible { outline: calc(3 * var(--a-u)) solid #3454D1; outline-offset: calc(2 * var(--a-u)); } /* blue reads on yellow paper */
+
+/* ---------- The tool caddy: a black box of chunky keys; the picked tool lights up yellow and sits pressed in ---------- */
+:is(html, html[data-theme="dark"]) #game .tray-tools {
+  grid-area: tools; align-self: start; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: calc(10 * var(--a-u)); width: auto; min-width: 0; margin: 0; padding: calc(12 * var(--a-u));
+  background: var(--a-caddy); border: calc(3 * var(--a-u)) solid var(--a-rim); border-radius: calc(14 * var(--a-u)); box-shadow: calc(5 * var(--a-u)) calc(5 * var(--a-u)) 0 #151515;
+}
+:is(html, html[data-theme="dark"]) #game .tray-tools .tool {
+  width: auto; min-width: 0; min-height: calc(78 * var(--a-u)); padding: calc(6 * var(--a-u)) calc(2 * var(--a-u)); gap: calc(2 * var(--a-u)); background: var(--a-key); color: var(--a-ink); border: calc(3 * var(--a-u)) solid #000; border-radius: calc(10 * var(--a-u));
+  box-shadow: var(--a-bevel), 0 calc(5 * var(--a-u)) 0 #000; transition: transform 80ms ease, box-shadow 80ms ease;
+}
+:is(html, html[data-theme="dark"]) #game .tray-tools .tool:hover:not([aria-pressed="true"]) { transform: translateY(calc(-2 * var(--a-u))); box-shadow: var(--a-bevel), 0 calc(7 * var(--a-u)) 0 #000; background: var(--a-key); }
+:is(html, html[data-theme="dark"]) #game .tray-tools .tool[aria-pressed="true"],
+:is(html, html[data-theme="dark"]) #game .tray-tools .tool[aria-pressed="true"]:hover { background: var(--a-yellow); border-color: #000; transform: translateY(calc(4 * var(--a-u))); box-shadow: var(--a-bevel), 0 calc(1 * var(--a-u)) 0 #000; }
+:is(html, html[data-theme="dark"]) #game .tray-tools .art-tool { width: calc(40 * var(--a-u)); height: calc(40 * var(--a-u)); filter: none; }
+:is(html, html[data-theme="dark"]) #game .tray-tools .tool-label { font: 700 max(11px, calc(13 * var(--a-u)))/1.1 var(--a-font); color: var(--a-ink); }
+
+/* ---------- The easel: the canvas in a wooden frame, clamped at the top, standing on three metal legs ---------- */
+/* --board is the canvas width: as big as fits (3:2), leaving room for the frame, the clamp, the ledge and the legs.
+   The canvas itself is never padded, tilted or moved, so a stroke lands right under the pointer; the frame, the clamp
+   and the legs are drawn around it and never take a click. */
+:is(html, html[data-theme="dark"]) #game #stage {
+  grid-area: stage; position: relative; align-self: stretch; display: block; min-width: 0; min-height: 0; margin: 0; padding: 0;
+  background: none; border: 0; container-type: inline-size;
+}
+#game .easel {
+  --rim: clamp(calc(14 * var(--a-u)), 3.6cqw, calc(34 * var(--a-u))); /* how far the frame reaches past the canvas on each side */
+  --legs: calc(34 * var(--a-u));                     /* how long the legs are, under the ledge */
+  --board: calc(100cqw - 2 * var(--rim) - calc(16 * var(--a-u)));
+  position: relative; display: flex; flex-direction: column; align-items: center; padding-bottom: var(--legs);
+  /* the middle leg */
+  background: linear-gradient(90deg, var(--a-ink) 0 calc(4 * var(--a-u)), #B5B7BC calc(4 * var(--a-u)) calc(9 * var(--a-u)), var(--a-metal) calc(9 * var(--a-u)) calc(100% - calc(4 * var(--a-u))), var(--a-ink) calc(100% - calc(4 * var(--a-u)))) 50% 100% / calc(22 * var(--a-u)) var(--legs) no-repeat;
+}
+#game .easel-board { position: relative; isolation: isolate; margin-top: calc(36 * var(--a-u)); }
+:is(html, html[data-theme="dark"]) #game #board {
+  display: block; width: var(--board); max-width: none; height: auto; aspect-ratio: 3 / 2; margin: 0; background: #fff;
+  border: calc(4 * var(--a-u)) solid var(--a-ink); border-radius: calc(3 * var(--a-u)); box-shadow: calc(3 * var(--a-u)) calc(4 * var(--a-u)) 0 rgba(0, 0, 0, .45);
+}
+#game .easel-board::before { /* the wooden frame, behind the canvas */
+  content: ""; position: absolute; z-index: -1; inset: calc(-18 * var(--a-u)) calc(-1 * var(--rim)) calc(-26 * var(--a-u)); pointer-events: none;
+  background: var(--a-wood); border: calc(4 * var(--a-u)) solid var(--a-ink); border-radius: calc(14 * var(--a-u)); box-shadow: calc(6 * var(--a-u)) calc(8 * var(--a-u)) 0 rgba(0, 0, 0, .4);
+}
+#game .easel-board::after { /* the clamp holding the board at the top */
+  content: ""; position: absolute; z-index: 2; top: calc(-32 * var(--a-u)); left: 50%; width: calc(160 * var(--a-u)); height: calc(30 * var(--a-u)); margin-left: calc(-80 * var(--a-u)); pointer-events: none;
+  background: url("assets/arcade/easel-clamp.svg") center / 100% 100% no-repeat;
+}
+#game .easel::before, #game .easel::after { /* the two outer legs, spread apart */
+  content: ""; position: absolute; bottom: 0; width: calc(22 * var(--a-u)); height: var(--legs); pointer-events: none;
+  background: linear-gradient(90deg, #6A6C72, #B5B7BC 35%, var(--a-metal)); border: calc(4 * var(--a-u)) solid var(--a-ink); border-top: 0;
+}
+#game .easel::before { left: 15%; transform: skewX(-12deg); }
+#game .easel::after { right: 15%; transform: skewX(12deg); }
+/* "3, 2, 1, Draw!" sits above the easel, over the canvas. */
+:is(html, html[data-theme="dark"]) #game .challenge-count { z-index: 5; }
+
+/* ---------- The ledge: a wooden tray where the twelve colors and the rainbow Custom stand as markers ---------- */
+#game .easel-ledge {
+  position: relative; z-index: 1; width: calc(var(--board) + calc(32 * var(--a-u))); margin-top: calc(10 * var(--a-u)); padding: calc(18 * var(--a-u)) calc(14 * var(--a-u)) 0;
+  background: var(--a-ledge); border: calc(4 * var(--a-u)) solid var(--a-ink); border-radius: calc(10 * var(--a-u)); box-shadow: 0 calc(6 * var(--a-u)) 0 rgba(0, 0, 0, .4);
+}
+#game .easel-ledge::after { /* the front lip, hiding the markers' bottoms */
+  content: ""; position: absolute; z-index: 2; left: calc(-4 * var(--a-u)); right: calc(-4 * var(--a-u)); bottom: calc(-4 * var(--a-u)); height: calc(24 * var(--a-u));
+  background: var(--a-lip); border: calc(4 * var(--a-u)) solid var(--a-ink); border-radius: 0 0 calc(10 * var(--a-u)) calc(10 * var(--a-u)); pointer-events: none;
+}
+:is(html, html[data-theme="dark"]) #game .tray-colors {
+  display: grid; grid-template-columns: repeat(13, minmax(0, 1fr)); align-items: end; justify-items: center; gap: calc(6 * var(--a-u));
+  min-width: 0; margin: 0; padding: 0; background: none; border: 0; border-radius: 0; box-shadow: none; flex: none;
+}
+:is(html, html[data-theme="dark"]) #game .tray-colors .swatches { display: contents; }
+:is(html, html[data-theme="dark"]) #game .swatch {
+  width: min(100%, calc(34 * var(--a-u))); height: calc(66 * var(--a-u)); aspect-ratio: auto; margin: 0; padding: 0; outline: none; cursor: pointer;
+  background: linear-gradient(90deg, rgba(255, 255, 255, .35) 0 24%, transparent 24% 68%, rgba(0, 0, 0, .16) 68%),
+    linear-gradient(var(--swatch) 0 28%, var(--a-ink) 28% calc(28% + calc(3 * var(--a-u))), #F7F3EA calc(28% + calc(3 * var(--a-u))) 46%, var(--swatch) 46%);
+  background-color: var(--swatch); border: calc(3 * var(--a-u)) solid var(--a-ink); border-radius: calc(12 * var(--a-u)) calc(12 * var(--a-u)) calc(4 * var(--a-u)) calc(4 * var(--a-u));
+  box-shadow: calc(3 * var(--a-u)) 0 0 rgba(0, 0, 0, .25); transition: transform 100ms ease;
+}
+:is(html, html[data-theme="dark"]) #game .swatch:hover { transform: translateY(calc(-5 * var(--a-u))); }
+/* The picked marker is pulled up out of the tray, with a ring that shows on the wood. */
+:is(html, html[data-theme="dark"]) #game .swatch[aria-pressed="true"] { transform: translateY(calc(-16 * var(--a-u))); outline: calc(3 * var(--a-u)) solid var(--a-ink); outline-offset: calc(2 * var(--a-u)); box-shadow: 0 0 0 calc(7 * var(--a-u)) var(--a-yellow); }
+:is(html, html[data-theme="dark"]) #game .swatch:focus-visible { outline: calc(3 * var(--a-u)) solid #3454D1; outline-offset: calc(2 * var(--a-u)); }
+/* Custom: the rainbow marker. Its box stays a positioned box, so Trenten's color picker opens right above it. */
+:is(html, html[data-theme="dark"]) #game .custom-color {
+  position: relative; display: flex; align-items: flex-end; justify-content: center; width: 100%; min-width: 0; gap: 0; padding: 0; margin: 0; border: 0; color: var(--a-ink);
+}
+:is(html, html[data-theme="dark"]) #game .custom-color > span { position: absolute; width: calc(1 * var(--a-u)); height: calc(1 * var(--a-u)); overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; } /* "Custom": the marker is named by its own label */
+:is(html, html[data-theme="dark"]) #game .wheel {
+  width: min(100%, calc(34 * var(--a-u))); height: calc(66 * var(--a-u)); border: calc(3 * var(--a-u)) solid var(--a-ink); border-radius: calc(12 * var(--a-u)) calc(12 * var(--a-u)) calc(4 * var(--a-u)) calc(4 * var(--a-u)); box-shadow: none; transition: transform 100ms ease;
+}
+:is(html, html[data-theme="dark"]) #game .wheel:hover { transform: translateY(calc(-5 * var(--a-u))); }
+:is(html, html[data-theme="dark"]) #game .wheel.on { transform: translateY(calc(-16 * var(--a-u))); outline: calc(3 * var(--a-u)) solid var(--a-ink); outline-offset: calc(2 * var(--a-u)); box-shadow: 0 0 0 calc(7 * var(--a-u)) var(--a-yellow); }
+
+/* ---------- Settings: the tool's name, Small / Medium / Large as paint cards, then the size slider and Opacity ---------- */
+:is(html, html[data-theme="dark"]) #game #brush-settings {
+  grid-area: settings; align-self: start; display: grid; grid-template-columns: minmax(0, 1fr); gap: calc(12 * var(--a-u)); min-width: 0; margin-top: calc(16 * var(--a-u)); padding: 0 calc(4 * var(--a-u)) calc(6 * var(--a-u)) 0;
+  background: none; border: 0; border-radius: 0; box-shadow: none; color: var(--a-text);
+}
+:is(html, html[data-theme="dark"]) #game .settings-title { grid-column: 1; grid-row: auto; margin: 0; padding: 0; border: 0; font: 700 700 calc(19 * var(--a-u))/1.2 var(--a-font); color: var(--a-text); }
+:is(html, html[data-theme="dark"]) #game .brush-controls { grid-column: 1; grid-row: auto; }
+:is(html, html[data-theme="dark"]) #game #brush-settings .tray-sizes {
+  grid-column: 1; grid-row: auto; display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: calc(10 * var(--a-u)); width: 100%; min-width: 0; margin: 0; padding: 0;
+  background: none; border: 0;
+}
+/* flow.css pins the readout and the dots to the first row on laptops and phones; here everything flows in order. */
+:is(html, html[data-theme="dark"]) #game #brush-settings .tray-sizes > *, :is(html, html[data-theme="dark"]) #game #brush-settings .size-top > * { grid-row: auto; }
+/* The three size buttons become the cards; the readout and the stroke preview sit on a row under them. */
+:is(html, html[data-theme="dark"]) #game #brush-settings .size-top { display: contents; }
+:is(html, html[data-theme="dark"]) #game #brush-settings .size-dot {
+  order: 1; grid-column: 1 / -1; display: grid; justify-items: start; align-content: center; gap: calc(10 * var(--a-u)); width: auto; height: auto; min-height: calc(64 * var(--a-u)); padding: calc(10 * var(--a-u)) calc(14 * var(--a-u));
+  background: var(--a-paper); color: var(--a-ink); border: calc(4 * var(--a-u)) solid var(--a-ink); border-radius: calc(6 * var(--a-u)); box-shadow: calc(5 * var(--a-u)) calc(5 * var(--a-u)) 0 #151515; rotate: -1.2deg;
+  font: 700 700 calc(17 * var(--a-u))/1 var(--a-font); cursor: pointer; transition: transform 80ms ease, box-shadow 80ms ease;
+}
+:is(html, html[data-theme="dark"]) #game #brush-settings .size-dot:nth-child(2) { rotate: 1deg; }
+:is(html, html[data-theme="dark"]) #game #brush-settings .size-dot:nth-child(3) { rotate: -.6deg; }
+#game #brush-settings .size-dot:nth-child(1)::after { content: "Small"; }
+#game #brush-settings .size-dot:nth-child(2)::after { content: "Medium"; }
+#game #brush-settings .size-dot:nth-child(3)::after { content: "Large"; }
+:is(html, html[data-theme="dark"]) #game #brush-settings .size-dot i { width: 82% !important; background: var(--a-ink); border-radius: calc(999 * var(--a-u)); rotate: -2deg; } /* the stroke; its thickness is the size */
+:is(html, html[data-theme="dark"]) #game #brush-settings .size-dot:hover:not(:disabled):not([aria-pressed="true"]) { background: var(--a-paper); transform: translateY(calc(-2 * var(--a-u))); box-shadow: calc(5 * var(--a-u)) calc(7 * var(--a-u)) 0 #151515; }
+:is(html, html[data-theme="dark"]) #game #brush-settings .size-dot[aria-pressed="true"] { background: var(--a-yellow); box-shadow: calc(1 * var(--a-u)) calc(1 * var(--a-u)) 0 #151515; transform: translate(calc(3 * var(--a-u)), calc(3 * var(--a-u))); }
+:is(html, html[data-theme="dark"]) #game #brush-settings .size-value { order: 2; grid-column: 1; min-width: 0; margin: 0; text-align: left; font: 600 max(11px, calc(14 * var(--a-u)))/1.2 var(--a-font); color: var(--a-text); }
+:is(html, html[data-theme="dark"]) #game #brush-settings .stroke-preview { order: 2; grid-column: 2; justify-self: end; height: auto; margin: 0; padding: 0 calc(6 * var(--a-u)); background: var(--a-paper); border: calc(2 * var(--a-u)) solid var(--a-ink); border-radius: calc(8 * var(--a-u)); } /* a little paper chip, so dark colors still show */
+:is(html, html[data-theme="dark"]) #game #brush-settings .tray-sizes > input[type="range"] { order: 3; grid-column: 1 / -1; width: 100%; min-width: 0; margin: 0; accent-color: var(--a-yellow); }
+:is(html, html[data-theme="dark"]) #game #brush-settings .tool-opacity { order: 4; grid-column: 1 / -1; display: flex; flex-direction: column; gap: calc(2 * var(--a-u)); min-width: 0; }
+:is(html, html[data-theme="dark"]) #game #brush-settings :is(.opacity-row, .opacity-value) { font: 600 max(11px, calc(14 * var(--a-u)))/1.2 var(--a-font); color: var(--a-text); }
+:is(html, html[data-theme="dark"]) #game #brush-settings .tool-opacity input[type="range"] { width: 100%; accent-color: var(--a-yellow); }
+/* The brush types, when the Brush is picked. */
+:is(html, html[data-theme="dark"]) #game .brush-choice { background: var(--a-cream); color: var(--a-ink); border: calc(3 * var(--a-u)) solid var(--a-ink); border-radius: calc(10 * var(--a-u)); box-shadow: calc(3 * var(--a-u)) calc(3 * var(--a-u)) 0 #151515; font: 700 max(11px, calc(13 * var(--a-u)))/1.1 var(--a-font); }
+:is(html, html[data-theme="dark"]) #game .brush-choice[aria-pressed="true"] { background: var(--a-yellow); box-shadow: none; transform: translate(calc(3 * var(--a-u)), calc(3 * var(--a-u))); }
+:is(html, html[data-theme="dark"]) #game .brush-choice canvas { background: #fff; border-radius: calc(4 * var(--a-u)); }
+:is(html, html[data-theme="dark"]) #game .brush-toggle { min-height: calc(40 * var(--a-u)); padding: 0 calc(12 * var(--a-u)); background: var(--a-cream); color: var(--a-ink); border: calc(3 * var(--a-u)) solid var(--a-ink); border-radius: calc(10 * var(--a-u)); box-shadow: calc(3 * var(--a-u)) calc(3 * var(--a-u)) 0 #151515; font: 700 max(11px, calc(14 * var(--a-u)))/1 var(--a-font); }
+
+/* ---------- The control deck: a joystick, Undo / Redo / Clear as round grey buttons, and Done drawing as the big red one ---------- */
+:is(html, html[data-theme="dark"]) #game .studio-footer {
+  grid-area: footer; display: flex; align-items: center; gap: calc(22 * var(--a-u)); margin: 0 calc(-12 * var(--a-u)); padding: calc(12 * var(--a-u)) calc(16 * var(--a-u)) calc(calc(12 * var(--a-u)) + env(safe-area-inset-bottom));
+  background: var(--a-deck); border-top: calc(4 * var(--a-u)) solid var(--a-deck-line); box-shadow: inset 0 calc(4 * var(--a-u)) 0 var(--a-deck-lit);
+}
+@media (min-width: 1000px), (min-width: 820px) and (min-height: 500px) and (orientation: landscape) { :is(html, html[data-theme="dark"]) #game .studio-footer { margin: 0 -2.5vw; padding: calc(10 * var(--a-u)) 3.5vw calc(12 * var(--a-u)); } }
+#game .studio-footer::before { /* a joystick, just for looks: it stands on the deck, its ball rising over the edge */
+  content: ""; flex: none; align-self: flex-end; width: calc(118 * var(--a-u)); height: calc(146 * var(--a-u)); margin: calc(-40 * var(--a-u)) calc(6 * var(--a-u)) calc(-2 * var(--a-u)) calc(-8 * var(--a-u)); pointer-events: none;
+  background: url("assets/arcade/joystick.svg") center bottom / contain no-repeat;
+}
+:is(html, html[data-theme="dark"]) #game .studio-footer .save-status { flex: 1 1 auto; min-width: 0; padding: 0; text-align: left; font: 600 max(11px, calc(14 * var(--a-u)))/1.3 var(--a-font); color: var(--a-soft) !important; } /* flow.css and theme.css set it with !important */
+:is(html, html[data-theme="dark"]) #game .studio-footer .save-status[data-state="saved"] { color: var(--a-saved) !important; }
+:is(html, html[data-theme="dark"]) #game .studio-footer .save-status[data-state="failed"] { color: var(--a-failed) !important; }
+/* tools.css draws Undo / Redo / Clear as one outlined pill that clips what sticks out; here they're separate round buttons. */
+:is(html, html[data-theme="dark"]) #game .history-actions { display: flex; align-items: flex-start; gap: calc(18 * var(--a-u)); margin: 0; padding: 0; border: 0; border-radius: 0; background: none; box-shadow: none; overflow: visible; }
+:is(html, html[data-theme="dark"]) #game .history-actions .tool {
+  display: grid; justify-items: center; gap: calc(6 * var(--a-u)); width: auto; min-width: calc(58 * var(--a-u)); min-height: 0; padding: 0;
+  background: none !important; border: 0 !important; border-radius: 0; box-shadow: none; color: var(--a-deck-text);
+}
+:is(html, html[data-theme="dark"]) #game .history-actions .tool-icon {
+  display: grid; place-items: center; width: calc(56 * var(--a-u)); height: calc(56 * var(--a-u)); background: var(--a-key); border: calc(4 * var(--a-u)) solid #000; border-radius: 50%;
+  box-shadow: var(--a-bevel), 0 calc(5 * var(--a-u)) 0 #000; transition: transform 80ms ease, box-shadow 80ms ease;
+}
+:is(html, html[data-theme="dark"]) #game .history-actions .tool-icon svg { width: calc(24 * var(--a-u)); height: calc(24 * var(--a-u)); stroke: var(--a-ink); }
+:is(html, html[data-theme="dark"]) #game .history-actions .tool-label { font: 700 max(11px, calc(13 * var(--a-u)))/1 var(--a-font); letter-spacing: .05em; text-transform: uppercase; color: var(--a-deck-text); }
+:is(html, html[data-theme="dark"]) #game .history-actions .tool:hover:not(:disabled) .tool-icon { transform: translateY(calc(-2 * var(--a-u))); box-shadow: var(--a-bevel), 0 calc(7 * var(--a-u)) 0 #000; }
+:is(html, html[data-theme="dark"]) #game .history-actions .tool:active:not(:disabled) .tool-icon { transform: translateY(calc(4 * var(--a-u))); box-shadow: var(--a-bevel), 0 calc(1 * var(--a-u)) 0 #000; }
+:is(html, html[data-theme="dark"]) #game .history-actions .tool:disabled { opacity: .5; }
+:is(html, html[data-theme="dark"]) #game .btn.primary.done {
+  display: grid; place-items: center; flex: none; width: calc(112 * var(--a-u)); height: calc(112 * var(--a-u)); min-width: 0; min-height: 0; margin: 0; padding: calc(12 * var(--a-u)); border-radius: 50%;
+  background: var(--a-red); color: #fff; border: calc(5 * var(--a-u)) solid #000 !important; box-shadow: var(--a-bevel), 0 calc(7 * var(--a-u)) 0 #000;
+  font: 700 700 calc(17 * var(--a-u))/1.05 var(--a-font); letter-spacing: .03em; text-transform: uppercase; text-align: center; white-space: normal;
+  transition: transform 80ms ease, box-shadow 80ms ease;
+}
+:is(html, html[data-theme="dark"]) #game .btn.primary.done:hover:not(:disabled) { background: var(--a-red); transform: translateY(calc(-2 * var(--a-u))); box-shadow: var(--a-bevel), 0 calc(9 * var(--a-u)) 0 #000; }
+:is(html, html[data-theme="dark"]) #game .btn.primary.done:active:not(:disabled) { transform: translateY(calc(5 * var(--a-u))); box-shadow: var(--a-bevel), 0 calc(2 * var(--a-u)) 0 #000; }
+/* Paused while a Time Challenge counts down 3-2-1 (index.html). */
+:is(html, html[data-theme="dark"]) #game .btn.primary.done:disabled { opacity: .5; filter: grayscale(.6); cursor: not-allowed; }
+
+/* ---------- Big screens: everything fits one window, the easel as big as the middle allows ---------- */
+@media (min-width: 1000px), (min-width: 820px) and (min-height: 500px) and (orientation: landscape) {
+  /* The easel stands at the bottom of the middle, its legs reaching down behind the control deck. */
+  :is(html, html[data-theme="dark"]) #game #stage { container-type: size; display: grid; place-items: end center; height: auto; } /* drawing.css makes it 88dvh tall under 1000px wide */
+  #game .easel { --legs: calc(54 * var(--a-u)); --board: min(100cqw - 2 * var(--rim) - calc(16 * var(--a-u)), (100cqh - calc(184 * var(--a-u))) * 1.5); margin-bottom: calc(-20 * var(--a-u)); }
+  #game #stage::before { /* the post the frame hangs from, coming down from the marquee and ending behind the frame */
+    content: ""; position: absolute; top: calc(-18 * var(--a-u)); bottom: calc(160 * var(--a-u)); left: 50%; width: calc(30 * var(--a-u)); margin-left: calc(-15 * var(--a-u)); pointer-events: none;
+    background: linear-gradient(90deg, #4E4F54 0 calc(5 * var(--a-u)), var(--a-slate) calc(5 * var(--a-u))); border: solid var(--a-ink); border-width: 0 calc(4 * var(--a-u));
+  }
+  /* The marquee and the deck sit in front, so the post and the legs go in behind them. */
+  :is(html, html[data-theme="dark"]) #game :is(.game-top, .studio-footer) { position: relative; z-index: 1; }
+  /* The note never pushes the tools off the screen: with many parts its list scrolls inside the note. */
+  :is(html, html[data-theme="dark"]) #game #prompt-text { max-height: max(calc(110 * var(--a-u)), calc(100dvh - calc(590 * var(--a-u)))); overflow-y: auto; overscroll-behavior: contain; }
+  :is(html, html[data-theme="dark"]) #game #brush-settings { max-height: calc(100dvh - calc(200 * var(--a-u))); overflow-y: auto; overscroll-behavior: contain; }
+}
+/* Short laptops: smaller keys and tighter lines on the note, so all ten parts still show without scrolling. */
+@media (min-width: 1000px) and (max-height: 800px), (min-width: 820px) and (max-width: 999px) and (min-height: 500px) and (orientation: landscape) {
+  :is(html, html[data-theme="dark"]) #game .tray-tools { gap: calc(8 * var(--a-u)); padding: calc(10 * var(--a-u)); }
+  :is(html, html[data-theme="dark"]) #game .tray-tools .tool { min-height: calc(56 * var(--a-u)); padding: calc(4 * var(--a-u)) calc(2 * var(--a-u)); }
+  :is(html, html[data-theme="dark"]) #game .tray-tools .art-tool { width: calc(30 * var(--a-u)); height: calc(30 * var(--a-u)); }
+  :is(html, html[data-theme="dark"]) #game .tray-tools .tool-label { font-size: max(11px, calc(12 * var(--a-u))); }
+  :is(html, html[data-theme="dark"]) #game #prompt-bar { padding: calc(14 * var(--a-u)) calc(14 * var(--a-u)) calc(10 * var(--a-u)); }
+  :is(html, html[data-theme="dark"]) #game .mission-title { font-size: calc(24 * var(--a-u)); }
+  :is(html, html[data-theme="dark"]) #game #prompt-label { margin-bottom: calc(6 * var(--a-u)); }
+  :is(html, html[data-theme="dark"]) #game #prompt-text { gap: calc(2 * var(--a-u)); max-height: max(calc(110 * var(--a-u)), calc(100dvh - calc(500 * var(--a-u)))); }
+  :is(html, html[data-theme="dark"]) #game #prompt-text .part { font-size: calc(16 * var(--a-u)); min-height: calc(20 * var(--a-u)); }
+  :is(html, html[data-theme="dark"]) #game #prompt-text .part small { font-size: max(11px, calc(11 * var(--a-u))) !important; }
+  :is(html, html[data-theme="dark"]) #game #prompt-text .part input { width: calc(19 * var(--a-u)); height: calc(19 * var(--a-u)); border-width: calc(2.5 * var(--a-u)); }
+  :is(html, html[data-theme="dark"]) #game #brush-settings .size-dot { min-height: calc(50 * var(--a-u)); padding: calc(8 * var(--a-u)) calc(12 * var(--a-u)); gap: calc(6 * var(--a-u)); font-size: max(11px, calc(15 * var(--a-u))); }
+  :is(html, html[data-theme="dark"]) #game .btn.primary.done { width: calc(96 * var(--a-u)); height: calc(96 * var(--a-u)); font-size: max(11px, calc(15 * var(--a-u))); }
+  :is(html, html[data-theme="dark"]) #game .history-actions .tool-icon { width: calc(50 * var(--a-u)); height: calc(50 * var(--a-u)); }
+  #game .studio-footer::before { width: calc(100 * var(--a-u)); height: calc(124 * var(--a-u)); margin-top: calc(-34 * var(--a-u)); }
+}
+
+/* ---------- Phones and tablets: one column, the note above the easel ---------- */
+@media (max-width: 819px), (max-width: 999px) and (max-height: 499px), (max-width: 999px) and (orientation: portrait) {
+  #game { --a-u: 1px; }
+  :is(html, html[data-theme="dark"]) #game .game-top { flex-wrap: wrap; padding: 8px 12px; }
+  :is(html, html[data-theme="dark"]) #game .game-top .wordmark { font-size: 26px !important; }
+  :is(html, html[data-theme="dark"]) #game .game-nav { gap: 8px; }
+  :is(html, html[data-theme="dark"]) #game .game-nav :is(#back-home, #restart) { min-height: 40px; padding: 0 10px; font-size: 14px; }
+  :is(html, html[data-theme="dark"]) #game .game-nav #back-home { width: 40px; height: 40px; padding: 0; }
+  :is(html, html[data-theme="dark"]) #game .game-nav #back-home svg { display: block; } /* flow.css hides the old arrow on phones; the house is the whole button */
+  :is(html, html[data-theme="dark"]) #game .mission { margin-top: 6px; }
+  :is(html, html[data-theme="dark"]) #game #prompt-bar { transform: rotate(-1deg); padding: 14px 14px 10px; }
+  :is(html, html[data-theme="dark"]) #game #prompt-text .part { font-size: 19px; }
+  #game .easel { --rim: 12px; --legs: 26px; background-size: 18px var(--legs); }
+  #game .easel-board { margin-top: 30px; }
+  #game .easel-board::before { inset: -14px calc(-1 * var(--rim)) -20px; border-radius: 10px; box-shadow: 4px 6px 0 rgba(0, 0, 0, .4); }
+  #game .easel-board::after { top: -24px; width: 120px; height: 22.5px; margin-left: -60px; }
+  #game .easel-ledge { width: calc(var(--board) + 20px); margin-top: 8px; padding: 16px 8px 0; }
+  :is(html, html[data-theme="dark"]) #game .tray-colors { gap: 3px; }
+  :is(html, html[data-theme="dark"]) #game :is(.swatch, .wheel) { height: 58px; border-radius: 9px 9px 3px 3px; }
+  #game .easel::before, #game .easel::after { width: 18px; }
+  :is(html, html[data-theme="dark"]) #game .tray-tools { grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 6px; padding: 8px; }
+  :is(html, html[data-theme="dark"]) #game .tray-tools .tool { min-height: 66px; }
+  :is(html, html[data-theme="dark"]) #game .tray-tools .art-tool { width: 32px; height: 32px; }
+  :is(html, html[data-theme="dark"]) #game .tray-tools .tool-label { font-size: 11px; }
+  :is(html, html[data-theme="dark"]) #game #brush-settings { margin-top: 0; }
+  /* Small / Medium / Large side by side; the size slider and Opacity each on their own line under them. */
+  :is(html, html[data-theme="dark"]) #game #brush-settings .tray-sizes { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  :is(html, html[data-theme="dark"]) #game #brush-settings .size-dot { grid-column: auto; min-height: 60px; padding: 8px 10px; font-size: 15px; }
+  :is(html, html[data-theme="dark"]) #game #brush-settings .size-value { grid-column: 1 / 3; }
+  :is(html, html[data-theme="dark"]) #game #brush-settings .stroke-preview { grid-column: 3; }
+  :is(html, html[data-theme="dark"]) #game .studio-footer { flex-wrap: wrap; justify-content: space-between; gap: 10px 14px; }
+  #game .studio-footer::before { display: none; }
+  :is(html, html[data-theme="dark"]) #game .studio-footer .save-status { order: 3; flex-basis: 100%; text-align: center; font-size: 13px; }
+  :is(html, html[data-theme="dark"]) #game .history-actions { gap: 14px; }
+  :is(html, html[data-theme="dark"]) #game .history-actions .tool-icon { width: 50px; height: 50px; }
+  :is(html, html[data-theme="dark"]) #game .btn.primary.done { width: 92px; height: 92px; font-size: 14px; }
+}
+
+@media (max-width: 819px), (max-width: 999px) and (max-height: 499px), (max-width: 999px) and (orientation: portrait) {
+  /* Playing on a phone: the canvas shows on the first screen, and the clock and Done drawing never scroll away. */
+  /* The top bar stays at the top. In a Time Challenge the name steps aside so the clock and buttons fit on one row. */
+  :is(html, html[data-theme="dark"]) #game .game-top { position: sticky; top: 0; z-index: 6; flex-wrap: nowrap; }
+  :is(html, html[data-theme="dark"]) #game .game-top:has(#challenge-timer:not([hidden])) .wm-slot { display: none; }
+  :is(html, html[data-theme="dark"]) #game .challenge-timer { min-width: 0; padding: 6px 10px; font-size: 20px; }
+  /* The note is compact: two columns, and it scrolls inside itself when the parts don't fit. */
+  :is(html, html[data-theme="dark"]) #game #prompt-bar { padding: 10px 12px 8px; }
+  :is(html, html[data-theme="dark"]) #game .mission-title { font-size: 21px; }
+  :is(html, html[data-theme="dark"]) #game #prompt-label { margin-bottom: 6px; font-size: 12px !important; }
+  :is(html, html[data-theme="dark"]) #game #prompt-text { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 4px 10px; max-height: 26dvh; overflow-y: auto; overscroll-behavior: contain; }
+  :is(html, html[data-theme="dark"]) #game #prompt-text .part { font-size: 16px; padding-left: 24px; }
+  :is(html, html[data-theme="dark"]) #game #prompt-text .part small { font-size: 10.5px !important; }
+  :is(html, html[data-theme="dark"]) #game #prompt-text .part input { width: 18px; height: 18px; border-width: 2.5px; }
+  :is(html, html[data-theme="dark"]) #game #prompt-text .part.free { grid-column: 1 / -1; }
+  /* Undo, Redo, Clear and Done drawing stay at the bottom of the screen. */
+  :is(html, html[data-theme="dark"]) #game .studio-footer { position: sticky; bottom: 0; z-index: 6; padding-top: 8px; padding-bottom: calc(8px + env(safe-area-inset-bottom)); }
+  :is(html, html[data-theme="dark"]) #game .studio-footer .save-status { display: none; }
+  /* While the custom color picker is open it's pinned to the bottom of the screen (color-picker.css), where the dock
+     is, so the dock steps aside until it closes; otherwise a tap on the picker's Done would press Done drawing. */
+  #game:has(.cp-panel:not([hidden])) .studio-footer { visibility: hidden; }
+  :is(html, html[data-theme="dark"]) #game .history-actions .tool-icon { width: 44px; height: 44px; }
+  :is(html, html[data-theme="dark"]) #game .history-actions .tool-label { font-size: 11px; }
+  :is(html, html[data-theme="dark"]) #game .btn.primary.done { width: 76px; height: 76px; padding: 8px; font-size: 13px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #game :is(.game-nav button, .tray-tools .tool, .history-actions .tool-icon, .btn.primary.done, .swatch, .wheel, .size-dot) { transition: none; }
+  #game :is(.game-nav button, .tray-tools .tool:not([aria-pressed="true"]), .swatch:not([aria-pressed="true"]), .wheel:not(.on), .size-dot:not([aria-pressed="true"])):hover,
+  #game .history-actions .tool:hover .tool-icon, #game .btn.primary.done:hover { transform: none; }
+}

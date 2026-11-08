@@ -59,23 +59,25 @@
     return { current, best: Math.max(longestRun(days), Number(bestSoFar) || 0, current), drewToday };
   }
 
+  // A streak only shows once it's a real one: this many days in a row. Days 1 and 2 still count, quietly.
+  const SHOW_FROM = 3;
+
   // What the home screen says, or "" when there's no streak to show.
   function homeText(s) {
-    if (!s || !s.current) return "";
+    if (!s || s.current < SHOW_FROM) return "";
     const days = `${s.current}-day streak`;
-    return s.drewToday ? `🔥 ${days}` : `🔥 ${days} · Draw today to keep it going`;
+    return s.drewToday ? days : `${days} · Draw today to keep it going`;
   }
 
   // What the finish screen says. `added` is true when this drawing is the first to count today.
   function finishText(s, added, bestBefore) {
-    if (!s || !s.current) return "";
-    if (!added) return `🔥 ${s.current}-day streak`;
-    if (s.current === 1) return "🔥 Day 1 of a new streak. Come back tomorrow to keep it going!";
-    if (s.current > bestBefore) return `🔥 New best: ${s.current} days in a row!`;
-    return `🔥 That's ${s.current} days in a row!`;
+    if (!s || s.current < SHOW_FROM) return "";
+    if (!added) return `${s.current}-day streak`;
+    if (s.current > bestBefore) return `New best: ${s.current} days in a row!`;
+    return `That's ${s.current} days in a row!`;
   }
 
-  const pure = { dayNumber, addDay, longestRun, streakOf, homeText, finishText, KEEP_DAYS };
+  const pure = { dayNumber, addDay, longestRun, streakOf, homeText, finishText, KEEP_DAYS, SHOW_FROM };
   if (typeof module !== "undefined" && module.exports) { module.exports = pure; return; }
 
   /* ---------- This browser's streak ---------- */

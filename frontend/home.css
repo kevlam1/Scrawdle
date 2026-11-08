@@ -93,6 +93,13 @@
   .daily-more { transition: none; }
 }
 
+/* Every card's description is simply shown, on every screen. Opening it on hover moved the cards below (so a quick
+   click could land on the wrong mode) and, on phones, cut the text off mid-line. The cards still lift and tint on hover.
+   (After the Daily card's own rules above, so it wins over them.) */
+.menu-more, .daily-more { display: block; opacity: 1; }
+.menu-more-inner { overflow: visible; text-align: center; }
+.daily-options { overflow: visible; }
+
 /* ---------- Public drawings, bottom right ---------- */
 .public-corner {
   position: fixed;
@@ -149,6 +156,45 @@ a.wordmark:focus-visible { outline: 2.5px solid var(--ink); outline-offset: 4px;
 }
 .continue-x::after { content: ""; position: absolute; inset: -7px; } /* a 44px target around the small circle */
 .continue-x:hover { background: rgba(48, 47, 43, .12); color: var(--ink); }
+
+/* On the home page the notices sit small in the top-left corner (in the header), one line each, so they don't push
+ * the menu down. The full list of parts is the card's tooltip. */
+#setup > .app-header { align-items: flex-start; padding-top: 12px; }
+#setup > .app-header #continue-list { width: min(330px, calc(100% - 128px)); margin: 0; gap: 8px; }
+#setup > .app-header .continue { gap: 10px; padding: 6px 38px 6px 6px; border-width: 2px; border-radius: 12px; box-shadow: none; }
+#setup > .app-header .continue img { width: 54px; height: 36px; border-width: 1.5px; border-radius: 6px; }
+#setup > .app-header .continue span { flex: 1; }
+#setup > .app-header .continue b { font-size: 13px; line-height: 1.3; }
+#setup > .app-header .continue small { margin-top: 1px; font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+#setup > .app-header .continue-x { top: 50%; right: 6px; width: 26px; height: 26px; margin-top: -13px; font-size: 18px; }
+
+/* ---------- Dark mode and How to play: icon buttons, top right ---------- */
+/* Drawn like the Public drawings button. The words are hidden but still read out, and show as the tooltip. */
+.header-actions { gap: 10px; }
+.header-actions .icon-btn {
+  display: inline-grid;
+  place-items: center;
+  width: 46px;
+  height: 46px;
+  min-height: 0;
+  padding: 0;
+  background: #fff;
+  border: 3px solid var(--ink);
+  border-radius: 12px;
+  box-shadow: 3px 3px 0 var(--ink);
+  color: var(--ink);
+}
+.header-actions .icon-btn:hover { transform: translate(-1px, -1px); box-shadow: 4px 4px 0 var(--ink); }
+.header-actions .icon-btn:active { transform: translate(3px, 3px); box-shadow: none; }
+.header-actions .icon-btn:focus-visible { outline: 2.5px solid var(--ink); outline-offset: 3px; }
+.icon-btn svg { width: 24px; height: 24px; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
+.icon-label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+#theme-toggle .i-sun { display: none; }
+html[data-theme="dark"] #theme-toggle .i-sun { display: block; }
+html[data-theme="dark"] #theme-toggle .i-moon { display: none; }
+html[data-theme="dark"] .header-actions .icon-btn { background: var(--surface); border-color: #857d70; box-shadow: 3px 3px 0 #000; color: inherit; }
+html[data-theme="dark"] .header-actions .icon-btn:hover { background: var(--picked); border-color: var(--picked-edge); }
+@media (prefers-reduced-motion: reduce) { .header-actions .icon-btn:hover, .header-actions .icon-btn:active { transform: none; } }
 
 /* ---------- Public drawings ---------- */
 .public-filters { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 10px; max-width: 600px; margin: 0 auto 16px; }

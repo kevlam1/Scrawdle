@@ -40,7 +40,7 @@ test("your own drawing's standing: its place, unranked, or none", () => {
   assert.equal(L.standingText(L.myStanding(items, ranked)), "Yours is #2 of 3 today.");
   const unranked = [d("a", 5), d("b", 0, 2, { mine: true })];
   assert.deepEqual(L.myStanding(unranked, L.rank(unranked)), { unranked: true });
-  assert.match(L.standingText({ unranked: true }), /no thumbs up yet/);
+  assert.match(L.standingText({ unranked: true }), /no likes yet/);
   assert.equal(L.myStanding([d("a", 5)], L.rank([d("a", 5)])), null);
   assert.equal(L.standingText(null), "");
 });

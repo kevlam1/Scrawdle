@@ -1,7 +1,8 @@
-/* Votes on published drawings: thumbs up or thumbs down, one per player per drawing.
- * The win condition lives here so it can change without a database update: today a drawing
- * has won once anyone gives it a thumbs up. A drawing's votes look like { up, down, mine },
- * where `mine` is this player's own vote: 1, -1, or 0 for none. */
+/* Likes on published drawings: a small heart, one per player per drawing. The database keeps them as
+ * votes (1 is a like; -1, an older thumbs down, still counts in the database but has no button now).
+ * The win condition lives here so it can change without a database update: today a drawing has won once
+ * anyone likes it. A drawing's votes look like { up, down, mine }, where `up` is its likes and `mine` is
+ * this player's own vote: 1, -1, or 0 for none. */
 (function (root) {
   "use strict";
 
@@ -11,12 +12,33 @@
     return Boolean(votes) && votes.up >= 1;
   }
 
-  // What the player sees under their own drawing.
+  // The words under the player's own drawing, beside its heart count; "" for none.
   function resultText(votes) {
-    if (!votes) return "Publish it to get votes.";
-    const tally = `👍 ${votes.up} · 👎 ${votes.down}`;
-    if (isWin(votes)) return `You won! ${tally}`;
-    return votes.down ? `No thumbs up yet. ${tally}` : "Waiting for votes.";
+    if (!votes) return "Publish it so others can like it.";
+    return isWin(votes) ? "You won!" : "";
+  }
+
+  // The heart: an outline, filled red once liked. Public drawings, the leaderboard and Scrawdle Party all use it.
+  const HEART = "M12 20.6s-7.6-4.6-9.4-9.3C1.3 7.9 3.4 4.4 6.9 4.4c2.1 0 3.7 1.2 5.1 3 1.4-1.8 3-3 5.1-3 3.5 0 5.6 3.5 4.3 6.9-1.8 4.7-9.4 9.3-9.4 9.3z";
+  function heartIcon(filled) {
+    const ns = "http://www.w3.org/2000/svg";
+    const svg = document.createElementNS(ns, "svg");
+    svg.setAttribute("viewBox", "0 0 24 24");
+    svg.setAttribute("aria-hidden", "true");
+    svg.setAttribute("class", filled ? "heart filled" : "heart");
+    const path = document.createElementNS(ns, "path");
+    path.setAttribute("d", HEART);
+    svg.append(path);
+    return svg;
+  }
+  // A heart and its number, for showing likes without a button (your own drawing, the leaderboard).
+  function likeCount(count, filled) {
+    const span = document.createElement("span");
+    span.className = "like-count";
+    span.setAttribute("role", "img");
+    span.setAttribute("aria-label", `${count} ${count === 1 ? "like" : "likes"}`);
+    span.append(heartIcon(filled), String(count));
+    return span;
   }
 
   // Pressing the vote you already gave takes it back; pressing the other one switches it.
@@ -44,5 +66,5 @@
 
   const api = { isWin, resultText, applyVote, countsById, NO_VOTES };
   if (typeof module !== "undefined" && module.exports) module.exports = api;
-  else root.ScrawdleVotes = api;
+  else root.ScrawdleVotes = { ...api, heartIcon, likeCount };
 })(typeof window !== "undefined" ? window : globalThis);

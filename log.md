@@ -1456,6 +1456,46 @@ Artifact 4 is "For Someone Else," due Sunday, November 8. Our team of four (Kevi
 
 ---
 
+## 74. The arcade drawing screen, hearts for likes, and fixes from a full playtest (2026-11-08) — Zainab
+
+**What I asked for**
+- Bring my arcade drawing screen over to the team's game (the team said I could, and Kevin liked it), keep the wooden easel around the canvas, add the big red ball joystick, put the navy top bar back, and give the whole drawing screen a light and a dark version.
+- Make it keep its shape when you zoom the browser in or out.
+- Replace the thumbs up / thumbs down and "Waiting for votes" with a small heart in the corner of each drawing that fills red when you like it and shows how many likes it has.
+- Show the streak only from 3 days in a row, with no emoji.
+- Then go through the whole game like a player and a grader would, and fix what doesn't work.
+- On the home page, make "Continue drawing" small and up in a corner, and use icons for Dark mode and How to play like my own redesign has, instead of the words.
+- Pressing Daily Scrawl after I'd published took me to the finish screen instead of the canvas; it should go to the canvas.
+
+**What changed**
+- The drawing screen (`frontend/arcade.css`, new, and the `#game` markup in `frontend/index.html`): the parts on a pinned sticky note with a box to tick for each, the tools as chunky keys, the canvas in a wooden frame on an easel with the twelve colors and Custom standing as markers on its tray, Small / Medium / Large as cards, and a control deck with a joystick, round Undo / Redo / Clear and a big red Done drawing. The navy top bar has a house button for home. Light mode is a cream cabinet and dark mode a dark one. Every size is based on the window, so zooming in or out keeps the proportions, with a floor so small text never goes under 11px. On phones the canvas is on the first screen, the parts note is two columns, the top bar (and the Time Challenge clock) stays at the top, and Undo / Redo / Clear / Done drawing stay at the bottom. `createBoard` in `drawing.js` takes an optional `palette` element for the colors, so Scrawdle Party's board is unchanged. All of it is scoped to `#game`.
+- New files: `frontend/arcade.css`; `frontend/assets/arcade/joystick.svg` and `easel-clamp.svg` (drawn for this, nothing downloaded); `frontend/fonts/fredoka.woff2` (Fredoka, SIL Open Font License, the cabinet's font); `tests/syntax.test.js`.
+- Likes (`votes.js`, `gallery.js`, `leaderboard.js`, `party.js`, `flow.css`): a heart icon instead of 👍 / 👎 on Public drawings, the leaderboard, yesterday's winners, your own drawing, and Scrawdle Party's voting and results. "Waiting for votes." is gone; your own drawing shows its heart count, and "You won!" once someone likes it. The database is unchanged: a like is still a vote of 1, and older thumbs-down votes stay but have no button.
+- Streak (`streak.js`, `drawing.js`): shown from 3 days in a row, with no emoji, on the home screen, the finish screen and in the share text.
+- A published drawing (`publish.js`, `index.html`, `drawing.js`): no longer offered as "Continue drawing" on home; pressing its mode again still opens it on the canvas, as before; and the finish screen says it's already published and no longer offers Publish again after a refresh. `window.scrawdleIsPublished` works even when Supabase can't load.
+- Time Challenge (`index.html`): leaving during "3, 2, 1" really cancels it (before, the clock started anyway and the finish screen popped up over home later), and Done drawing waits during the countdown.
+- Navigation (`index.html`): the reveal and drawing screens open scrolled to the top on phones; the drawing screen is hidden behind the reveal (on a phone you could scroll down to the tools and Done); links home from Public drawings and the leaderboard land on home instead of reopening the finish screen, while a refresh still returns to the drawing; sessionStorage calls are wrapped so blocked storage doesn't stop the buttons.
+- Public drawings (`gallery.js`): opened for Daily Scrawl before posting, it shows Daily Free Play and says why Daily Scrawl is locked (it used to show an empty page), and a line under the title says drawings "leave this page at midnight and are deleted within two days".
+- Scrawdle Party (`party.js`, `party.css`): guests get a Leave game button (they couldn't leave a running game), the bar with the round and End game / Leave game shows while drawing too, and the host's Players button no longer sits over Undo.
+- Home (`home.css`, `index.html`): "Continue drawing" is a small card in the top-left corner (a little picture, one line of parts, the full list on hover, and the x) instead of a wide banner above the menu; Dark mode and How to play are square icon buttons in the top right (a moon, or a sun in dark mode, and a question mark), drawn like the Public drawings button, with their names as the tooltip and for screen readers; every card's description is always shown, so hovering no longer moves the other cards (clicks could land on the wrong mode) and phones no longer cut the text off; the "parts couldn't load" error shows under the buttons; part checkboxes have screen-reader labels ("Head: Rabbit").
+- Finish screen (`drawing.js`): a blank canvas says "Nothing drawn yet." with no Download; a failed publish says "Couldn't publish"; sharing a Free Play drawing says "Free Play" (not "Open Canvas").
+- Leaderboard (`leaderboard.js`, `leaderboard.css`): heading "Today's leaderboard", links in ink instead of browser blue, the doodles show behind it, and the name links home.
+- How to play and `README.md` rewritten to match the game (the README said dark mode wasn't built and that the winner was on the home screen).
+
+**What I checked**
+- A full review of the game in Chrome, Firefox and Safari's engine, at laptop and phone sizes and in light and dark mode, with every problem re-checked independently, plus research on how daily and drawing games handle flow, streaks, likes and sharing. Nothing wrote to the live database: publishing and lobbies were tested with a stand-in Supabase.
+- After the fixes: the 29-step walkthrough passes in all three browsers on laptop; the drawing screen fits with no overlaps at 12 window sizes from 823x514 (175% zoom) to 2560x1440; on 3 phone sizes the canvas is on the first screen and Done drawing is always reachable; the color picker can be used on phones; the heart toggles and counts; refreshing, publishing, Time Challenge and the home links behave as above.
+- The home changes and the canvas fix, in Chrome at laptop and phone size, light and dark: the corner notice and the icons show and the theme button still switches; a published Daily Scrawl drawing reopens on the canvas.
+- All 150 tests pass (17 new in `tests/syntax.test.js`, which checks every browser script parses).
+
+**Decisions**
+- One commit for the whole set, as the team asked, instead of many small ones.
+- Thumbs down has no button now; nothing is removed from the database, so it can come back.
+- The old thumbs button styles in `flow.css` (`.vote-bar`, `.vote`) are left in place, unused.
+- Not done tonight: a phone held sideways still lets the canvas cover most of the tools (already noted in entry 72); renaming Daily Free Play; replacing the Arial fallback with the game's fonts; a "done for today" home screen with a countdown.
+
+---
+
 ## Where AI misread me, or I had to correct course
 
 - Claude's first version of the start page put "What is this?" in the top right, where it collided with the "New set" button on the game screen. I caught it by running the page; Claude hadn't opened it in a browser.

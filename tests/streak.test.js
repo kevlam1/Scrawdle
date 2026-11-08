@@ -67,17 +67,22 @@ test("no days means no streak", () => {
   assert.deepEqual(S.streakOf(null, "2026-11-07"), { current: 0, best: 0, drewToday: false });
 });
 
-test("the home screen shows the streak, and nudges when today isn't drawn yet", () => {
-  assert.equal(S.homeText({ current: 5, drewToday: true }), "🔥 5-day streak");
-  assert.equal(S.homeText({ current: 5, drewToday: false }), "🔥 5-day streak · Draw today to keep it going");
+test("the home screen shows the streak from 3 days, and nudges when today isn't drawn yet", () => {
+  assert.equal(S.homeText({ current: 5, drewToday: true }), "5-day streak");
+  assert.equal(S.homeText({ current: 5, drewToday: false }), "5-day streak · Draw today to keep it going");
+  assert.equal(S.homeText({ current: 3, drewToday: true }), "3-day streak");
+  assert.equal(S.homeText({ current: 2, drewToday: true }), "", "1 or 2 days isn't shown yet");
+  assert.equal(S.homeText({ current: 1, drewToday: false }), "");
   assert.equal(S.homeText({ current: 0, drewToday: false }), "");
   assert.equal(S.homeText(null), "");
 });
 
-test("the finish screen celebrates a new day, a new best, and a first day", () => {
-  assert.equal(S.finishText({ current: 1 }, true, 0), "🔥 Day 1 of a new streak. Come back tomorrow to keep it going!");
-  assert.equal(S.finishText({ current: 4 }, true, 6), "🔥 That's 4 days in a row!");
-  assert.equal(S.finishText({ current: 7 }, true, 6), "🔥 New best: 7 days in a row!");
-  assert.equal(S.finishText({ current: 4 }, false, 6), "🔥 4-day streak", "today already counted");
+test("the finish screen celebrates a new day and a new best, from 3 days", () => {
+  assert.equal(S.finishText({ current: 1 }, true, 0), "");
+  assert.equal(S.finishText({ current: 2 }, true, 1), "");
+  assert.equal(S.finishText({ current: 3 }, true, 3), "That's 3 days in a row!");
+  assert.equal(S.finishText({ current: 4 }, true, 6), "That's 4 days in a row!");
+  assert.equal(S.finishText({ current: 7 }, true, 6), "New best: 7 days in a row!");
+  assert.equal(S.finishText({ current: 4 }, false, 6), "4-day streak", "today already counted");
   assert.equal(S.finishText({ current: 0 }, false, 0), "");
 });

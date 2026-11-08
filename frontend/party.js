@@ -97,13 +97,24 @@
     /* ---------- screens ---------- */
     const view = el("div", { className: "party" });
     ctx.container.replaceChildren(view);
-    function screen(title, ...body) {
-      const bar = el("header", { className: "party-bar" },
+    // The bar over every Party screen, drawing included: the round, and End game for the host or Leave game for
+    // everyone else (it leaves the lobby too, the same as the lobby's own Leave button).
+    function partyBar() {
+      let action = el("span");
+      if (!game.ended && amHost()) action = el("button", { type: "button", className: "quiet", textContent: "End game", onclick: () => { if (confirm("End the game for everyone?")) ctx.end(); } });
+      else if (!game.ended) action = el("button", { type: "button", className: "quiet", textContent: "Leave game", onclick: () => {
+        if (!confirm("Leave the game? You'll leave the lobby too.")) return;
+        const leave = document.querySelector('#lobby [data-act="leave"]'); // the game is its own dialog, beside the lobby's
+        if (leave) leave.click();
+      } });
+      return el("header", { className: "party-bar" },
         el("span", { className: "party-name", textContent: "Scrawdle Party" }),
         el("span", { className: "party-round", textContent: game.total ? `Round ${game.round} of ${game.total}` : "" }),
-        amHost() && !game.ended ? el("button", { type: "button", className: "quiet", textContent: "End game", onclick: () => { if (confirm("End the game for everyone?")) ctx.end(); } }) : el("span"));
+        action);
+    }
+    function screen(title, ...body) {
       const main = el("main", { className: "party-screen" }, title ? el("h2", { textContent: title }) : null, ...body);
-      view.replaceChildren(bar, main);
+      view.replaceChildren(partyBar(), main);
       return main;
     }
     const note = (text) => el("p", { className: "party-note", textContent: text });
@@ -161,7 +172,7 @@
       game.renderSetupPlayers = () => players.replaceChildren(...ctx.players().map((p) => el("li", { textContent: p.id === me ? `${p.name} (you, host)` : p.name })));
       game.renderSetupPlayers();
       screen("Set up the game",
-        note("Everyone draws the same random parts, then votes on each other's drawings. Each thumbs up is a point."),
+        note("Everyone draws the same random parts, then likes each other's drawings. Each like is a point."),
         group("Parts", "mode", R.OPTIONS.mode, (m) => (m === "basic" ? "Basic" : "Detailed")),
         group("Rounds", "rounds", R.OPTIONS.rounds, String),
         group("Time to draw", "seconds", R.OPTIONS.seconds, (s) => `${s} seconds`),
@@ -185,7 +196,7 @@
         v.board.discard();
         v.parts.textContent = partsLine(d.parts);
         v.board.onDone = () => submit(false);
-        view.replaceChildren(v.root);
+        view.replaceChildren(partyBar(), v.root);
         game.drawTimer = countdown(v.timer, d.seconds, () => submit(true));
       });
     }
@@ -251,27 +262,28 @@
           image ? el("img", { src: image, alt: id === me ? "Your drawing" : "A player's drawing" }) : el("div", { className: "party-missing", textContent: "This drawing didn't reach you." }));
         if (id === me) card.append(el("p", { className: "party-card-note", textContent: "Yours" }));
         else if (image) {
-          const bar = el("div", { className: "vote-bar" });
-          const buttons = [[1, "👍", "Thumbs up"], [-1, "👎", "Thumbs down"]].map(([value, icon, label]) => {
-            const b = el("button", { type: "button", className: "vote", textContent: icon });
-            b.setAttribute("aria-label", label);
-            b.addEventListener("click", () => {
-              game.ballot[id] = game.ballot[id] === value ? 0 : value;
-              buttons.forEach(([v, btn]) => btn.setAttribute("aria-pressed", String(game.ballot[id] === v)));
-              stop(sendTimer);
-              sendTimer = later(250, () => sendBallot(false));
-            });
-            b.setAttribute("aria-pressed", "false");
-            bar.append(b);
-            return [value, b];
+          // The same heart as Public drawings: press to like (a point for that drawing), press again to take it back.
+          const like = el("button", { type: "button", className: "like" });
+          like.setAttribute("aria-label", "Like");
+          const draw = () => {
+            const on = game.ballot[id] === 1;
+            like.replaceChildren(root.ScrawdleVotes.heartIcon(on));
+            like.setAttribute("aria-pressed", String(on));
+          };
+          like.addEventListener("click", () => {
+            game.ballot[id] = game.ballot[id] === 1 ? 0 : 1;
+            draw();
+            stop(sendTimer);
+            sendTimer = later(250, () => sendBallot(false));
           });
-          card.append(bar);
+          draw();
+          card.append(like);
         }
         grid.append(card);
       }
       const timer = el("p", { className: "party-timer", role: "timer" });
       const doneBtn = button("Done voting", () => { sendBallot(true); doneBtn.disabled = true; doneBtn.textContent = "Waiting for the others…"; });
-      screen("Vote!", note("Names stay hidden until the results. Give each drawing a thumbs up or down; press again to take it back."), timer, grid, doneBtn);
+      screen("Vote!", note("Names stay hidden until the results. Tap the heart on the drawings you like; tap again to take it back."), timer, grid, doneBtn);
       countdown(timer, R.VOTE_SECONDS, () => { if (game.phase === "vote") sendBallot(true); });
     }
 
@@ -310,7 +322,7 @@
         grid.append(el("li", { className: [id === me ? "mine" : "", won ? "won" : ""].join(" ").trim() },
           image ? el("img", { src: image, alt: `${names[id] || "A player"}'s drawing` }) : el("div", { className: "party-missing", textContent: "This drawing didn't reach you." }),
           el("p", { className: "party-card-name", textContent: `${names[id] || "Player"}${id === me ? " (you)" : ""}` }),
-          el("p", { className: "party-card-votes", textContent: `👍 ${v.up} · 👎 ${v.down}${top ? " · Top drawing!" : won ? " · Won the round" : ""}` })));
+          el("p", { className: "party-card-votes" }, root.ScrawdleVotes.likeCount(v.up, v.up > 0), top ? " · Top drawing!" : won ? " · Won the round" : "")));
       }
       const last = d.round >= d.total;
       const next = amHost()
@@ -398,7 +410,7 @@
   root.ScrawdleLobby.registerGame({
     id: "party",
     title: "Scrawdle Party",
-    description: "Everyone draws the same random parts, then votes. Each thumbs up is a point.",
+    description: "Everyone draws the same random parts, then likes each other's drawings. Each like is a point.",
     minPlayers: 2,
     start,
   });

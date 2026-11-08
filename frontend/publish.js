@@ -19,6 +19,12 @@
   "use strict";
 
   const cfg = root.SCRAWDLE_SUPABASE || {};
+  // True once this browser has published the drawing for that day and mode (the "scrawdle-published" list below).
+  // The home screen uses it so a published drawing stops showing as "Continue drawing", and the finish screen so
+  // it doesn't offer Publish again. It's set before the checks below, so it works even when Supabase can't load.
+  root.scrawdleIsPublished = (day, mode) => {
+    try { return Boolean(JSON.parse(localStorage.getItem("scrawdle-published") || "{}")[`${day}|${mode}`]); } catch { return false; }
+  };
   if (!cfg.url || !cfg.anonKey) return; // no project yet; leave both hooks undefined
 
   if (typeof root.supabase === "undefined" || typeof root.supabase.createClient !== "function") {
@@ -86,7 +92,7 @@
     if (uploadError) {
       console.error("publish.js upload error (raw):", uploadError);
       const err = new Error(uploadError.message || "upload failed");
-      err.userMessage = "Couldn't share right now. Your drawing is still saved here, so try again.";
+      err.userMessage = "Couldn't publish right now. Your drawing is still saved here, so try again.";
       throw err;
     }
 
@@ -96,7 +102,7 @@
     if (insertError) {
       console.error("publish.js insert error (raw):", insertError);
       const err = new Error(insertError.message || "insert failed");
-      err.userMessage = "Couldn't share right now. Your drawing is still saved here, so try again.";
+      err.userMessage = "Couldn't publish right now. Your drawing is still saved here, so try again.";
       throw err;
     }
 
