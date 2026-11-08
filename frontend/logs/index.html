@@ -609,7 +609,7 @@
         <h1>Scrawdle: build log</h1>
         <p class="intro">
           A daily drawing game, built by a team of four with Claude Code: a new set of parts to draw each day, a gallery of what
-          other people drew, and private lobbies. Here are the 72 entries of our log with one sentence on each and the name of
+          other people drew, and private lobbies. Here are the 73 entries of our log with one sentence on each and the name of
           whoever wrote it. Open an entry to read everything they wrote for it.
         </p>
         <ul class="facts" aria-label="Project facts">
@@ -752,9 +752,10 @@
   </ul></div>
 </div>
 <div class="toc-group is-open">
-  <button class="toc-head" type="button" aria-expanded="true">Sunday 8 November <span class="count">1</span></button>
+  <button class="toc-head" type="button" aria-expanded="true">Sunday 8 November <span class="count">2</span></button>
   <div class="toc-list-wrap"><ul class="toc-list">
     <li><a href="#entry-72"><span class="n">72</span><span>The drawing screen fits phones again</span></a></li>
+    <li><a href="#entry-73"><span class="n">73</span><span>Yesterday's winners move off the home screen</span></a></li>
   </ul></div>
 </div>
 <div class="toc-group is-open">
@@ -1984,6 +1985,23 @@
 <ul><li>In Chrome, Firefox and Safari's engine, on seven phone and tablet sizes (iPhone SE, a small Android, iPhone 14, Pixel, iPhone Pro Max, iPad, and a phone held sideways), in Daily Scrawl, Free Play and Daily Free Play, with the Pen, the Brush and the Bucket: the drawing screen fits the screen every time, 252 of 252 checks. Before the fix, none of them did. Tapping the Size and Opacity sliders changes them.</li><li>All 133 tests pass.</li><li>Found while checking, not changed here: with a phone held sideways, the canvas covers the row of tools, so they can't be tapped. That was already happening before this change. It's on the list for the next phone fixes, along with making the parts take less room.</li><li>Not checked: a real phone.</li></ul>
 <p class="sub"><strong>Decisions</strong></p>
 <ul><li>Only phones and tablets change. On laptops the settings box stays the way it was.</li></ul>
+  </div></div></div>
+</article>
+<article class="entry" id="entry-73">
+  <h3 class="entry-head"><button type="button" aria-expanded="false" aria-controls="entry-73-body">
+    <span class="num">73</span>
+    <span><span class="title">Yesterday's winners move off the home screen<span class="by">by Zainab</span></span><span class="sum">Zainab moved yesterday's winners off the home screen, where the full-size winning drawing pushed the game buttons below the screen, so they now show on the leaderboard page only.</span></span>
+    <span class="caret" aria-hidden="true"></span>
+  </button></h3>
+  <div class="body" id="entry-73-body"><div class="body-in"><div class="body-pad">
+<p class="sub"><strong>What I asked for</strong></p>
+<ul><li>When I opened the game, the first thing on the home screen was yesterday's winning drawing, so big that I couldn't see how to start a game. Put it on another screen.</li></ul>
+<p class="sub"><strong>What changed</strong></p>
+<ul><li><code>frontend/index.html</code>: the home screen no longer shows the &quot;Yesterday's winners&quot; card (Trenten's, entry 68). With only one winner, the card stretched to the full width of the home column and showed the drawing full size, which pushed Daily, Multiplayer, Free Play and Time Challenge below the bottom of the screen on laptops and phones. It only started showing tonight, once database update 005 was run. Yesterday's winners are still on the leaderboard page, which builds them on its own, and the home screen's Today's leaderboard link goes there.</li></ul>
+<p class="sub"><strong>What I checked</strong></p>
+<ul><li>In Chrome, Firefox and Safari's engine at 1440x900, 1280x720 and 390x844, with the live database: before the change the game buttons were below the screen at every size. Now, on laptops all four are on the first screen, and on phones Daily and Multiplayer are (Free Play and Time Challenge are a short scroll down). Daily still starts a game, and the leaderboard page still shows &quot;Yesterday's winners&quot;.</li><li>All 133 tests pass.</li></ul>
+<p class="sub"><strong>Decisions</strong></p>
+<ul><li>Moved off the home screen rather than shrunk, so the game buttons come first. The card's styles in <code>leaderboard.css</code> (<code>#yesterday-slot</code>) are left in place, unused, in case it comes back somewhere else.</li></ul>
   </div></div></div>
 </article>
       </section>
