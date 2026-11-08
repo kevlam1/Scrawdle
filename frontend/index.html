@@ -19,6 +19,7 @@
   <link rel="stylesheet" href="tools.css" />
   <link rel="stylesheet" href="color-picker.css" />
   <link rel="stylesheet" href="leaderboard.css" />
+  <link rel="stylesheet" href="arcade.css" />
 </head>
 <body>
   <template id="wordmark">
@@ -32,20 +33,23 @@
     <h2>How to play</h2>
     <p>Scrawdle hands you a random mix of animal parts, and your job is to draw the creature they make together.</p>
     <ol>
-      <li>Open Daily Scrawl. Everyone gets the same parts each day: a head, arms, legs and tail, plus ears, eyes and a mouth, with an optional extra, skin pattern and accessory.</li>
+      <li>Open Daily, then Daily Scrawl. Everyone gets the same parts each day: a head, arms, legs and tail, plus ears, eyes and a mouth, with an optional extra, skin pattern and accessory.</li>
       <li>Watch the slot machine spin. Whatever it lands on is your set of parts.</li>
-      <li>Your parts stay above the canvas while you draw. Parts marked optional are yours to use or skip.</li>
+      <li>Your parts sit on the Mission briefing note beside the easel. Tick each one off as you draw it; parts marked optional are yours to use or skip.</li>
       <li>Draw with your mouse, finger or stylus. Your drawing saves in this browser as you go.</li>
       <li>Press Done drawing to publish it, download it, or watch it replay.</li>
-      <li>In today's gallery, give other players' drawings a thumbs up or thumbs down. Once anyone gives your published drawing a thumbs up, you win!</li>
+      <li>On Public drawings, tap the heart on the drawings you like. Once anyone likes your published drawing, you win!</li>
     </ol>
-    <p>Want a different creature? Free Play gives you random parts any time.</p>
-    <p>Daily Free Play has no parts: draw anything you like. It saves in your browser and clears each day, like the others.</p>
-    <p>Public drawings shows what everyone has posted today, and starts over each day. Daily Scrawl's drawings unlock once you post yours. Multiplayer Games makes a private lobby you can invite friends to.</p>
+    <p><strong>Daily Free Play</strong> has no parts: draw anything you like today.</p>
+    <p><strong>Free Play</strong> gives you random parts any time, as often as you like.</p>
+    <p><strong>Time Challenge</strong> gives you four random parts and 30, 60 or 90 seconds. The canvas locks at 0:00.</p>
+    <p><strong>Multiplayer</strong> makes a private lobby you can invite friends to, for Scrawdle Party.</p>
+    <p>Public drawings shows what everyone has posted today; drawings leave at midnight. Daily Scrawl's drawings unlock once you post yours.</p>
   </dialog>
 
   <main id="setup">
-    <header class="app-header"><span></span><div class="header-actions"><button class="quiet" id="theme-toggle" type="button">Dark mode</button><button class="help-open quiet" type="button">How to play</button></div></header>
+    <!-- Top left: a small "Continue drawing" for each drawing in progress. Top right: two icon buttons; their names are the tooltip and what a screen reader says. -->
+    <header class="app-header"><div id="continue-list"></div><div class="header-actions"><button class="quiet icon-btn" id="theme-toggle" type="button" title="Dark mode"><svg class="i-moon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 14.5A8 8 0 0 1 9.5 4 8 8 0 1 0 20 14.5z"/></svg><svg class="i-sun" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1L7 17M17 7l2.1-2.1"/></svg><span class="icon-label theme-label">Dark mode</span></button><button class="help-open quiet icon-btn" type="button" title="How to play"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .8-1 1.5v.7M12 17.5v.5"/></svg><span class="icon-label">How to play</span></button></div></header>
     <!-- The big word behind everything: sized to the page's width in home.css, and not part of the page for a screen reader. -->
     <div class="home-bg" aria-hidden="true"><span>Scrawdle</span></div>
     <div class="home-body">
@@ -53,7 +57,6 @@
       <p class="eyebrow" id="home-date"></p>
       <p class="home-streak" id="home-streak" hidden></p>
       <h1>Ready to draw?</h1>
-      <div id="continue-list"></div>
       <div class="menu-stack">
         <!-- Daily opens into two halves (hover, keyboard focus, or always on a touch screen); each half is its own button. -->
         <div class="menu-card daily-card" role="group" aria-label="Daily">
@@ -89,10 +92,10 @@
         </button>
       </div>
       <div id="multiplayer-error"></div>
+      <p id="setup-error" role="alert" hidden></p><!-- right under the buttons, so "the parts couldn't load" is seen -->
       <button class="quiet" id="my-drawings" type="button" hidden>My drawings</button>
       <a class="quiet" id="leaderboard-link" href="leaderboard/" hidden>Today's leaderboard</a>
       <a class="quiet" href="/logs/">Read our build log</a>
-      <p id="setup-error" role="alert" hidden></p>
     </div>
     <!-- Bottom right of the page. Shown only when the Supabase project is connected (see the script below). -->
     <a class="public-corner" id="public-drawings" href="public-drawings/" hidden title="See what everyone has posted. Daily Scrawl's drawings unlock once you post yours.">Public drawings</a>
@@ -120,23 +123,30 @@
 
   <section id="game" hidden>
     <header class="game-top">
-      <button class="quiet" id="back-home" type="button">
-        <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M10 6l-6 6 6 6M4 12h16" /></svg>
-        Back to home
-      </button>
       <span class="wm-slot"></span>
-      <button class="quiet" id="restart" type="button"></button>
-      <div class="top-prompt">
-        <div id="prompt-bar">
-          <small id="prompt-label"></small>
-          <strong id="prompt-text"></strong>
-        </div>
-        <span class="challenge-timer" id="challenge-timer" role="timer" aria-label="Time left" hidden></span>
+      <span class="challenge-timer" id="challenge-timer" role="timer" aria-label="Time left" hidden></span>
+      <nav class="game-nav" aria-label="Drawing">
+        <button class="quiet" id="back-home" type="button" aria-label="Back to home" title="Back to home">
+          <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M3 11.5 12 4l9 7.5M5.5 10v10h5v-6h3v6h5V10" /></svg>
+        </button>
+        <button class="quiet" id="restart" type="button"></button>
         <button class="help-open round-btn" id="help-btn" type="button" aria-label="Help">?</button>
-      </div>
+      </nav>
     </header>
+    <!-- The parts to draw, on a sticky note: tick each one off as you draw it. -->
+    <aside class="mission" aria-labelledby="mission-title">
+      <div id="prompt-bar">
+        <p class="mission-title" id="mission-title">Mission briefing</p>
+        <small id="prompt-label"></small>
+        <div id="prompt-text"></div>
+      </div>
+    </aside>
+    <!-- The easel: the canvas clamped on top, and a ledge underneath where the color markers stand. -->
     <div id="stage">
-      <canvas id="board" width="1800" height="1200" aria-label="Drawing canvas"></canvas>
+      <div class="easel">
+        <div class="easel-board"><canvas id="board" width="1800" height="1200" aria-label="Drawing canvas"></canvas></div>
+        <div class="easel-ledge" id="easel-ledge"></div>
+      </div>
       <!-- Time Challenge: "3, 2, 1, Draw!" before the clock starts, and "Time's up!" at 0:00. -->
       <div class="challenge-count" id="challenge-count" aria-live="assertive" hidden></div>
     </div>
@@ -188,7 +198,7 @@
     const THEME_KEY = "scrawdle-theme";
     const themeBtn = $("theme-toggle");
     function showTheme() {
-      themeBtn.textContent = document.documentElement.dataset.theme === "dark" ? "Light mode" : "Dark mode";
+      themeBtn.querySelector(".theme-label").textContent = themeBtn.title = document.documentElement.dataset.theme === "dark" ? "Light mode" : "Dark mode";
     }
     themeBtn.addEventListener("click", () => {
       const dark = document.documentElement.dataset.theme !== "dark";
@@ -277,6 +287,7 @@
       $("slot-start").textContent = timed ? "Start the clock" : "Start drawing";
       $("slot-times").hidden = true;
       slotEl.hidden = false;
+      window.scrollTo(0, 0); // on a phone the page may still be scrolled from the screen before
       gameEl.inert = true;
       $("slot-sentence").hidden = true;
       $("slot-new").hidden = true;
@@ -317,13 +328,45 @@
     // Daily Free Play is a free draw, so its one "prompt" is just a label (this also fills the finished PNG).
     const SCRAWL_PROMPTS = [{ label: "Daily Free Play", value: "Draw anything", optional: false }];
 
+    // The note's short names: "Arms" for "Arms / Front Limbs", "Extra" for "Wings / Back / Skin / Extra". The
+    // downloaded picture and the share text still use the full names.
+    const shortLabel = (label) => (/extra/i.test(label) ? "Extra" : label.split(" / ")[0]);
+    // Ticks are kept per drawing and day, so a refresh or coming back later keeps them.
+    const ticksKey = (prompts) => {
+      const round = board.round;
+      return `scrawdle-ticks:${round ? slotFor(round) : "none"}:${round ? round.day : ""}:${prompts.map((p) => p.value).join("|")}`;
+    };
+    const readTicks = (key) => { try { return JSON.parse(localStorage.getItem(key)) || []; } catch (err) { return []; } };
+    // Each part is a line on the Mission briefing note, with a box to tick as you draw it.
     function showParts(prompts) {
-      $("prompt-text").replaceChildren(...prompts.map((p) => {
-        const part = document.createElement("span");
+      // Daily Free Play has no parts, just "Draw anything", so it gets no box.
+      if (prompts.length === 1 && prompts[0].label === SCRAWL_PROMPTS[0].label) { // also after a refresh, when the parts come back from storage
+        const line = document.createElement("p");
+        line.className = "part free";
+        line.textContent = "Draw anything you like";
+        $("prompt-text").replaceChildren(line);
+        return;
+      }
+      const key = ticksKey(prompts);
+      const ticked = new Set(readTicks(key));
+      $("prompt-text").replaceChildren(...prompts.map((p, i) => {
+        const part = document.createElement("label");
         part.className = "part" + (p.optional ? " optional" : "");
+        const box = document.createElement("input");
+        box.type = "checkbox";
+        box.checked = ticked.has(i);
+        box.addEventListener("change", () => {
+          if (box.checked) ticked.add(i); else ticked.delete(i);
+          try { localStorage.setItem(key, JSON.stringify([...ticked])); } catch (err) { /* private mode: ticks just aren't kept */ }
+        });
         const label = document.createElement("small");
-        label.textContent = p.label + (p.optional ? " (optional)" : "");
-        part.append(label, p.value);
+        label.textContent = shortLabel(p.label) + (p.optional ? " (optional)" : "");
+        const value = document.createElement("span");
+        value.className = "part-value";
+        value.textContent = p.value;
+        // A screen reader hears "Head: Rabbit", not the two words run together.
+        box.setAttribute("aria-label", `${shortLabel(p.label)}: ${p.value}${p.optional ? " (optional)" : ""}`);
+        part.append(box, label, value);
         return part;
       }));
     }
@@ -333,15 +376,16 @@
       $("prompt-label").textContent = round.timed ? `${round.timed.seconds}-second Time Challenge` : round.mode === "scrawl" ? "Daily Free Play" : !round.daily ? "Free Play" : round.mode === "detailed" ? "Detailed" : round.mode === "basic" ? "Basic" : "Daily Scrawl";
       showParts(round.prompts);
       $("restart").textContent = round.timed ? "New challenge" : round.daily ? "Start over" : "New set";
-      sessionStorage.setItem(OPEN_KEY, slotFor(round));
+      try { sessionStorage.setItem(OPEN_KEY, slotFor(round)); } catch (err) { /* storage blocked: a refresh just goes home */ }
       setupEl.hidden = true;
       gameEl.hidden = false;
+      window.scrollTo(0, 0); // on a phone the page may still be scrolled from the home screen, hiding the top of the drawing screen
       // A Time Challenge that isn't about to start and isn't running is over: it stays locked.
       const timer = $("challenge-timer");
       timer.hidden = !round.timed;
       if (round.timed && !challenge.pending && !challenge.stop) {
         board.setLocked(true);
-        timer.textContent = "Time's up";
+        timer.textContent = round.timed.startedAt ? "Time's up" : "Not started"; // left during the 3-2-1
         timer.classList.remove("hurry");
       } else if (!round.timed) board.setLocked(false);
       markGameEntry();
@@ -353,7 +397,10 @@
     // reloading the page ends it; what was drawn is kept. The clock is timer.js, shared with Scrawdle Party.
     const TIME_KEY = "scrawdle-time-challenge"; // localStorage: the length last picked
     const TIME_OPTIONS = [30, 60, 90];
-    const challenge = { pending: false, stop: null }; // pending: rolled but the clock hasn't started; stop: ends the running clock
+    // pending: rolled but the clock hasn't started; stop: ends the running clock; countdown: bumped to cancel a 3-2-1 in progress
+    const challenge = { pending: false, stop: null, countdown: 0 };
+    // Done drawing waits while the 3-2-1 runs, so the finish screen can't open with the clock about to start behind it.
+    const setDoneWaiting = (waiting) => { const d = document.querySelector("#game .done"); if (d) d.disabled = waiting; };
     function chosenSeconds() {
       let s = 60;
       try { s = Number(localStorage.getItem(TIME_KEY)) || 60; } catch (err) { /* private browsing */ }
@@ -398,10 +445,17 @@
       timer.hidden = false;
       timer.textContent = ScrawdleTimer.clockText(round.timed.seconds);
       timer.classList.remove("hurry");
+      const mine = ++challenge.countdown;
+      setDoneWaiting(true);
       for (const word of reduceMotion ? ["Draw!"] : ["3", "2", "1", "Draw!"]) {
         await bigWord(word, word === "Draw!" ? 500 : 700);
-        if (board.round !== round) return; // left during the countdown
+        // Left during the countdown (home, a new round, or another drawing): the clock never starts.
+        if (board.round !== round || challenge.countdown !== mine || gameEl.hidden) {
+          if (challenge.countdown === mine) { $("challenge-count").hidden = true; setDoneWaiting(false); } // a newer 3-2-1 owns them otherwise
+          return;
+        }
       }
+      setDoneWaiting(false);
       challenge.pending = false;
       board.setLocked(false);
       board.noteTimed({ startedAt: Date.now() });
@@ -499,6 +553,7 @@
       const prompt = document.createElement("small");
       prompt.textContent = (draft.slot === "free" ? "Free Play: " : draft.slot === "scrawl" ? "Daily Free Play: " : "") + draft.prompts.map((p) => p.value).join(", ");
       text.append(title, prompt);
+      card.title = prompt.textContent; // the notice is one short line, so the full list of parts shows on hover
       card.append(thumb, text);
       card.addEventListener("click", () => openSaved(draft.slot));
       const x = document.createElement("button");
@@ -518,19 +573,25 @@
       return wrap;
     }
 
+    // True once this browser has published that saved drawing (publish.js keeps the list).
+    const isPublishedDraft = (d) => Boolean(d) && typeof window.scrawdleIsPublished === "function" && window.scrawdleIsPublished(d.day, d.mode);
+
     async function showHome() {
       // Leaving a Time Challenge ends it; what was drawn is kept.
       if (challenge.stop) await endChallenge(false, { quiet: true });
       challenge.pending = false;
+      challenge.countdown++; // cancels a 3-2-1 that's still running
+      setDoneWaiting(false);
       gameEl.hidden = true;
       gameEl.inert = false;
       slotEl.hidden = true;
-      sessionStorage.removeItem(OPEN_KEY);
+      try { sessionStorage.removeItem(OPEN_KEY); sessionStorage.removeItem(ScrawdleDrawing.FINISH_KEY); } catch (err) { /* storage blocked */ }
       saved = await board.drafts();
       thumbUrls.forEach((u) => URL.revokeObjectURL(u));
       thumbUrls = [];
       const gone = dismissedNotices();
-      const cards = [saved.today, saved.scrawl, saved.free].filter((d) => d && d.marked && gone[d.slot] !== noticeId(d));
+      // A drawing already published is finished, so it isn't offered as "Continue drawing" (publish.js).
+      const cards = [saved.today, saved.scrawl, saved.free].filter((d) => d && d.marked && gone[d.slot] !== noticeId(d) && !isPublishedDraft(d));
       $("continue-list").replaceChildren(...cards.map(continueCard));
       await showMyDrawingsLink();
       setupEl.classList.toggle("has-saved", cards.length > 0);
@@ -650,7 +711,7 @@
     });
 
     /* ---------- Drawing board (see drawing.js) ---------- */
-    const board = ScrawdleDrawing.createBoard({ canvas: $("board"), toolbar: $("tools"), settings: $("brush-settings") });
+    const board = ScrawdleDrawing.createBoard({ canvas: $("board"), toolbar: $("tools"), settings: $("brush-settings"), palette: $("easel-ledge") });
     const gallery = ScrawdleGallery.createGallery(board);
     const sketchbook = ScrawdleSketchbook.create(board, { onContinue: openSaved });
     $("my-drawings").addEventListener("click", () => sketchbook.show());
@@ -674,14 +735,20 @@
     board.onDone = () => (challenge.stop ? endChallenge(false) : finish.open());
     makeWordmarksLinks(); // after every screen with a wordmark exists
 
-    // A refresh returns to the drawing this tab was on, and to the finish screen if that was open. A new visit
-    // starts at home.
+    // A refresh (or the browser's Back/Forward) returns to the drawing this tab was on, and to the finish screen if
+    // that was open. A new visit, or a link to home (the name on Public drawings, "Back to Scrawdle" on the
+    // leaderboard), starts at home.
     (async () => {
-      const open = sessionStorage.getItem(OPEN_KEY);
+      const nav = performance.getEntriesByType ? performance.getEntriesByType("navigation")[0] : null;
+      let fromOtherPage = false; // a link from Public drawings or the leaderboard
+      try { const r = new URL(document.referrer); fromOtherPage = r.origin === location.origin && r.pathname !== location.pathname; } catch (err) { /* no referrer */ }
+      const resumed = !nav || nav.type === "reload" || nav.type === "back_forward" || !fromOtherPage;
+      const session = (k) => { try { return sessionStorage.getItem(k); } catch (err) { return null; } };
+      const open = resumed ? session(OPEN_KEY) : null;
       const found = await board.drafts();
       if (open && found[open] && await board.restore(open)) {
         showGame();
-        if (sessionStorage.getItem(ScrawdleDrawing.FINISH_KEY) === "1") finish.open();
+        if (session(ScrawdleDrawing.FINISH_KEY) === "1") finish.open();
       } else showHome();
     })();
   </script>

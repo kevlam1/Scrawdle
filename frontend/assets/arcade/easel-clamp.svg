@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 30">
+  <!-- The clamp that holds the easel's charcoal board at the top (arcade.css). -->
+  <rect x="2" y="2" width="156" height="26" rx="8" fill="#2E2F33" stroke="#1F1F1F" stroke-width="4"/>
+  <rect x="7" y="5" width="146" height="5" rx="2.5" fill="#5A5B60"/>
+</svg>

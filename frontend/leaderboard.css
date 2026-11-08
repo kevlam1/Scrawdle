@@ -1,7 +1,10 @@
 /* Today's leaderboard (leaderboard.js, /leaderboard/). Uses the theme's variables, so dark mode
  * (theme.css) applies with no extra rules. */
 
-.lb-page { min-height: 100dvh; padding: 20px 32px 40px; background: var(--paper); color: var(--ink); }
+.lb-page { min-height: 100dvh; padding: 20px 32px 40px; color: var(--ink); } /* no background of its own, so the page's doodles show, as on Public drawings */
+/* Links in Scrawdle's ink, not the browser's blue, in both modes. */
+:is(html, html[data-theme="dark"]) .lb-page a.quiet { color: var(--ink); text-decoration-thickness: 1.5px; text-underline-offset: 3px; }
+.lb-page a.quiet:hover { opacity: .75; }
 .lb-page .app-header { max-width: 1000px; margin: 0 auto; }
 .lb-page .gallery-heading { margin: 20px auto 8px; text-align: center; }
 .lb-page h1 { margin: 0; font: 400 40px/1.2 var(--hand); }

@@ -17,7 +17,7 @@
     dialog.setAttribute("aria-labelledby", "gallery-title");
     if (page) dialog.className = "gallery-page";
     const wordmark = page ? '<a class="wordmark" href="../" aria-label="Scrawdle, back to the home screen">Scrawdle</a>' : '<span class="wordmark">Scrawdle</span>';
-    dialog.innerHTML = '<header class="app-header">' + wordmark + '<button class="quiet" type="button">Back</button></header><div class="gallery-heading"><h2 id="gallery-title"></h2></div><div class="public-filters" hidden></div><p class="gallery-note" role="status"></p><ul class="gallery-grid"></ul>';
+    dialog.innerHTML = '<header class="app-header">' + wordmark + '<button class="quiet" type="button">Back</button></header><div class="gallery-heading"><h2 id="gallery-title"></h2><p class="gallery-sub">Today\u2019s drawings, posted without names. They leave this page at midnight and are deleted within two days.</p></div><div class="public-filters" hidden></div><p class="gallery-note" role="status"></p><ul class="gallery-grid"></ul>';
     const closeBtn = dialog.querySelector("button");
     const open = () => { if (!page) dialog.showModal(); };
     const isOpen = () => page || dialog.open;
@@ -53,33 +53,27 @@
       grid.append(li);
       return li;
     }
-    // Thumbs up and down under someone else's drawing. Shows the new vote straight away, and
-    // puts the old one back if saving it fails.
+    // A small heart in the corner of someone else's drawing: press it to like the drawing (it fills red),
+    // press again to take it back. The number is how many players like it. Shows the change straight away,
+    // and puts the old one back if saving it fails.
     function addVotes(li, item) {
-      const bar = document.createElement("div");
-      bar.className = "vote-bar";
-      const buttons = [[1, "👍", "Thumbs up"], [-1, "👎", "Thumbs down"]].map(([value, icon, name]) => {
-        const b = document.createElement("button");
-        b.type = "button";
-        b.className = "vote";
-        b.addEventListener("click", () => vote(value));
-        bar.append(b);
-        return { b, value, icon, name };
-      });
+      const b = document.createElement("button");
+      b.type = "button";
+      b.className = "like";
+      b.addEventListener("click", vote);
       let busy = false;
       const render = () => {
-        for (const { b, value, icon, name } of buttons) {
-          const count = value === 1 ? item.votes.up : item.votes.down;
-          b.textContent = `${icon} ${count}`;
-          b.setAttribute("aria-label", `${name}, ${count} ${count === 1 ? "vote" : "votes"}`);
-          b.setAttribute("aria-pressed", String(item.votes.mine === value));
-          b.disabled = busy;
-        }
+        const liked = item.votes.mine === 1;
+        const count = item.votes.up;
+        b.replaceChildren(root.ScrawdleVotes.heartIcon(liked), String(count));
+        b.setAttribute("aria-label", `Like, ${count} ${count === 1 ? "like" : "likes"}`);
+        b.setAttribute("aria-pressed", String(liked));
+        b.disabled = busy;
       };
-      async function vote(pressed) {
+      async function vote() {
         if (busy) return;
         const before = item.votes;
-        const { value, votes } = root.ScrawdleVotes.applyVote(before, pressed);
+        const { value, votes } = root.ScrawdleVotes.applyVote(before, 1);
         item.votes = votes;
         busy = true;
         render();
@@ -93,7 +87,7 @@
         render();
       }
       render();
-      li.append(bar);
+      li.append(b);
     }
     // Report, under someone else's drawing. Three different players' reports hide it for everyone
     // (the number is set in the database's report_drawing; change this message with it). This
@@ -139,15 +133,9 @@
         if (token !== request || !isOpen()) return;
         const mine = items.find((item) => item.mine);
         const others = items.filter((item) => !item.mine);
-        // Your result: won once anyone gives your published drawing a thumbs up (see votes.js).
+        // Your result: its likes, and won once anyone likes your published drawing (see votes.js).
         if (mine) myCard.querySelector("p").textContent = "Your drawing · published";
-        if (!mine || mine.votes) {
-          const result = document.createElement("p");
-          result.className = "vote-result";
-          result.classList.toggle("won", root.ScrawdleVotes.isWin(mine && mine.votes));
-          result.textContent = root.ScrawdleVotes.resultText(mine && mine.votes);
-          myCard.append(result);
-        }
+        if (!mine || mine.votes) addResult(myCard, mine && mine.votes);
         note.textContent = others.length ? "" : "No community drawings to show yet.";
         const canVote = typeof root.scrawdleVote === "function";
         const canReport = typeof root.scrawdleReport === "function";
@@ -181,10 +169,13 @@
     };
     // Your own drawing on the public page shows how it did, like the old Today's drawings page did.
     function addResult(li, votes) {
+      if (votes) li.append(root.ScrawdleVotes.likeCount(votes.up, votes.up > 0));
+      const text = root.ScrawdleVotes.resultText(votes);
+      if (!text) return;
       const result = document.createElement("p");
       result.className = "vote-result";
       result.classList.toggle("won", root.ScrawdleVotes.isWin(votes));
-      result.textContent = root.ScrawdleVotes.resultText(votes);
+      result.textContent = text;
       li.append(result);
     }
     // `focus` ("daily" or "free") starts with only that kind showing, for opening the page from a finished drawing.
@@ -196,7 +187,9 @@
       grid.replaceChildren();
       filters.replaceChildren();
       filters.hidden = false;
-      const startsOn = (id) => !focus || focus === id;
+      // Opened for Daily Scrawl before posting one, there's nothing to see behind the lock, so what's open shows too.
+      const lockedOut = focus === "daily" && !posted;
+      const startsOn = (id) => !focus || focus === id || lockedOut;
       let seenDay = null;
       try { seenDay = localStorage.getItem(UNLOCK_SEEN_KEY); } catch (err) { /* private browsing: it just plays each time */ }
       const reduceMotion = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -211,7 +204,7 @@
       const why = document.createElement("p");
       why.className = "lock-why";
       why.textContent = LOCK_WHY;
-      why.hidden = true;
+      why.hidden = !lockedOut; // say why straight away when Daily Scrawl was what they came for
       for (const g of GROUPS) {
         const b = document.createElement("button");
         b.type = "button";
@@ -287,7 +280,7 @@
           if (canVote && item.votes) addVotes(li, item);
           if (canReport && item.id) addReport(li, item);
         }
-        note.textContent = shown.length || lockBreaking ? "" : !on.daily && !on.free ? "Turn on a bubble to see drawings." : "No drawings to show yet.";
+        note.textContent = shown.length || lockBreaking ? "" : !on.daily && !on.free ? "Turn on a bubble to see drawings." : posted ? "No drawings to show yet." : "No Daily Free Play drawings yet today.";
       }
       open();
       note.textContent = "Loading\u2026";

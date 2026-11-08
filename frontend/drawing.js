@@ -300,14 +300,15 @@
   };
 
   /* ---------- Sharing: the line that goes with a shared drawing, like a daily puzzle's ---------- */
-  // `streak` is the player's current streak (streak.js); a daily drawing's line ends with it, Wordle-style.
+  // `streak` is the player's current streak (streak.js); a daily drawing's line ends with it, Wordle-style, once
+  // it's 3 days or more (the same point the home screen starts showing it).
   function shareLine({ mode, daily, prompts, day, timed }, url, streak = 0) {
     const date = new Date(`${day}T12:00:00`).toLocaleDateString(undefined, { month: "long", day: "numeric" });
-    const fire = streak > 0 ? ` 🔥 ${streak}` : "";
+    const fire = streak >= 3 ? ` · ${streak}-day streak` : "";
     if (mode === "scrawl") return `My Scrawdle Daily Free Play drawing for ${date}. Draw yours: ${url}${fire}`;
     const parts = prompts.map((p) => p.value).join(", ");
     if (timed && timed.seconds) return `My Scrawdle ${timed.seconds}-second Time Challenge: ${parts}. Draw yours: ${url}`;
-    if (daily === false) return `My Scrawdle Open Canvas drawing: ${parts}. Draw yours: ${url}`;
+    if (daily === false) return `My Scrawdle Free Play drawing: ${parts}. Draw yours: ${url}`;
     const name = mode === "daily" ? "Daily Scrawl" : mode === "detailed" ? "Detailed" : "Basic";
     return `My Scrawdle ${name} drawing for ${date}: ${parts}. Draw yours: ${url}${fire}`;
   }
@@ -350,7 +351,9 @@
   /* ---------- The board ---------- */
   // idPrefix keeps a second board's controls (a lobby game's, say) from repeating the main board's ids.
   // A board that is never given a round (start or restore) never saves, so it can't touch the drafts.
-  function createBoard({ canvas, toolbar, settings, idPrefix = "" }) {
+  // palette, if given, is where the colors go (the easel's ledge on the main drawing screen); otherwise
+  // they sit in the tray with the tools, as on Scrawdle Party's board.
+  function createBoard({ canvas, toolbar, settings, palette, idPrefix = "" }) {
     let ctx = canvas.getContext("2d", { willReadFrequently: true });
     const W = canvas.width;
     const H = canvas.height;
@@ -474,10 +477,12 @@
     sizeGroup.prepend(sizeValue);
     const custom = el("div", {className: "custom-color"}, wheel, el("span", {textContent: "Custom"}));
     if (picker) custom.append(picker.el);
+    const colorGroup = el("div", {className: "tray-group tray-colors"}, el("div", {className: "swatches"}, ...swatches), custom);
+    if (palette) palette.append(colorGroup);
     toolbar.append(
       el("div", {className: "tray"},
         el("div", {className: "tray-group tray-tools"}, ...Object.values(toolButtons)),
-        el("div", {className: "tray-group tray-colors"}, el("div", {className: "swatches"}, ...swatches), custom),
+        ...(palette ? [] : [colorGroup]),
         ...(settings ? [] : [sizeGroup])),
       el("div", {className: "studio-footer"}, status,
         el("div", {className: "history-actions"}, undoBtn, redoBtn, clearBtn), doneBtn)
@@ -1403,7 +1408,9 @@
       const ready = daily && !empty && typeof window.scrawdlePublish === "function";
       dialog.querySelector(".publish-disclosure").hidden = !ready;
       publishBtn.hidden = !ready;
-      const publishedNote = published.get(roundKey());
+      // Published earlier (another visit or before a refresh): publish.js remembers it in this browser.
+      const publishedNote = published.get(roundKey())
+        || (typeof root.scrawdleIsPublished === "function" && root.scrawdleIsPublished(day, board.round.mode) ? "You've already published this drawing. See it under Public drawings. Changes you make now stay in this browser." : null);
       showPublish(publishedNote ? "done" : "ready");
       publishBtn.classList.toggle("primary", ready);
       downloadBtn.classList.toggle("primary", !ready);
@@ -1425,8 +1432,11 @@
       streakEl.hidden = !streakEl.textContent;
       // A Time Challenge says how long it took (timedText).
       const timedEl = dialog.querySelector(".finish-timed");
-      timedEl.textContent = timedText(board.round.timed);
+      timedEl.textContent = empty ? "" : timedText(board.round.timed);
       timedEl.hidden = !timedEl.textContent;
+      // A blank canvas isn't celebrated: no "Made by you", and nothing to download.
+      dialog.querySelector(".finish-heading h1").textContent = empty ? "Nothing drawn yet." : "Made by you.";
+      downloadBtn.hidden = empty;
       dialog.showModal();
       try { sessionStorage.setItem(FINISH_KEY, "1"); } catch (err) { /* private browsing: a refresh just goes back to the drawing */ }
     };

@@ -1,4 +1,4 @@
-/* Today's leaderboard (/leaderboard/): today's published drawings ranked by thumbs up, one list for
+/* Today's leaderboard (/leaderboard/): today's published drawings ranked by likes (thumbs up in the database), one list for
  * Daily Scrawl and one for Daily Free Play. It resets with the day, because the drawings it reads are
  * only today's (by the player's local date) and the daily wipe deletes them.
  *
@@ -45,7 +45,7 @@
 
   function standingText(s) {
     if (!s) return "";
-    if (s.unranked) return "Your drawing has no thumbs up yet, so it isn't ranked.";
+    if (s.unranked) return "Your drawing has no likes yet, so it isn't ranked.";
     return `Yours is #${s.place} of ${s.of} today.`;
   }
 
@@ -80,7 +80,6 @@
     if (text != null) n.textContent = text;
     return n;
   }
-  const votesText = (v) => `👍 ${v.up} · 👎 ${v.down}`;
 
   function entry(it, big) {
     const li = el("li", ["lb-entry", big ? "lb-podium-entry" : "", it.mine ? "mine" : ""].filter(Boolean).join(" "));
@@ -91,7 +90,9 @@
     img.alt = it.mine ? `Your drawing, place ${it.place}` : `Drawing in place ${it.place}`;
     img.loading = "lazy";
     const info = el("span", "lb-info");
-    info.append(el("span", "lb-votes", votesText(it.votes)));
+    const likes = el("span", "lb-votes");
+    likes.append(root.ScrawdleVotes.likeCount(it.votes.up, true));
+    info.append(likes);
     if (it.mine) info.append(el("span", "lb-yours", "Yours"));
     li.append(place, img, info);
     return li;
@@ -113,7 +114,7 @@
     const standing = standingText(myStanding(inGroup, ranked));
     if (standing) sec.append(el("p", "lb-standing", standing));
     if (!ranked.length) {
-      sec.append(el("p", "lb-note", inGroup.length ? "No thumbs up yet today. Vote on Public drawings to start the leaderboard." : "Nobody has posted one today yet."));
+      sec.append(el("p", "lb-note", inGroup.length ? "No likes yet today. Like drawings on Public drawings to start the leaderboard." : "Nobody has posted one today yet."));
       return sec;
     }
     const top = topOf(ranked);
@@ -150,7 +151,9 @@
         const text = el("p", "yesterday-text");
         const caption = el("span", "yesterday-caption", winnerCaption(card));
         caption.title = winnerCaption(card);
-        text.append(caption, el("span", "yesterday-votes", `👍 ${card.votes.up}${card.mine ? " · Yours" : ""}`));
+        const likes = el("span", "yesterday-votes");
+        likes.append(root.ScrawdleVotes.likeCount(card.votes.up, true), card.mine ? " · Yours" : "");
+        text.append(caption, likes);
         li.append(img, text);
         grid.append(li);
       }
@@ -166,12 +169,15 @@
 
   async function show(container) {
     const header = el("header", "app-header");
-    header.append(el("span", "wordmark", "Scrawdle"));
+    const home = el("a", "wordmark", "Scrawdle"); // the name goes home, as on Public drawings
+    home.href = "../";
+    home.setAttribute("aria-label", "Scrawdle, back to the home screen");
+    header.append(home);
     const back = el("a", "quiet", "Back to Scrawdle");
     back.href = "../";
     header.append(back);
     const heading = el("div", "gallery-heading");
-    heading.append(el("h1", "", "Today's top drawings"));
+    heading.append(el("h1", "", "Today's leaderboard"));
     const note = el("p", "gallery-note", "Loading…");
     note.setAttribute("role", "status");
     const body = el("div", "lb-body");
@@ -193,7 +199,7 @@
       note.textContent = "Couldn't load today's drawings. Reload this page to try again.";
       return;
     }
-    note.textContent = "Ranked by thumbs up. It starts over at midnight.";
+    note.textContent = "Ranked by likes. It starts over at midnight.";
     body.replaceChildren(...GROUPS.map((g) => section(g, items, { locked: g.id === "daily" && !posted })));
     // Yesterday's winners go above today's lists. They can't spoil today's parts, so there's no lock.
     if (typeof root.scrawdleYesterdayWinners === "function") {
