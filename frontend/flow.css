@@ -233,10 +233,17 @@ html:has(#slot:not([hidden])){overflow:hidden}
  .history-actions .tool{min-height:38px}
  .done{min-height:40px}
  #brush-settings{padding:12px;gap:8px}
- .brush-choice{min-height:52px;padding:4px}
+ .brush-choice{min-height:46px;padding:3px 4px}
  .brush-choice canvas{height:22px;margin-bottom:2px}
  #brush-settings .tray-sizes{padding-top:8px;gap:4px;margin-top:0}
- .size-top{display:none}
+ /* Small, Medium and Large share the "Size" row instead of taking their own, so the panel stays as short as before */
+ #brush-settings .tray-sizes{display:grid;grid-template-columns:auto minmax(0,1fr);align-items:center;column-gap:8px}
+ #brush-settings .size-value{grid-column:1;grid-row:1}
+ #brush-settings .size-top{grid-column:2;grid-row:1;justify-content:flex-end;min-width:0}
+ #brush-settings .tray-sizes>input[type="range"],#brush-settings .tool-opacity{grid-column:1/-1}
+ #brush-settings .size-dot{height:24px}
+ #brush-settings .stroke-preview svg{height:24px}
+ #brush-settings .tray-sizes{padding-top:4px}
 }
 
 /* The streak (streak.js): under the date on the home screen, and under the parts on the finish screen. */
