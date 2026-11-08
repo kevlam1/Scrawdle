@@ -76,6 +76,7 @@ export const SUMMARIES = {
   68: "Trenten added yesterday's winner to the home screen and the leaderboard, with a small database update for Kevin, because the database stops letting the game read the player's yesterday each evening in US time.",
   69: "Trenten added a Time Challenge: four random parts, 30, 60 or 90 seconds, a 3-2-1, and a canvas that locks at 0:00, with its own save slot and a countdown shared with Scrawdle Party.",
   70: "Zainab made drawings save in Safari private windows, which won't keep a picture file, by saving the picture as text there instead, and checked the whole game in Chrome, Firefox and Safari's engine.",
+  71: "Zainab made the Small, Medium and Large size buttons show on laptop screens, on the same row as Size so the settings panel stays the same height.",
   misread: 'Where the AI got something wrong or we had to correct course, and what happened next.',
   decisions: 'What we decided and what we dropped along the way.',
 }

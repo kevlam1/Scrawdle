@@ -1401,6 +1401,25 @@ Artifact 4 is "For Someone Else," due Sunday, November 8. Our team of four (Kevi
 
 ---
 
+## 71. Size buttons on laptops (2026-11-07) — Zainab
+
+**What I asked for**
+- On laptop screens the Small, Medium and Large size buttons didn't show, only the slider. Fix that without making anything else worse.
+
+**What changed**
+- `frontend/flow.css`: the Small, Medium and Large buttons were hidden on every screen 920 pixels tall or less, which is almost every laptop, by a rule from the Nov 2 redesign (entry 25). Now they show there too. On those screens they sit on the same row as "Size" instead of a row of their own, so the settings panel doesn't get taller, and the brush style buttons are a little shorter.
+
+**What I checked**
+- In Chrome, Firefox and Safari's engine at 1440x900, 1366x768, 1280x800, 1280x720, 1024x768 and 1920x1080, with the Pen and with the Brush: the three buttons show and set the size (Large sets it to 24), nothing in the settings panel is cut off, and nothing scrolls sideways.
+- The page never scrolls further than before. On the shortest screen (1280x720) with the Brush picked it now scrolls a little less: 20 pixels instead of 27 in Chrome and Firefox, and 13 instead of 22 in Safari's engine.
+- All 133 tests pass.
+- Not checked: phones and tablets (narrower than 1000 pixels), where the size buttons are still hidden on purpose and only the slider shows. That's part of the next fix, for phones.
+
+**Decisions**
+- The change only applies to laptop-height screens. Taller screens keep the layout they had.
+
+---
+
 ## Where AI misread me, or I had to correct course
 
 - Claude's first version of the start page put "What is this?" in the top right, where it collided with the "New set" button on the game screen. I caught it by running the page; Claude hadn't opened it in a browser.
