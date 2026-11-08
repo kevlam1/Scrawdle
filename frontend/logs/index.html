@@ -609,7 +609,7 @@
         <h1>Scrawdle: build log</h1>
         <p class="intro">
           A daily drawing game, built by a team of four with Claude Code: a new set of parts to draw each day, a gallery of what
-          other people drew, and private lobbies. Here are the 69 entries of our log with one sentence on each and the name of
+          other people drew, and private lobbies. Here are the 70 entries of our log with one sentence on each and the name of
           whoever wrote it. Open an entry to read everything they wrote for it.
         </p>
         <ul class="facts" aria-label="Project facts">
@@ -739,7 +739,7 @@
   </ul></div>
 </div>
 <div class="toc-group is-open">
-  <button class="toc-head" type="button" aria-expanded="true">Saturday 7 November <span class="count">6</span></button>
+  <button class="toc-head" type="button" aria-expanded="true">Saturday 7 November <span class="count">7</span></button>
   <div class="toc-list-wrap"><ul class="toc-list">
     <li><a href="#entry-64"><span class="n">64</span><span>Scrawdle's own color picker</span></a></li>
     <li><a href="#entry-65"><span class="n">65</span><span>Kicking players, and votes to kick</span></a></li>
@@ -747,6 +747,7 @@
     <li><a href="#entry-67"><span class="n">67</span><span>Today's leaderboard</span></a></li>
     <li><a href="#entry-68"><span class="n">68</span><span>Yesterday's winner</span></a></li>
     <li><a href="#entry-69"><span class="n">69</span><span>Time Challenge</span></a></li>
+    <li><a href="#entry-70"><span class="n">70</span><span>Drawings save in Safari private windows</span></a></li>
   </ul></div>
 </div>
 <div class="toc-group is-open">
@@ -1924,6 +1925,23 @@
 <ul><li>7 new Node tests (the clock's wording and rounding, time used, the save slot, the finish line, the share text). All 133 tests pass.</li><li>In the browser, with the clock sped up 30 times so 30 seconds took about one: the card and the reveal (four parts, the choices, &quot;Start the clock&quot;); the canvas refusing to draw during &quot;3, 2, 1&quot;; the clock running from 0:30, red from 0:10, to 0:00; &quot;Time's up!&quot;, the canvas locked, and the finish screen saying &quot;Drawn in 30 seconds!&quot; with no publish, Public drawings or leaderboard buttons and no streak line; the share text; finishing early (&quot;Finished in 3 of 30 seconds!&quot;); the 30-second choice remembered; reloading mid-challenge (the drawing kept and locked, &quot;Time's up&quot; on the clock, the finish screen saying it ended); a new challenge sending the last one to My drawings; the Free Play drawing untouched (last saved 43 minutes before the test). Scrawdle Party's clock still counts down with the shared timer. At phone width the time buttons are 44 px tall and fit, the clock doesn't cover the parts or the help button, and nothing scrolls sideways; dark mode checked.</li><li>Not checked: Safari or Firefox, a real phone, and a real 60- or 90-second challenge at normal speed (the clock is worked out from the time on each tick, the same as Scrawdle Party's).</li></ul>
 <p class="sub"><strong>Decisions</strong></p>
 <ul><li>Not published, so there's no database update and no new list on Public drawings or the leaderboard. That can be added later with a new mode on the database.</li><li>When a challenge ends by reload, the time it took isn't known, so the finish screen says it ended rather than guessing.</li></ul>
+  </div></div></div>
+</article>
+<article class="entry" id="entry-70">
+  <h3 class="entry-head"><button type="button" aria-expanded="false" aria-controls="entry-70-body">
+    <span class="num">70</span>
+    <span><span class="title">Drawings save in Safari private windows<span class="by">by Zainab</span></span><span class="sum">Zainab made drawings save in Safari private windows, which won't keep a picture file, by saving the picture as text there instead, and checked the whole game in Chrome, Firefox and Safari's engine.</span></span>
+    <span class="caret" aria-hidden="true"></span>
+  </button></h3>
+  <div class="body" id="entry-70-body"><div class="body-in"><div class="body-pad">
+<p class="sub"><strong>What I asked for</strong></p>
+<ul><li>Check the game in Firefox, Safari and Chrome, since we'd only ever tested Chrome, and fix whatever is broken, one thing at a time.</li></ul>
+<p class="sub"><strong>What changed</strong></p>
+<ul><li><code>frontend/drawing.js</code>: in a Safari private window, drawings never saved. The status under the canvas said &quot;Couldn't save&quot;, refreshing the page lost the drawing, and finished drawings never showed up in My drawings. Safari's private windows won't keep a picture file in the browser's storage, but they do keep text. Now, if saving the picture file doesn't work, the game saves the same picture as text instead, and it can read either one back, both when reopening a drawing and in My drawings. It skips that second try if a newer save has already happened, so an older copy of a drawing can't replace a newer one. Chrome, Firefox and normal Safari windows keep saving the same way as before.</li></ul>
+<p class="sub"><strong>What I checked</strong></p>
+<ul><li>All 133 tests pass.</li><li>In Chrome, Firefox and Safari's engine, each in a private window and a normal one: drawing says &quot;Saved in this browser&quot;, a refresh brings the drawing back, and a Free Play drawing replaced with New set shows up in My drawings. Before the fix the Safari private window failed 4 of these 33 checks; now all 33 pass, and the other browsers still save picture files. Downloading from My drawings in a Safari private window works too.</li><li>A walkthrough of the whole game (home, dark mode, How to play, Daily Scrawl, all six tools, Undo and Redo, Opacity, the color picker, the finish screen, Download, Share, Replay, Free Play, Time Challenge, the leaderboard, Public drawings and the build log) passes in Chrome, Firefox and Safari's engine at laptop and phone sizes. I didn't find anything that breaks only in Firefox.</li><li>A code review of the change found one rare case: in a Safari private window, leaving the tab in the split second while a save was being retried could put back a slightly older copy of the drawing. The retry now checks for a newer save first, and the save checks above were run again after that change.</li><li>While testing, clicking Multiplayer made a few empty test rooms in the live database, since it creates a room right away. They're removed after a day like any other room.</li><li>Not checked: a real iPhone or the real Safari app (only Safari's engine), and publishing, voting or rooms with other players, because those write to the live database.</li></ul>
+<p class="sub"><strong>Decisions</strong></p>
+<ul><li>The text copy is only used when saving the picture file fails, so nothing changes in browsers that were already saving fine.</li></ul>
   </div></div></div>
 </article>
       </section>
