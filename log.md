@@ -1439,6 +1439,23 @@ Artifact 4 is "For Someone Else," due Sunday, November 8. Our team of four (Kevi
 
 ---
 
+## 73. Yesterday's winners move off the home screen (2026-11-08) — Zainab
+
+**What I asked for**
+- When I opened the game, the first thing on the home screen was yesterday's winning drawing, so big that I couldn't see how to start a game. Put it on another screen.
+
+**What changed**
+- `frontend/index.html`: the home screen no longer shows the "Yesterday's winners" card (Trenten's, entry 68). With only one winner, the card stretched to the full width of the home column and showed the drawing full size, which pushed Daily, Multiplayer, Free Play and Time Challenge below the bottom of the screen on laptops and phones. It only started showing tonight, once database update 005 was run. Yesterday's winners are still on the leaderboard page, which builds them on its own, and the home screen's Today's leaderboard link goes there.
+
+**What I checked**
+- In Chrome, Firefox and Safari's engine at 1440x900, 1280x720 and 390x844, with the live database: before the change the game buttons were below the screen at every size. Now, on laptops all four are on the first screen, and on phones Daily and Multiplayer are (Free Play and Time Challenge are a short scroll down). Daily still starts a game, and the leaderboard page still shows "Yesterday's winners".
+- All 133 tests pass.
+
+**Decisions**
+- Moved off the home screen rather than shrunk, so the game buttons come first. The card's styles in `leaderboard.css` (`#yesterday-slot`) are left in place, unused, in case it comes back somewhere else.
+
+---
+
 ## Where AI misread me, or I had to correct course
 
 - Claude's first version of the start page put "What is this?" in the top right, where it collided with the "New set" button on the game screen. I caught it by running the page; Claude hadn't opened it in a browser.

@@ -78,6 +78,7 @@ export const SUMMARIES = {
   70: "Zainab made drawings save in Safari private windows, which won't keep a picture file, by saving the picture as text there instead, and checked the whole game in Chrome, Firefox and Safari's engine.",
   71: "Zainab made the Small, Medium and Large size buttons show on laptop screens, on the same row as Size so the settings panel stays the same height.",
   72: "Zainab fixed the drawing screen zooming out on phones by giving Size and Opacity their own lines, so the Opacity slider no longer sticks out past the edge of the screen.",
+  73: "Zainab moved yesterday's winners off the home screen, where the full-size winning drawing pushed the game buttons below the screen, so they now show on the leaderboard page only.",
   misread: 'Where the AI got something wrong or we had to correct course, and what happened next.',
   decisions: 'What we decided and what we dropped along the way.',
 }

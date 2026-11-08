@@ -54,7 +54,6 @@
       <p class="home-streak" id="home-streak" hidden></p>
       <h1>Ready to draw?</h1>
       <div id="continue-list"></div>
-      <div id="yesterday-slot"></div>
       <div class="menu-stack">
         <!-- Daily opens into two halves (hover, keyboard focus, or always on a touch screen); each half is its own button. -->
         <div class="menu-card daily-card" role="group" aria-label="Daily">
@@ -657,14 +656,8 @@
     $("my-drawings").addEventListener("click", () => sketchbook.show());
     $("public-drawings").hidden = typeof window.scrawdlePublicGallery !== "function"; // needs the Supabase project; it links to public-drawings/
     $("leaderboard-link").hidden = typeof window.scrawdlePublicGallery !== "function"; // the same data, ranked (leaderboard.js)
-    // Yesterday's winners, one per list, under the Continue cards. Loaded once; nothing shows until update
-    // 005 is on the database, or when nothing had a thumbs up yesterday.
-    if (typeof window.scrawdleYesterdayWinners === "function") {
-      window.scrawdleYesterdayWinners().then((w) => {
-        const sec = ScrawdleLeaderboard.yesterdaySection(w, { compact: true, link: { href: "leaderboard/", text: "See the leaderboard" } });
-        if (sec) $("yesterday-slot").replaceChildren(sec);
-      }).catch(() => {});
-    }
+    // Yesterday's winners are shown on the leaderboard page (leaderboard.js), not here: on the home screen the
+    // card pushed Daily and the other game buttons below the bottom of the screen.
 
     // Multiplayer Games goes straight to the lobby screen for now: it presses Create Lobby on the Lobby card that
     // lobby.js adds (the card itself is hidden in home.css), and its error message shows under these buttons.
