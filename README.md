@@ -2,7 +2,7 @@
 
 A daily drawing game. Every day everyone gets the same set of animal parts (Basic or Detailed) to combine into a creature, or can just draw anything in Daily Doodle. Players draw in the browser, can replay and download their drawing, publish it, and see what other players drew that day. Friends can also meet in private lobbies with a 5-letter code. Built for artists and for anyone who wants a quick daily creative pastime.
 
-TCSS 490 Artifact 4, built by a team of four: [kevlam1](https://github.com/kevlam1), [arcangieo](https://github.com/arcangieo), [trentenmuw](https://github.com/trentenmuw), [zainasuw](https://github.com/zainasuw).
+TCSS 490 Artifact 4, built by a team of four: [kevlam1](https://github.com/kevlam1), [arcangieo](https://github.com/arcangieo), [trentenmuw](https://github.com/trentenmuw), Zainab Stanikzy [zainasuw](https://github.com/zainasuw).
 
 **Live at [scrawdle.vercel.app](https://scrawdle.vercel.app).** The build log is a page at `scrawdle.vercel.app/logs` (every entry of `log.md`, with who wrote it and a one-sentence summary), linked from the bottom of the game's home screen ("Read our build log"). It goes live with the first deploy that includes `frontend/logs/`; once it does, check that `/logs` loads without a trailing slash.
 
