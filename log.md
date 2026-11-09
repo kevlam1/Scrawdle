@@ -1522,6 +1522,117 @@ Artifact 4 is "For Someone Else," due Sunday, November 8. Our team of four (Kevi
 
 ---
 
+## 76. A bigger canvas, with the note on the left and the tools on the right (2026-11-08) — Angie
+
+**What I asked for**
+- The canvas looked too small. After looking at mock-up images (kept outside the repo), I picked this arrangement: the Mission briefing at the top left, the canvas much bigger and close to both sides, the brush types with Size, Opacity and Small / Medium / Large in a column on the right, the crayon ledge under the canvas hanging over the bottom bar, and the doodles behind it. I also asked for the checkmarks in the boxes to fit inside them.
+
+**What changed**
+- `frontend/arcade.css` (the drawing screen's styles, which are Zainab's; edited in place, and the old laptop, wide-window and short-window blocks it replaces are gone):
+  - Windows at least 17:10 wide (1920×1080, 1366×768, a laptop with the browser's bars showing): three columns that sit together in the middle, the note on the left, the canvas, and the tools with Size and opacity on the right. The canvas is as wide as the window's height allows, or as wide as the room between the columns; any room left over is split between two outer columns, so the canvas stays close to both sides while the top row and the deck still span the window. Size, opacity and Small / Medium / Large are always on screen, so the Size key is hidden there.
+  - The easel's legs are gone and the crayon ledge hangs over the control deck, between the joystick and Undo, with the deck made slimmer (a smaller joystick, round buttons and Done drawing) so the canvas gets the height.
+  - Windows closer to square than 17:10 (a 1440×900 laptop, a 4:3 screen, a tablet on its side) keep two columns, with the note and tools on the left, the Size key and its pop-up, and the ledge above the deck. A right-hand column there would take more width than the height gives back, so the canvas would have been smaller than before.
+  - The page behind the drawing now has the same faint doodles as the other pages (they were flat grey on purpose; this is a change to that).
+  - The tick in each part's box is smaller (15 units instead of 24, tilted less) so it sits inside the box.
+- Phones are unchanged.
+
+**What I checked**
+- All 152 tests pass; they don't cover styling. In headless Chrome on a local server I measured the screen at 1919×911, 1440×900, 1366×768, 1280×720, 1097×520, 1024×768, 1180×820, 1500×1000, 1680×1050 and 2560×1300: no extra scrolling, no sideways overflow, the ledge never covers a deck button, and the canvas is wider than before at every size (for example 979 wide at 1919×911 against 727, and 559 at 1097×520 against about 416; roughly 825 at 1440×900 against 720). I looked at screenshots of the wide layout in light and dark mode, the squarer layout with the Size pop-up open, a phone-sized window, and a Time Challenge with its clock and 3-2-1, and a zoomed shot of ticked boxes.
+- Not checked: a real phone or tablet, Safari or Firefox, and the Party game's own board (it is a different screen).
+
+**Decisions**
+- The canvas stays 3:2. A wider shape would change saved drafts, the PNG export, the replay, the gallery thumbnails and the Party board, so I left it.
+- The Mission briefing is on the left and the tools are on the right, as chosen; in squarer windows the tools stay under the note.
+
+---
+
+## 77. The tool keys go back under the Mission briefing (2026-11-08) — Angie
+
+**What I asked for**
+- In the new three-column drawing screen, move just the box of tool keys (Pen, Pencil, Brush, Line, Eraser, Bucket) to the left, under the Mission briefing. When the Brush is picked, its options should show at the top right.
+
+**What changed**
+- `frontend/arcade.css`: in windows at least 17:10 wide, the tool keys are the second row of the left column, under the note, and the right-hand column is only Size, opacity and Small / Medium / Large, starting at the top. The brush types still live in that same settings panel, so picking the Brush puts Round, Marker, Calligraphy, Crayon, Watercolor, Spray and Dry bristle at the top right, above the size and opacity. The note's list now scrolls inside the note a little sooner (540 units from the window's height instead of 330) so the tool keys never run into the deck. The squarer-window layout already had the tool keys under the note and is unchanged.
+
+**What I checked**
+- All 152 tests pass. In headless Chrome I picked the Brush and looked at a screenshot (the seven brush types, then Small / Medium / Large, size and opacity, at the top right). I measured that the tool box stays above the deck, clear of the joystick and off the canvas at 1919×911, 1366×768, 1280×720, 1097×520, 2560×1300 and 1024×768. It first ran 11px into the deck at 1097×520, which is why the note's list limit changed. A very small 1000×480 window still scrolls by 3px.
+- Not checked: a real tablet or phone, and Safari or Firefox.
+
+**Decisions**
+- Only the grid placement changed; the tool keys, the Size key for phones and the squarer-window layout are as before.
+
+---
+
+## 78. Tool keys back on the right, and the home screen notes go under the cards (2026-11-08) — Angie
+
+**What I asked for**
+- I liked the tool keys better in the right-hand column, so undo entry 77. On the home screen, bring back the description appearing under the button when I hover over it, instead of beside it.
+
+**What changed**
+- `frontend/arcade.css`: entry 77's move is undone. In windows at least 17:10 wide the tool keys are the top of the right-hand column again, with Size, opacity and the brush options under them, and the note's list limit is back to what it was in entry 76. Entry 77 stays in this log as the record of what I tried.
+- `frontend/home.css`: the description on each home card is a small note directly under the card at every window width. It was beside the card with a mouse, and under it only in narrow windows, so the rule for narrow windows is gone. The note still sits outside the page's flow, so the cards below never move.
+
+**What I checked**
+- All 152 tests pass. In headless Chrome I hovered Daily, Multiplayer, Free Play and Time Challenge on the home screen and looked at screenshots: the note shows under each card, centered, and covers part of the next card while it is up. For the drawing screen I looked at a screenshot, and measured that the canvas has the note on its left and the settings on its right at 1366×768, 1097×520 and 2560×1300, with the same canvas sizes as in entry 76.
+- Not checked: touch screens (there the notes are always shown, by an existing rule I did not touch), Safari and Firefox.
+
+**Decisions**
+- I did not bring back the old way of growing the card in place to show the text inside it. That pushed the cards below it down, so a click meant for one card could land on another, which is why it was moved beside the card. A note under the card looks close to it without moving anything. The cost is that it covers the top of the next card while it shows; if that bothers me, the card growing in place is the other option.
+
+---
+
+## 79. The home card text grows inside the card again (2026-11-08) — Angie
+
+**What I asked for**
+- The hover text on the home cards should appear inside the button itself, under its name, not beside the card and not in a note under it (entry 78 got that wrong).
+
+**What changed**
+- `frontend/home.css`: the description of each card (Daily, Multiplayer, Free Play, Time Challenge) opens inside the card under its name, and the card grows to fit it. It opens after a short moment of hover and closes straight away, so a mouse passing over a card on its way to another does not open it. The Daily card shows its one-line note under the yellow title the same way, until its two halves are opened with a click, and has its own side padding because the card itself has none. The floating note and its dark-mode style are gone.
+
+**What I checked**
+- All 152 tests pass. In headless Chrome I hovered each card and looked at screenshots: the text sits under the name inside the card, and the cards below move down. With real mouse movements I moved from Daily to Free Play and to Time Challenge, and from Free Play to Time Challenge, and each click opened the card I aimed at. A click on Multiplayer reaches the create-lobby call (my fake backend cannot give it a code, so it shows the error). My first run of that click had no fake backend, so it probably made one real test lobby, which the daily cleanup deletes.
+- Not checked: touch screens (there the text is always shown, by rules I did not touch), narrow windows by eye, and Safari or Firefox.
+
+**Decisions**
+- The cards below do move when one opens, which is the trade-off the side note was added to avoid (a click meant for one card landing on another). The short open delay and the instant close are there to make that rare; if it happens again, the note beside or under the card is the option that never moves anything.
+
+---
+
+## 80. Daily's two halves open on hover, and the tool keys go back on the left (2026-11-08) — Angie
+
+**What I asked for**
+- Keep Daily's two buttons, Daily Scrawl and Daily Doodle, and have them pop up as the options when I hover over Daily. Also put the Pen, Pencil, Brush, Line, Eraser and Bucket box back on the left, under the Mission briefing.
+
+**What changed**
+- `frontend/home.css`: hovering the Daily card (or tabbing into it) opens the two halves, as a click on its title still does; a touch screen still always shows them. They open after a short moment of hover, so a mouse passing over Daily on its way to another card doesn't open them, and they close as soon as the mouse leaves. The note under the yellow title is hidden while the halves are out, and the arrow turns.
+- `frontend/arcade.css`: the tool keys are the second row of the left column again, under the note, and the right-hand column is Size, opacity and the brush options, as in entry 77. The note's list limit is back to 540 units from the window's height.
+
+**What I checked**
+- All 152 tests pass. In headless Chrome I hovered Daily and looked at a screenshot (the two halves open under the yellow title). With real mouse movements, I moved from Daily to each half and to Free Play, and each click opened what I aimed at. For the drawing screen, the tool box stays above the deck and clear of the canvas at six window sizes from 1024×768 to 2560×1300, with no extra scrolling.
+- Not checked: touch screens, narrow windows by eye, Safari and Firefox.
+
+**Decisions**
+- Opening Daily on hover pushes the cards below it down by the height of the halves, which is the reason it was a click-only for a while. The short open delay and the instant close are there to make a misdirected click rare; if one happens, a click on the title is the way to open them without any risk, and it still works.
+
+---
+
+## 81. The tool box stays put when the Brush is picked (2026-11-08) — Angie
+
+**What I asked for**
+- Clicking the Brush moved the tool box lower. It should stay where it is.
+
+**What changed**
+- `frontend/arcade.css`: the note and the settings panel shared one grid row, so when the Brush options made the panel taller, the whole row grew and pushed the tool box (the next row) down. The settings panel now spans all three rows on the right instead, so its height no longer changes where the note or the tool box sit. Only the grid areas changed.
+
+**What I checked**
+- All 152 tests pass. In headless Chrome I clicked Pen, Brush, Pencil, Line, Eraser, Bucket, Brush and Pen in turn at 1919×911, 1366×768 and 1097×520, and the tool box's top and bottom, the note's bottom and the canvas's top were the same every time (for example the box stayed at 545 to 736 at 1919×911); the settings panel grew by about 240px with the Brush picked and back, and the page never scrolled. A screenshot with the Brush picked shows the box in the same place.
+- Not checked: the squarer-window layout (it keeps the tool keys under the note with the settings in a pop-up, so this never happened there), Safari and Firefox.
+
+**Decisions**
+- None beyond the fix.
+
+---
+
 ## Where AI misread me, or I had to correct course
 
 - Claude's first version of the start page put "What is this?" in the top right, where it collided with the "New set" button on the game screen. I caught it by running the page; Claude hadn't opened it in a browser.
@@ -1545,6 +1656,7 @@ Artifact 4 is "For Someone Else," due Sunday, November 8. Our team of four (Kevi
 - **I said Free Play was broken and Claude could not find it (entry 61):** I reported that the Free Play button didn't work. Claude checked it in a real browser with scripted clicks and with real mouse movements, at several window sizes, and it opened the parts screen every time, wired to the same `startFreePlay` as the old Open Canvas button. The cause is not found yet. One guess is the "Replace your Free Play drawing?" question, which only appears when a Free Play drawing already exists.
 - **I blamed the browser for a lock that probably wasn't a browser problem (Claude's slip, entries 62 and 63):** when you said the Daily Scrawl filter didn't unlock, Claude tested the unlock with a faked "published" marker and listed the browser, the private window, and the file-versus-localhost address as likely causes. That left out the likeliest one, which Claude only checked next time: the live database has no Daily Scrawl drawings, so update 004 was probably never run and publishing it is refused.
 - **My own edit helper dropped changes without saying so (Claude's slip, entries 56 to 58):** a script that patched the Supabase test stand-in returned the old text, so three of its edits vanished and the new tests failed with "is not a function". The failing tests caught it, nothing was committed, and the edits were redone. A check at the time of the home-screen change also looked at the export screen 700 ms after pressing Done drawing, before it had finished opening, and reported a failure that was only timing.
+- **Mock-ups at the wrong window size (Claude's slip, entry 76):** the mock-up images were made at a window 1919 px wide, where Size and opacity were already docked on the right; the screenshot Angie sent showed the Size key, which fits a window narrower than 1200 CSS px, probably about 1100 at a 175% zoom (inferred, not asked). Claude only noticed when it read the stylesheet. Building it, Claude measured the screen at many sizes instead of one, which turned up two problems that a single screenshot hid: the right-hand column made the canvas smaller than before on 4:3 and 16:10 windows, and in the two-column version the wide crayon ledge covered Undo, Redo, Clear and Done. Both were fixed before finishing.
 
 ---
 
@@ -1554,3 +1666,4 @@ Artifact 4 is "For Someone Else," due Sunday, November 8. Our team of four (Kevi
 - (Kevin, 2026-11-04, entry 33) The free-draw mode is "Daily Free Play" on screen but keeps the id `scrawl` underneath, and the name "Daily Scrawl" is saved for the Basic + Detailed merge a teammate will build, which gets its own new id. Dropped: renaming the id now, because that needs a database update for a cosmetic gain.
 - (Kevin, 2026-11-04, entry 33) Basic and Detailed will go away as separate modes and become the one "Daily Scrawl". When that ships, their database values stay allowed for a day and are removed in a later update; they are not renamed in place. Noted in `CLAUDE.md`.
 - (Angie, 2026-11-06, entry 56) Daily Scrawl (id `daily`) is live in the page and uses the full Detailed set of parts. Basic and Detailed are gone from the home screen, but their database values are still allowed (update 004 keeps them) until a later numbered update drops them once the daily wipe has cleared the old rows. Open Canvas is only Free play renamed.
+- (Angie, 2026-11-08, entry 76) The drawing screen is three columns in windows at least 17:10 wide (note, a much bigger canvas, tools with Size and opacity), and keeps two columns, with the Size key, in squarer windows. The canvas is still 3:2, and the page behind it has the faint doodles again.

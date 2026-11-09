@@ -81,6 +81,12 @@ export const SUMMARIES = {
   73: "Zainab moved yesterday's winners off the home screen, where the full-size winning drawing pushed the game buttons below the screen, so they now show on the leaderboard page only.",
   74: "Zainab brought her arcade drawing screen into the game, with a light and a dark version, replaced thumbs up and down with a heart for likes, showed the streak only from 3 days, made Continue drawing a small corner card with icon buttons for Dark mode and How to play, and fixed what a full playtest found, from published drawings still showing as Continue drawing to Party guests being unable to leave.",
   75: "Zainab reworked the drawing screen for phones and split screens (no bar, a Size key, a stacked layout), tidied the home page and Public drawings, added Save draft / Discard when leaving and Play again when finished, fixed a batch of small bugs, and renamed Daily Free Play to Daily Doodle on screen.",
+  76: "Angie made the drawing screen's canvas much bigger, with the Mission briefing on the left, the brush types, Size and opacity on the right, the crayon ledge hanging over the bottom bar, the doodles behind it, and the checkmarks fitted inside their boxes.",
+  77: "Angie moved the drawing screen's tool keys back under the Mission briefing, so the right-hand column is just Size, opacity and the brush options.",
+  78: "Angie undid the tool-key move so they are in the right-hand column again, and made the home cards' hover notes appear under each card instead of beside it.",
+  79: "Angie put the home cards' hover text back inside each card under its name, opening after a short hover and closing at once, and checked that clicks still land on the card aimed at.",
+  80: "Angie made Daily's two halves open on hover again, with a short delay and an instant close, and put the tool keys back on the left under the Mission briefing.",
+  81: "Angie stopped the tool box from moving down when the Brush is picked, by letting the settings panel span the rows instead of stretching the note's row.",
   misread: 'Where the AI got something wrong or we had to correct course, and what happened next.',
   decisions: 'What we decided and what we dropped along the way.',
 }
