@@ -1496,35 +1496,6 @@ Artifact 4 is "For Someone Else," due Sunday, November 8. Our team of four (Kevi
 
 ---
 
-## 75. Design review fixes: the drawing screen, home, gallery, Play again, and phones (2026-11-08) — Zainab
-
-**What I asked for**
-- A second, harder design review of the whole game against skribbl.io, Gartic Phone, Jackbox and Wordle, then fix what it found. Make my private copy the best version, taking anything useful from a second private copy I'd been testing in.
-- Let people play again after finishing, with a clean canvas.
-- The drawing screen should keep its look in a split-screen window instead of shrinking with the window's height, and the tools should sit under the canvas on phones.
-
-**What changed**
-- Home (`index.html`, `home.css`): the moon and ? buttons stay top-right (the Continue card's slot had replaced the header's spacer); the cards open on hover again; the yellow Daily title is a button that opens its two halves; "Daily Scrawl · Continue" / "· Done ✓" on the card once today's drawing exists, with "New parts in 8h 32m" under the date; "Daily Free Play" is "Daily Doodle" on screen (the id stays `scrawl`); an invite-code field under the cards hands a code to the lobby the way an invite link does (no `lobby.js` change); the build-log link is small.
-- Drawing screen (`arcade.css`, `drawing.js`, `index.html`): no bar across the top; a flat warm grey (#E6E1D6; dark mode: the dark page) behind the easel instead of the beige cabinet; size and opacity behind one Size key beside the tools, so the right column is gone and the canvas takes the room; the easel always fits a laptop window (the note's list scrolls inside itself on short windows); windows taller than 4:3 get a stacked layout (parts in one scrolling row, no easel legs, canvas as wide as fits, tools under it, the Size key as a seventh tool); a phone on its side puts Undo/Redo/Clear/Done in a column on the right; the joystick is a real button that opens the colour picker; Start over is a text link that asks "Clear the canvas? Undo brings it back." in the game's own box and flashes "Cleared!"; Done drawing is dimmed on a blank canvas and says "Draw something!"; the ticks reset with the canvas; a broken `font: 700 700 …` shorthand meant six things fell back to Arial, fixed; "Saved in this browser" no longer shows (only a failure would); 24px colour markers and 22px tick boxes on phones.
-- Leaving a drawing (`index.html`, `home.css`): the house, the Scrawdle name and the browser's Back ask "Leave your drawing?" with Save draft, Keep drawing and Discard (a red link); no question on a blank, published or finished drawing or during a Time Challenge; Esc or a click outside keeps drawing.
-- Finish screen (`drawing.js`): "Daily Scrawl · done ✓" (or Daily Doodle / Free Play / Time Challenge); "New parts in …"; the share text in a box labelled "What Share sends"; Publish goes straight to Public drawings on success; a drawing already published shows "See it in Public drawings" beside the greyed "Published ✓" and the leaderboard link; Play again starts a clean canvas with the same parts and keeps the finished one in My drawings (a second drawing can't be published the same day, the database allows one; the note says so); Back to home never asks.
-- Public drawings and the leaderboard (`gallery.js`, `leaderboard.js`, `votes.js`, `home.css`): one All · Daily Scrawl · Daily Doodle switch (Daily Scrawl locked until you post, with the unlock animation), kind labels only in the All view; the heart and count under the picture; Report asks in the game's own box; "Back to home" on every page; "Your first like!" instead of "You won!"; an outline heart on your own card; empty states say "Be the first: draw today's parts".
-- Fixes: Free Play's Cancel opens the saved drawing; the reveal screen has Back to home; a tab left open past midnight rebuilds home for the new day and `restore()` refuses another day's draft; a Time Challenge you walked out of says "Ended" and "You left after N seconds"; typing the address goes home while a reload returns to the drawing; Start over leaves no blank Continue card (`isMarked` ignores a trailing clear); `discard()` waits for a save in flight; the old 88dvh rule in `drawing.css` that let a sideways phone's canvas cover the tools is gone; `#board` uses `aspect-ratio: auto 3 / 2` so a drawing isn't stretched; the reduced-motion rules get the same `:is(html, …)` prefix as what they switch off.
-- supabase-js 2.119.0 is served with the game as `frontend/vendor/supabase.js` (the UMD build from npm, MIT) instead of from the jsDelivr CDN, so a slow or blocked CDN can't stall the page. Same library, same version pinned; the three pages point at it.
-- New copy: "Start Daily Scrawl? Your drawing for today is replaced and kept in My drawings." (the old text named Basic and Detailed); "New set of parts? Your Free Play drawing is kept in My drawings."; "Pick Daily Scrawl or Daily Doodle above to see drawings."; "No drawings yet today."
-
-**What I checked**
-- Two more review passes (a code review of the day's changes and a UX critique with sources), then every fix in headless Chrome: the leave box in every path, Publish → Public drawings, Play again, the Size key, the gallery switch in posted, unposted and unlocking states, dark mode, and the layout at 1440×900, 1280×720, 1200×700, 1920×1080, 1024×768, 756×957, 768×1024, 390×844 and 844×390: no sideways overflow, Done drawing always on screen, the colour tray never under the deck. Reload returns to the drawing in Chrome and Safari's engine. Nothing reached the live database (Supabase stubbed, `*.supabase.co` blocked).
-- All 150 tests pass.
-- Not checked: real phones (viewport sizes stood in), Firefox's reload under the test harness (it reports a reload as a plain visit there), anything against the real database.
-
-**Decisions**
-- "Daily Free Play" → "Daily Doodle" on screen only; the id `scrawl`, the database and My drawings are untouched. Team: say if you want the old name back.
-- The stacked layout for tall or narrow windows (and the Size key, the phone layout and the vendored library) came from my second private copy; the rest is from here. Both copies started from main at 23f6895.
-- Left for later: one header and button style across all pages; fewer typefaces; a faster parts reveal and player words for the categories; the home page fitting 1440×900 without scrolling; phone leaderboard as rows; Scrawdle Party's Ctrl+Z (the lobby dialog stays open under the game and blocks it).
-
----
-
 ## Where AI misread me, or I had to correct course
 
 - Claude's first version of the start page put "What is this?" in the top right, where it collided with the "New set" button on the game screen. I caught it by running the page; Claude hadn't opened it in a browser.

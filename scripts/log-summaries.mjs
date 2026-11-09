@@ -80,7 +80,6 @@ export const SUMMARIES = {
   72: "Zainab fixed the drawing screen zooming out on phones by giving Size and Opacity their own lines, so the Opacity slider no longer sticks out past the edge of the screen.",
   73: "Zainab moved yesterday's winners off the home screen, where the full-size winning drawing pushed the game buttons below the screen, so they now show on the leaderboard page only.",
   74: "Zainab brought her arcade drawing screen into the game, with a light and a dark version, replaced thumbs up and down with a heart for likes, showed the streak only from 3 days, made Continue drawing a small corner card with icon buttons for Dark mode and How to play, and fixed what a full playtest found, from published drawings still showing as Continue drawing to Party guests being unable to leave.",
-  75: "Zainab fixed what a second design review found: no bar and a flat warm grey on the drawing screen, size and opacity behind one Size key, a stacked layout for phones and split screens with the tools under the canvas, Save draft / Keep drawing / Discard when leaving, Play again on the finish screen, Publish going to Public drawings, one All · Daily Scrawl · Daily Doodle switch, the game's own question boxes instead of the browser's, and Daily Free Play renamed Daily Doodle on screen.",
   misread: 'Where the AI got something wrong or we had to correct course, and what happened next.',
   decisions: 'What we decided and what we dropped along the way.',
 }
