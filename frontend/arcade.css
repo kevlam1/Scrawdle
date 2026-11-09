@@ -591,25 +591,8 @@ html[data-theme="dark"]:has(#game:not([hidden])) { background: #1F1E1B var(--doo
   :is(html, html[data-theme="dark"]) #game .history-actions .tool:hover .tool-icon, :is(html, html[data-theme="dark"]) #game .btn.primary.done:hover { transform: none; }
 }
 
-/* ---------- Wide screens (wider than 17:10, 1200px and up; a 16:9 laptop or monitor): the deck moves into the right column ----------
-   On a wide monitor the canvas is limited by the window's height, and the deck across the bottom took a fifth of it
-   while both sides of the easel sat empty. Here Undo / Redo / Clear, Done drawing and the joystick stack under the
-   size and opacity controls on the right, the legs fold away, and the canvas gets the height back (about 40% bigger
-   on a 1920x930 window). */
-@media (min-width: 1200px) and (min-aspect-ratio: 17/10) {
-  :is(html, html[data-theme="dark"]) #game {
-    grid-template-areas: "header header header" "note stage settings" "tools stage footer";
-    grid-template-rows: auto auto minmax(auto, 1fr);
-  }
-  :is(html, html[data-theme="dark"]) #game .studio-footer {
-    grid-area: footer; position: static; z-index: auto; align-self: start; display: grid; grid-template-columns: 1fr; justify-items: center; gap: calc(10 * var(--a-u));
-    margin: calc(10 * var(--a-u)) 0 0; padding: calc(12 * var(--a-u)) 0 0; background: none; border: 0; border-top: calc(3 * var(--a-u)) solid var(--a-deck-line); box-shadow: none;
-  }
-  :is(html, html[data-theme="dark"]) #game .studio-footer > * { grid-column: 1; grid-row: auto; justify-self: center; } /* flow.css pins .done to a third column; here everything stacks */
-  :is(html, html[data-theme="dark"]) #game .studio-footer .save-status { order: 0; width: 100%; text-align: center; }
-  :is(html, html[data-theme="dark"]) #game .studio-footer .save-status:not([data-state="failed"]) { display: none; }
-  :is(html, html[data-theme="dark"]) #game .studio-footer .history-actions { order: 1; justify-content: center; gap: calc(14 * var(--a-u)); }
-  :is(html, html[data-theme="dark"]) #game .studio-footer .done { order: 2; min-width: 0; }
-  :is(html, html[data-theme="dark"]) #game .studio-footer .joystick { order: 3; align-self: auto; width: calc(80 * var(--a-u)); height: calc(96 * var(--a-u)); margin: 0; }
-  #game .easel { --legs: 0px; margin-bottom: 0; --board: min(100cqw - 2 * var(--rim) - calc(16 * var(--a-u)), (100dvh - calc(256 * var(--a-u))) * 1.5, 1400px); }
-}
+/* (Removed: a "wide screens" block from the PR that merged just before this layout (commit 04d206a, in the git history) moved the
+   deck into the right column on windows wider than 17:10 and 1200px. The layout at the top of the desktop rules does the
+   same job for those windows in its own way (a bigger canvas, the crayon ledge over the deck), and the two disagreed about
+   the grid's columns, which pushed the canvas off the left edge of the window. If the deck should live in the right column
+   after all, that block is the place to start from, with the grid at the top changed to match.) */

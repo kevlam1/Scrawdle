@@ -87,6 +87,7 @@ export const SUMMARIES = {
   79: "Angie put the home cards' hover text back inside each card under its name, opening after a short hover and closing at once, and checked that clicks still land on the card aimed at.",
   80: "Angie made Daily's two halves open on hover again, with a short delay and an instant close, and put the tool keys back on the left under the Mission briefing.",
   81: "Angie stopped the tool box from moving down when the Brush is picked, by letting the settings panel span the rows instead of stretching the note's row.",
+  82: "Angie and Claude found why the merge pushed the drawing screen's canvas off the left edge (Zainab's wide-screen block set three grid columns over Angie's seven) and removed that block.",
   misread: 'Where the AI got something wrong or we had to correct course, and what happened next.',
   decisions: 'What we decided and what we dropped along the way.',
 }
