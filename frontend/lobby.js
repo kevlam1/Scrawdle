@@ -77,11 +77,33 @@
       .trim();
   }
 
-  const ADJECTIVES = ["Brave", "Sleepy", "Wobbly", "Sneaky", "Jolly", "Fuzzy", "Speedy", "Grumpy", "Dizzy", "Bouncy", "Cosmic", "Tiny"];
-  const ANIMALS = ["Otter", "Gecko", "Moth", "Heron", "Newt", "Lynx", "Toad", "Finch", "Yak", "Wombat", "Crab", "Mole"];
+  const ADJECTIVES = ["Sleepy", "Bouncy", "Fluffy", "Giggly", "Sparkly", "Wiggly", "Snuggly", "Peachy", "Jolly", "Dizzy", "Cozy", "Sunny", "Zippy", "Fuzzy", "Wobbly", "Tiny", "Happy", "Lucky"];
+  const NOUNS = ["Pancake", "Muffin", "Otter", "Bean", "Noodle", "Pebble", "Bunny", "Teacup", "Waffle", "Pickle", "Duckling", "Marshmallow", "Cupcake", "Kitten", "Puddle", "Donut", "Mango", "Penguin"];
   function randomName(rand = Math.random) {
     const pick = (list) => list[Math.min(list.length - 1, Math.floor(rand() * list.length))];
-    return `${pick(ADJECTIVES)} ${pick(ANIMALS)}`;
+    return `${pick(ADJECTIVES)} ${pick(NOUNS)}`;
+  }
+  // A random name nobody in the room has yet.
+  function unusedName(taken, rand = Math.random) {
+    for (let i = 0; i < 50; i++) {
+      const name = randomName(rand);
+      if (!taken.includes(name)) return name;
+    }
+    return randomName(rand);
+  }
+
+  // Which doodle each player gets: a hash of their id, stepped past any doodle already taken by
+  // someone who joined earlier, so no two players in a lobby share one and every screen agrees.
+  function seatPicks(ids, count) {
+    const taken = new Set();
+    return ids.map((id) => {
+      let h = 0;
+      for (const ch of String(id)) h = (h * 31 + ch.charCodeAt(0)) >>> 0;
+      let i = h % count;
+      while (taken.has(i) && taken.size < count) i = (i + 1) % count;
+      taken.add(i);
+      return i;
+    });
   }
 
   // Supabase's presenceState() is { key: [meta, ...] }. Keep each player's newest meta, drop
@@ -175,7 +197,7 @@
     return out;
   }
 
-  const pure = { MAX_PLAYERS, normalizeCode, codeFromSearch, lobbyLink, cleanName, randomName, playersFromState, isOverCap, activeGameOf, unwrap, VOTE_MS, VOTE_COOLDOWN_MS, VOTE_MIN_PLAYERS, mayKick, voteBlocker, voteOutcome, voteEnforcer, wasKicked, rememberKick };
+  const pure = { MAX_PLAYERS, normalizeCode, codeFromSearch, lobbyLink, cleanName, randomName, unusedName, seatPicks, playersFromState, isOverCap, activeGameOf, unwrap, VOTE_MS, VOTE_COOLDOWN_MS, VOTE_MIN_PLAYERS, mayKick, voteBlocker, voteOutcome, voteEnforcer, wasKicked, rememberKick };
   if (typeof module !== "undefined" && module.exports) { module.exports = pure; return; }
 
   /* ---------- Browser side ---------- */
@@ -202,6 +224,16 @@
 
   const ID_KEY = "scrawdle-player-id";     // sessionStorage: one id per tab, so two tabs are two players
   const NAME_KEY = "scrawdle-player-name"; // localStorage: your name, kept between visits
+  const CHOSEN_KEY = "scrawdle-player-name-chosen"; // localStorage: "1" once you typed a name yourself (a random one can be swapped if someone already has it)
+  function saveName(name, chosen) {
+    try {
+      localStorage.setItem(NAME_KEY, name);
+      if (chosen) localStorage.setItem(CHOSEN_KEY, "1"); else localStorage.removeItem(CHOSEN_KEY);
+    } catch (err) { /* private mode */ }
+  }
+  function nameWasChosen() {
+    try { return localStorage.getItem(CHOSEN_KEY) === "1"; } catch (err) { return false; }
+  }
   function storedId() {
     let id = null;
     try { id = sessionStorage.getItem(ID_KEY); } catch (err) { /* private mode */ }
@@ -219,7 +251,7 @@
     try { name = cleanName(localStorage.getItem(NAME_KEY)); } catch (err) { /* private mode */ }
     if (!name) {
       name = randomName();
-      try { localStorage.setItem(NAME_KEY, name); } catch (err) { /* private mode */ }
+      saveName(name, false);
     }
     return name;
   }
@@ -272,10 +304,10 @@
       <h2>Players <span class="lobby-count"></span></h2>
       <ul class="lobby-players"></ul>
       <div class="lobby-vote" role="status" hidden><p class="lobby-vote-text"></p><div class="lobby-vote-actions"><button type="button" class="btn" data-vote="yes">Yes, kick</button><button type="button" class="btn" data-vote="no">No</button></div></div>
-      <label class="lobby-name">Your name <input maxlength="${NAME_MAX}" autocomplete="off" spellcheck="false"></label>
       <h2>Games</h2>
       <ul class="lobby-games"></ul>
       <p class="lobby-games-empty">No games here yet. Anyone you invite can join and see the player list.</p>
+      <div class="lobby-name"><label>Your name <input maxlength="${NAME_MAX}" autocomplete="off" spellcheck="false"></label><button type="button" class="btn lobby-shuffle">New name</button></div>
     </div>`;
   const stage = el("dialog", "lobby-stage");
   stage.id = "lobby-game";
@@ -301,6 +333,7 @@
   const playersEl = $(room, ".lobby-players");
   const countEl = $(room, ".lobby-count");
   const nameEl = $(room, ".lobby-name input");
+  const shuffleEl = $(room, ".lobby-shuffle");
   const gamesEl = $(room, ".lobby-games");
   const gamesEmptyEl = $(room, ".lobby-games-empty");
   const copyBtn = $(room, '[data-act="copy"]');
@@ -331,16 +364,71 @@
     return b;
   }
 
+  // A seat for each player, with a little doodle picked from their id (the same one on everyone's screen,
+  // never the same as another player's), and open seats up to the limit. Someone new pops into their seat.
+  const DOODLES = [
+    ["star", "#fff1c2", "M24 6l5.3 11.2 12.2 1.5-9 8.5 2.3 12.1L24 33.4l-10.8 5.9 2.3-12.1-9-8.5 12.2-1.5z"],
+    ["heart", "#ffd9d6", "M24 41s-15-9.6-15-20.2C9 15 13.4 11 18.3 11c2.5 0 4.6 1.2 5.7 3.1C25.1 12.2 27.2 11 29.7 11 34.6 11 39 15 39 20.8 39 31.4 24 41 24 41z"],
+    ["moon", "#e4e6ff", "M30 7a17 17 0 1 0 11 29A14 14 0 0 1 30 7z"],
+    ["cloud", "#dcefff", "M14 36h22a7 7 0 0 0 1-13.9A10 10 0 0 0 18 20a7.5 7.5 0 0 0-4 16z"],
+    ["fish", "#d6f3ef", "M8 24c6-8 14-11 22-7l10-6-2 13 2 13-10-6c-8 4-16 1-22-7zm21-2h.1"],
+    ["cat", "#ffe3c9", "M12 20l-2-10 9 5h10l9-5-2 10a14 14 0 1 1-24 0zM18 25h.1M30 25h.1M22 31h4"],
+    ["pencil", "#e6f4d9", "M10 38l3-9 20-20 6 6-20 20zM31 11l6 6M10 38l6-3"],
+    ["smile", "#f0dff5", "M34 24a10 10 0 1 1-20 0 10 10 0 0 1 20 0zM20 22h.1M28 22h.1M19 27c2 3 8 3 10 0"],
+    ["sun", "#ffe9a8", "M33 24a9 9 0 1 1-18 0 9 9 0 0 1 18 0zM24 5v5M24 38v5M5 24h5M38 24h5M10.6 10.6l3.5 3.5M33.9 33.9l3.5 3.5M10.6 37.4l3.5-3.5M33.9 14.1l3.5-3.5"],
+    ["flower", "#ffd6e8", "M29 13a5 5 0 1 1-10 0 5 5 0 0 1 10 0zM39.5 20.6a5 5 0 1 1-10 0 5 5 0 0 1 10 0zM35.5 32.9a5 5 0 1 1-10 0 5 5 0 0 1 10 0zM22.5 32.9a5 5 0 1 1-10 0 5 5 0 0 1 10 0zM18.5 20.6a5 5 0 1 1-10 0 5 5 0 0 1 10 0zM28 24a4 4 0 1 1-8 0 4 4 0 0 1 8 0z"],
+    ["ghost", "#e9e9f3", "M14 42V22a10 10 0 0 1 20 0v20l-4-3-4 3-4-3-4 3-4-3zM20 23h.1M28 23h.1"],
+    ["mushroom", "#ffd8c2", "M8 24c0-10 7-16 16-16s16 6 16 16H8zM18 24v12a6 4 0 0 0 12 0V24M18 16h.1M28 14h.1"],
+    ["bolt", "#fff5b8", "M27 6L13 27h10l-3 15 15-22H25z"],
+    ["leaf", "#d8f0cf", "M10 38C10 20 22 10 40 10c0 18-10 28-28 28zM10 38l18-18"],
+    ["rainbow", "#dff3ff", "M6 36a18 18 0 0 1 36 0M13 36a11 11 0 0 1 22 0M20 36a4 4 0 0 1 8 0"],
+    ["cherry", "#ffd2d2", "M26 30a6 6 0 1 1-12 0 6 6 0 0 1 12 0zM38 34a6 6 0 1 1-12 0 6 6 0 0 1 12 0zM20 24c0-8 4-14 10-18M32 28c-2-8-6-16-12-22"],
+    ["planet", "#e0e4ff", "M34 24a10 10 0 1 1-20 0 10 10 0 0 1 20 0zM8 30c4 5 24 3 34-8"],
+    ["icecream", "#fbe3cf", "M16 20h16l-8 22zM16 20a8 8 0 1 1 16 0"],
+    ["note", "#e4f0e6", "M18 38a4 4 0 1 1-8 0 4 4 0 0 1 8 0zM18 38V12l18-4v24M36 32a4 4 0 1 1-8 0 4 4 0 0 1 8 0zM18 20l18-4"],
+    ["cactus", "#d6eedd", "M20 40V14a4 4 0 0 1 8 0v26M12 22v6a8 8 0 0 0 8 8M36 18v8a8 8 0 0 1-8 8M12 40h24"],
+  ];
+  const seenPlayers = new Set();
+  const titleEl = $(room, ".lobby-title"), eyebrowEl = $(room, ".lobby-body > .eyebrow");
   function renderPlayers() {
     countEl.textContent = `${lobby.players.length} of ${MAX_PLAYERS}`;
-    playersEl.replaceChildren(...lobby.players.map((p, i) => {
-      const li = el("li");
-      li.append(el("span", "lobby-player-name", p.name));
-      if (p.id === me.id) li.append(el("span", "lobby-tag", "you"));
-      if (i === 0) li.append(el("span", "lobby-tag host", "host"));
-      if (p.id !== me.id && lobby.ready) li.append(kickButton(p));
+    // The host's job is to invite; a guest's screen says they're in and who starts the game.
+    const host = lobby.players[0];
+    if (lobby.ready && !isHost() && host) { titleEl.textContent = "You're in!"; eyebrowEl.textContent = `Waiting for ${host.name} to start a game`; }
+    else { titleEl.textContent = "Invite your friends"; eyebrowEl.textContent = "Private lobby"; }
+    const picks = seatPicks(lobby.players.map((p) => p.id), DOODLES.length);
+    const seats = lobby.players.map((p, i) => {
+      const li = el("li", "seat filled");
+      if (!seenPlayers.has(p.id)) { li.classList.add("new"); seenPlayers.add(p.id); }
+      const [name, bg, d] = DOODLES[picks[i]];
+      const icon = el("span", `seat-icon seat-icon-${name}`);
+      icon.style.setProperty("--seat-bg", bg);
+      icon.innerHTML = `<svg viewBox="0 0 48 48" aria-hidden="true"><path d="${d}"/></svg>`;
+      li.append(icon, el("span", "lobby-player-name", p.name));
+      const tags = el("span", "seat-tags");
+      if (i === 0) tags.append(el("span", "lobby-tag host", "host"));
+      if (p.id === me.id) tags.append(el("span", "lobby-tag", "you"));
+      li.append(tags);
+      if (p.id !== me.id && lobby.ready) { // on a seat the kick is a small × in the corner; its name stays in the tooltip and for screen readers
+        const kick = kickButton(p); kick.textContent = "\u00d7"; kick.title = kick.getAttribute("aria-label"); kick.classList.add("seat-kick"); li.append(kick);
+      }
       return li;
-    }));
+    });
+    const remaining = MAX_PLAYERS - lobby.players.length;
+    if (remaining > 0 && matchMedia("(max-width: 600px)").matches) { // a phone: one line instead of a column of empty boxes
+      const open = el("li", "seat open many");
+      open.append(el("span", "seat-open-text", remaining === 1 ? "1 open seat" : `${remaining} open seats`));
+      open.setAttribute("aria-hidden", "true");
+      seats.push(open);
+    } else {
+      for (let i = lobby.players.length; i < MAX_PLAYERS; i++) {
+        const open = el("li", "seat open");
+        open.append(el("span", "seat-open-text", "Open seat"));
+        open.setAttribute("aria-hidden", "true");
+        seats.push(open);
+      }
+    }
+    playersEl.replaceChildren(...seats);
     renderStageMenu();
   }
 
@@ -359,10 +447,13 @@
     stagePlayersBtn.setAttribute("aria-expanded", String(!stageMenu.hidden));
   });
 
+  // A yes/no question in the game's own box when the page has one (index.html), the browser's confirm() otherwise.
+  const askBox = (q) => (typeof root.scrawdleAsk === "function" ? root.scrawdleAsk(q) : Promise.resolve(confirm(q.title + (q.body ? "\n" + q.body : ""))));
+
   /* ----- kicking ----- */
-  function hostKick(target) {
+  async function hostKick(target) {
     if (!isHost() || target === me.id) return;
-    if (!confirm(`Kick ${nameOf(target)} from the lobby? They won't be able to rejoin it today.`)) return;
+    if (!await askBox({ title: `Kick ${nameOf(target)}?`, body: "They won't be able to rejoin this lobby today.", yes: "Kick", no: "Keep them" })) return;
     lobby.kicked.add(target);
     send("lobby:kick", { target, by: me.id });
   }
@@ -394,10 +485,10 @@
   }
 
   /* ----- votes to kick ----- */
-  function callVote(target) {
+  async function callVote(target) {
     const why = voteBlocker({ players: lobby.players, me: me.id, target, active: Boolean(lobby.vote), cooldownUntil: lobby.cooldowns.get(target) || 0, inGame: Boolean(lobby.game) });
     if (why) { setStatus(why); return; }
-    if (!confirm(`Start a vote to kick ${nameOf(target)}? Everyone else in the lobby has to agree.`)) return;
+    if (!await askBox({ title: `Vote to kick ${nameOf(target)}?`, body: "Everyone else in the lobby has to agree.", yes: "Start the vote", no: "Never mind" })) return;
     send("lobby:votekick", { id: newId(), target, by: me.id });
   }
 
@@ -518,6 +609,7 @@
       return;
     }
     lobby.ready = true;
+    freshenName();
     renderPlayers();
     renderGames();
     rekickReturning();
@@ -805,8 +897,32 @@
     nameEl.value = name;
     if (name === me.name) return;
     me.name = name;
-    try { localStorage.setItem(NAME_KEY, name); } catch (err) { /* private mode */ }
+    saveName(name, true);
     track(); // Supabase allows only a few presence updates every 30 seconds, so this is on change, not each keystroke
+  });
+  const otherNames = () => lobby.players.filter((p) => p.id !== me.id).map((p) => p.name);
+  // The name you were given (not one you typed) is already on someone who got here first: take another.
+  function freshenName() {
+    if (nameWasChosen()) return;
+    const mine = lobby.players.findIndex((p) => p.id === me.id);
+    const clash = lobby.players.findIndex((p) => p.name === me.name);
+    if (mine < 0 || clash < 0 || clash >= mine) return;
+    me.name = unusedName(otherNames());
+    lobby.players[mine].name = me.name;
+    nameEl.value = me.name;
+    saveName(me.name, false);
+    track();
+  }
+  let shuffleTimer = 0;
+  shuffleEl.addEventListener("click", () => {
+    me.name = unusedName(otherNames().concat(me.name));
+    nameEl.value = me.name;
+    const mine = lobby.players.find((p) => p.id === me.id);
+    if (mine) mine.name = me.name;
+    saveName(me.name, false);
+    renderPlayers();
+    clearTimeout(shuffleTimer);
+    shuffleTimer = setTimeout(track, 600); // a few quick presses send one presence update
   });
   window.addEventListener("pagehide", () => { if (lobby.channel) client.removeChannel(lobby.channel); });
 

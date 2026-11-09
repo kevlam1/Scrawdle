@@ -173,7 +173,10 @@
     home.href = "../";
     home.setAttribute("aria-label", "Scrawdle, back to the home screen");
     header.append(home);
-    const back = el("a", "quiet", "Back to home");
+    const back = el("a", "quiet home-key"); // a small house key, as on every other page
+    back.innerHTML = '<svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M3 11.5 12 4l9 7.5M5.5 10v10h5v-6h3v6h5V10"/></svg>';
+    back.setAttribute("aria-label", "Back to home");
+    back.title = "Back to home";
     back.href = "../";
     header.append(back);
     const heading = el("div", "gallery-heading");

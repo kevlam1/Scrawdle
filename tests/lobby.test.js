@@ -2,7 +2,7 @@
 const test = require("node:test");
 const assert = require("node:assert/strict");
 const {
-  MAX_PLAYERS, normalizeCode, codeFromSearch, lobbyLink, cleanName, randomName,
+  MAX_PLAYERS, normalizeCode, codeFromSearch, lobbyLink, cleanName, randomName, unusedName, seatPicks,
   playersFromState, isOverCap, activeGameOf, unwrap,
 } = require("../frontend/lobby.js");
 
@@ -40,13 +40,30 @@ test("names are tidied and capped at 20 characters", () => {
 
 test("a random name is two words from the lists, and always valid at the extremes", () => {
   assert.match(randomName(), /^[A-Z][a-z]+ [A-Z][a-z]+$/);
-  assert.equal(randomName(() => 0), "Brave Otter");
+  assert.equal(randomName(() => 0), "Sleepy Pancake");
   assert.match(randomName(() => 0.999999999), /^[A-Z][a-z]+ [A-Z][a-z]+$/);
   for (let i = 0; i < 300; i++) {
     const name = randomName();
     assert.equal(cleanName(name), name, `${name} survives cleanName unchanged`);
     assert.ok(name.length <= 20);
   }
+});
+
+test("unusedName skips names already in the room", () => {
+  let n = 0;
+  const rand = () => [0, 0, 0.5][n++ % 3] ?? 0; // "Sleepy Pancake" twice, then something else
+  assert.notEqual(unusedName(["Sleepy Pancake"], rand), "Sleepy Pancake");
+  assert.equal(unusedName([], () => 0), "Sleepy Pancake");
+});
+
+test("seatPicks gives every player in a room a different doodle, in join order, the same on every screen", () => {
+  const ids = ["a", "b", "c", "d", "e", "f", "g", "h"];
+  const picks = seatPicks(ids, 20);
+  assert.equal(picks.length, 8);
+  assert.equal(new Set(picks).size, 8, "no two players share a doodle");
+  for (const i of picks) assert.ok(i >= 0 && i < 20);
+  assert.deepEqual(seatPicks(ids, 20), picks, "the same ids always give the same picks");
+  assert.deepEqual(seatPicks(["x", "x2"], 1), [0, 0], "with one doodle everyone gets it rather than looping forever");
 });
 
 const meta = (id, name, joinedAt, game) => ({ id, name, joinedAt, ...(game ? { game } : {}) });

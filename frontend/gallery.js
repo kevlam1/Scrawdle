@@ -17,7 +17,7 @@
     dialog.setAttribute("aria-labelledby", "gallery-title");
     if (page) dialog.className = "gallery-page";
     const wordmark = page ? '<a class="wordmark" href="../" aria-label="Scrawdle, back to the home screen">Scrawdle</a>' : '<span class="wordmark">Scrawdle</span>';
-    dialog.innerHTML = '<header class="app-header">' + wordmark + '<button class="quiet" type="button">Back to home</button></header><div class="gallery-heading"><h2 id="gallery-title"></h2><p class="gallery-sub">Today\u2019s drawings, posted without names. They leave this page at midnight and are deleted within two days.</p></div><div class="public-filters" hidden></div><p class="gallery-note" role="status"></p><ul class="gallery-grid"></ul>';
+    dialog.innerHTML = '<header class="app-header">' + wordmark + '<button class="quiet home-key" type="button" aria-label="Back to home" title="Back to home"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M3 11.5 12 4l9 7.5M5.5 10v10h5v-6h3v6h5V10"/></svg></button></header><div class="gallery-heading"><h2 id="gallery-title"></h2><p class="gallery-sub">Today\u2019s drawings, posted without names. They leave this page at midnight and are deleted within two days.</p></div><div class="public-filters" hidden></div><p class="gallery-note" role="status"></p><ul class="gallery-grid"></ul>';
     const closeBtn = dialog.querySelector("button");
     const open = () => { if (!page) dialog.showModal(); };
     const isOpen = () => page || dialog.open;
@@ -37,6 +37,14 @@
     let request = 0;
     dialog.addEventListener("close", () => { request++; });
     (page ? container : document.body).appendChild(dialog);
+    // Time to midnight, the way the home screen says it ("5h 48m").
+    function untilMidnight(now = new Date()) {
+      const midnight = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
+      const mins = Math.max(0, Math.round((midnight - now) / 60000));
+      if (mins < 1) return "under a minute";
+      const h = Math.floor(mins / 60), m = mins % 60;
+      return h ? `${h}h ${m}m` : `${m}m`;
+    }
     function addCard(url, caption, mine) {
       const li = document.createElement("li");
       if (mine) li.className = "mine";
@@ -150,7 +158,7 @@
         const mine = items.find((item) => item.mine);
         const others = items.filter((item) => !item.mine);
         // Your result: its likes, and won once anyone likes your published drawing (see votes.js).
-        if (mine) myCard.querySelector("p").textContent = "Your drawing · published";
+        if (mine) myCard.querySelector("p").textContent = "Your drawing · Published ✓" + (round.mode === "daily" ? ` · New parts in ${untilMidnight()}` : "");
         if (!mine || mine.votes) addResult(myCard, mine && mine.votes);
         note.textContent = others.length ? "" : "No community drawings to show yet.";
         const canVote = typeof root.scrawdleVote === "function";
@@ -283,8 +291,7 @@
             setTimeout(() => {
               b.classList.remove("unlocked-pop");
               b.querySelectorAll(".spark").forEach((s) => s.remove());
-              if (token === request) why.hidden = true;
-            }, 3500);
+            }, 3500); // the "Unlocked!" line stays until the page is left
           }, BREAK_MS);
         }
       }
@@ -298,7 +305,8 @@
         for (const item of shown) {
           // Daily Scrawl drawings (and the older Basic and Detailed) go under Daily Scrawl; Daily Free Play under its own.
           const kind = GROUPS.find((g) => g.modes.includes(item.mode)).label;
-          const li = addCard(item.imageUrl, item.mine ? `Your drawing · ${kind}` : seg === "all" ? kind : "", item.mine);
+          // Your own card says it's up, and (for Daily Scrawl) when the next parts come, since Publish lands here.
+          const li = addCard(item.imageUrl, item.mine ? `Your drawing · Published ✓${kind === "Daily Scrawl" ? ` · New parts in ${untilMidnight()}` : ""}` : seg === "all" ? kind : "", item.mine);
           if (item.mine) { // your own drawing has no vote or report buttons; its votes show as your result
             if (item.votes) addResult(li, item.votes);
             continue;

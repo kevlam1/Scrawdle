@@ -57,6 +57,7 @@ button { cursor: pointer; }
 .quiet { display: inline-flex; align-items: center; gap: .35em; min-height: 44px; padding: 0 .6em; border: 0; border-radius: var(--radius); background: none; font-size: 1.02rem; text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 3px; }
 .quiet svg { fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 .quiet:hover { background: rgba(44, 42, 40, .07); }
+.splash-layer { position: absolute; z-index: 5; pointer-events: none; } /* the bucket's splash, drawn over the canvas for a moment (drawing.js) */
 .round-btn { flex: none; width: 36px; height: 36px; padding: 0; border: var(--line); border-radius: 50%; background: var(--cream); box-shadow: var(--raise); font: 1.25rem/1 var(--hand); position: relative; }
 .round-btn::after { content: ""; position: absolute; inset: -5px; } /* a 44px target around the small circle */
 .round-btn:hover { background: var(--tan); }

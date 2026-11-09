@@ -34,9 +34,24 @@
 .menu-name { display: block; font: 700 30px/1.2 var(--hand); }
 
 /* The description opens inside the card. */
-.menu-more { display: grid; grid-template-rows: 0fr; opacity: 0; transition: grid-template-rows .3s ease, opacity .25s ease; }
-.menu-card:hover .menu-more, .menu-card:focus-visible .menu-more { grid-template-rows: 1fr; opacity: 1; }
-.menu-more-inner { display: block; min-height: 0; overflow: hidden; text-align: left; font: 17px/1.4 var(--hand); }
+/* With a mouse, the description is a small note beside the card (under it in a narrower window), shown after a
+   moment's hover. It sits outside the page's flow, so the cards below never move: a click lands on the card you aimed
+   at. (Growing the card in place pushed the cards under it down, and a click meant for one of them landed elsewhere.) */
+.menu-card { position: relative; }
+.menu-card:hover, .menu-card:focus-visible { z-index: 2; } /* the note shows over the next card, not under it */
+.menu-more {
+  position: absolute; z-index: 3; left: calc(100% + 18px); top: 50%; width: 220px; translate: 0 -50%;
+  padding: 10px 14px; background: #fffdf8; border: 2.5px solid var(--ink); border-radius: 12px; box-shadow: 3px 3px 0 var(--ink);
+  opacity: 0; visibility: hidden; pointer-events: none;
+  transition: opacity .15s ease, visibility 0s linear .15s;
+}
+.menu-card:hover .menu-more, .menu-card:focus-visible .menu-more, .daily-card:focus-within > .menu-more { opacity: 1; visibility: visible; transition: opacity .2s ease .18s, visibility 0s linear .18s; }
+html[data-theme="dark"] .menu-more { background: var(--surface); border-color: #857d70; box-shadow: 3px 3px 0 #000; color: inherit; }
+.menu-more-inner { display: block; text-align: left; font: 16px/1.35 var(--hand); }
+.menu-more .menu-text { margin-top: 0; }
+@media (max-width: 899px) {
+  .menu-more { left: 50%; top: calc(100% + 10px); width: min(320px, 92%); translate: -50% 0; }
+}
 .menu-text { display: block; margin-top: 12px; }
 .menu-line { display: block; }
 .menu-line:first-of-type { margin-top: 12px; }
@@ -64,27 +79,37 @@
 /* The word is sized in vw so it spans the page (its width is 3.81 times its font size, measured in Chrome
  * with the real font); 25vw makes it about 95% of the width. It bleeds a little off the bottom. */
 .home-bg { position: absolute; inset: 0; z-index: 0; overflow: hidden; pointer-events: none; }
-.home-bg span { position: absolute; left: 2.5vw; bottom: -.12em; font-family: var(--marker); font-size: 25vw; line-height: 1; white-space: nowrap; color: #f2c9c0; opacity: .55; }
+.home-bg span { position: absolute; left: 2.5vw; bottom: -.18em; font-family: var(--marker); font-size: 25vw; line-height: 1; white-space: nowrap; color: #f2c9c0; opacity: .5;
+  -webkit-mask-image: linear-gradient(to bottom, transparent 0, rgba(0, 0, 0, .35) 45%, #000 80%); mask-image: linear-gradient(to bottom, transparent 0, rgba(0, 0, 0, .35) 45%, #000 80%); } /* faint behind the invite box and links, fuller at the page's edge */
 
 /* ---------- Daily: one card that opens into two halves ---------- */
-.menu-stack .daily-card { padding: 0; overflow: hidden; }
+.menu-stack .daily-card { padding: 0; } /* not overflow: hidden, so its hover note can sit beside it; the halves round their own corners below */
 .daily-card:hover, .daily-card:focus-within { background: #fff; transform: translate(-3px, -3px); box-shadow: 9px 9px 0 var(--ink); }
 .daily-title { padding: 18px 20px; }
 /* The Daily title is the one thing to do first: yellow, and a real button that opens its two halves (hover opens them too). */
-button.daily-title { display: block; width: 100%; background: var(--yellow); border: 0; border-radius: 0; color: var(--ink); text-align: center; cursor: pointer; } /* keeps .menu-name's font */
+button.daily-title { display: block; width: 100%; background: var(--yellow); border: 0; border-radius: 14px; color: var(--ink); text-align: center; cursor: pointer; } /* keeps .menu-name's font */
+.daily-card.open button.daily-title { border-radius: 14px 14px 0 0; }
+/* A small arrow on the title says it opens; it turns when the halves are out. */
+button.daily-title::after { content: ""; display: inline-block; width: .4em; height: .4em; margin: 0 0 .2em .5em; border: solid currentColor; border-width: 0 3px 3px 0; transform: rotate(45deg); transition: transform .2s ease; }
+.daily-card.open button.daily-title::after { transform: rotate(-135deg); margin-bottom: -.1em; }
+.daily-card.open > .menu-more { display: none; } /* the halves are out: no need for the note */
 button.daily-title:focus-visible { outline: 2.5px solid var(--ink); outline-offset: -4px; }
 .daily-card.open .daily-more { grid-template-rows: 1fr; opacity: 1; }
 html[data-theme="dark"] button.daily-title { background: var(--yellow); color: #1F1E1B; } /* the same primary yellow as Publish in dark mode */
 /* Join a lobby with a code, under the cards. */
 .join-row { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 8px 10px; margin: 18px auto 0; font: 17px/1.3 var(--hand); }
 .join-row input { width: 7.5ch; min-height: 44px; padding: 0 10px; border: var(--line); border-radius: 9px; background: var(--cream); color: var(--ink); font: 600 18px/1 Arial, sans-serif; letter-spacing: .12em; text-transform: uppercase; text-align: center; }
+.join-row input { width: 8.5ch; }
+.join-row input::placeholder { font: 400 15px/1 var(--hand); letter-spacing: 0; text-transform: none; color: var(--ink-soft); }
 .join-row input:focus-visible { outline: 2.5px solid var(--ink); outline-offset: 2px; }
 .join-row .btn { min-height: 44px; padding: 0 18px; }
 .join-help { flex-basis: 100%; text-align: center; font-size: 14px; color: var(--ink-soft); }
 .join-help:empty { display: none; }
-.daily-more { display: grid; grid-template-rows: 0fr; opacity: 0; transition: grid-template-rows .3s ease, opacity .25s ease; }
-.daily-card:hover .daily-more, .daily-card:focus-within .daily-more { grid-template-rows: 1fr; opacity: 1; }
-.daily-options { display: grid; grid-template-columns: 1fr 1fr; min-height: 0; overflow: hidden; border-top: 3px solid var(--ink); }
+/* The two halves open on a click of the title (on a touch screen they are always out), never on hover: opening them
+   pushes the cards below down, and when hover did that, a click meant for Multiplayer landed on Daily Doodle. */
+.daily-more { display: grid; grid-template-rows: 0fr; opacity: 0; visibility: hidden; transition: grid-template-rows .3s ease, opacity .25s ease, visibility 0s linear .3s; } /* hidden: the closed halves can't be tabbed to or clicked */
+.daily-card.open .daily-more { visibility: visible; transition-delay: 0s; }
+.daily-options { display: grid; grid-template-columns: 1fr 1fr; min-height: 0; overflow: hidden; border-top: 3px solid var(--ink); border-radius: 0 0 14px 14px; }
 .daily-option { display: flex; flex-direction: column; align-items: center; justify-content: flex-start; padding: 14px 16px 18px; border: 0; background: transparent; color: var(--ink); font: inherit; text-align: center; cursor: pointer; }
 .daily-option + .daily-option { border-left: 3px solid var(--ink); }
 .daily-option .menu-name { font-size: 24px; }
@@ -109,40 +134,55 @@ html[data-theme="dark"] button.daily-title { background: var(--yellow); color: #
    cut the text off mid-line on phones. With a mouse, the cards open on hover as above.
    (After the Daily card's own rules above, so it wins over them.) */
 @media (hover: none) {
-  .menu-more, .daily-more { display: block; opacity: 1; }
+  .menu-more, .daily-more { display: block; opacity: 1; visibility: visible; }
+  .menu-more { position: static; width: auto; translate: none; padding: 0; background: none; border: 0; box-shadow: none; visibility: visible; pointer-events: auto; transition: none; }
+  .menu-more .menu-text { margin-top: 12px; }
   .menu-more-inner { overflow: visible; text-align: center; }
   .daily-options { overflow: visible; }
+  .daily-card > .menu-more, button.daily-title::after { display: none; } /* the halves are already out */
+  button.daily-title { border-radius: 14px 14px 0 0; }
 }
 
-/* ---------- Public drawings, bottom right ---------- */
-.public-corner {
-  position: fixed;
-  right: 24px;
-  bottom: 22px;
-  z-index: 2;
-  min-height: 44px;
-  padding: 0 20px;
-  background: #fff;
-  border: 3px solid var(--ink);
-  border-radius: 14px;
-  box-shadow: 4px 4px 0 var(--ink);
-  color: var(--ink);
-  font: 700 20px var(--hand);
-  cursor: pointer;
+/* ---------- The other pages: one row of pills under the cards ---------- */
+.home-links { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 12px 14px; margin: 22px 0 4px; }
+.home-pill {
+  display: inline-flex; align-items: center; min-height: 44px; padding: 0 20px;
+  background: #fff; border: 3px solid var(--ink); border-radius: 14px; box-shadow: 4px 4px 0 var(--ink);
+  color: var(--ink); font: 700 20px var(--hand); text-decoration: none; cursor: pointer;
   transition: transform .15s ease, box-shadow .15s ease, background .15s ease;
-  /* It is a link to the Public drawings page, so it needs these to look like the button it replaced. */
-  display: inline-flex;
-  align-items: center;
-  text-decoration: none;
 }
-.public-corner[hidden] { display: none; }
-.public-corner:hover, .public-corner:focus-visible { background: #fff0cf; transform: translate(-2px, -2px); box-shadow: 6px 6px 0 var(--ink); }
-.public-corner:focus-visible { outline: 2.5px solid var(--ink); outline-offset: 4px; }
-@media (max-width: 640px) {
-  .public-corner { position: relative; right: auto; bottom: auto; align-self: center; margin: 0 0 20px; }
-}
+.home-pill[hidden] { display: none; }
+.home-pill:hover, .home-pill:focus-visible { background: #fff0cf; transform: translate(-2px, -2px); box-shadow: 6px 6px 0 var(--ink); }
+.home-pill:focus-visible { outline: 2.5px solid var(--ink); outline-offset: 4px; }
+.home-links #my-drawings { margin: 0; } /* flow.css centres it with auto margins, which would push it to the row's end */
+.home-links:not(:has(.home-pill:not([hidden]))) { margin-top: 10px; } /* nothing connected: just the small links, close under the cards */
+/* The date, "New parts in …" and the streak share one line, so a drawing in progress doesn't make the page taller. */
+#setup #home-date, #setup .home-next { display: inline; }
+#setup .home-next { margin: 0 0 0 .5em; }
+#setup .home-next::before { content: "· "; }
+#setup .home-streak { margin: 0 0 0 12px; vertical-align: middle; }
 @media (prefers-reduced-motion: reduce) {
-  .public-corner { transition: none; }
+  .home-pill { transition: none; }
+}
+/* Above phone size, the menu scales with the window's shorter side (vmin): full size in a full-screen window, a notch
+   smaller in a laptop window with the browser's bars showing, smaller again in a half-screen or half-height window,
+   so the whole menu sits on one screen without scrolling and never looks zoomed in. (1440x900 keeps the full sizes.) */
+@media (min-width: 641px) {
+  #setup { padding-top: clamp(8px, 6vmin - 34px, 20px); }
+  #setup > .home-body { padding: clamp(4px, 7vmin - 39px, 24px) 0 clamp(4px, 1.6vmin, 14px); }
+  #setup .home-logo .wordmark { font-size: clamp(48px, 14vmin - 42px, 84px) !important; }
+  #setup .home-body h1 { font-size: clamp(28px, 4.7vmin, 42px); margin: clamp(3px, .9vmin, 8px) 0 clamp(6px, 5vmin - 23px, 22px); }
+  .menu-stack { gap: clamp(8px, 4vmin - 19px, 17px); margin-bottom: clamp(6px, 4vmin - 18px, 18px); }
+  .menu-stack .menu-card { width: min(100%, clamp(340px, 49vmin, 440px)); padding: clamp(8px, 3.5vmin - 13.5px, 18px) 20px; }
+  .daily-title { padding: clamp(8px, 3.5vmin - 13.5px, 18px) 20px; }
+  .menu-stack .daily-card { padding: 0; } /* the yellow title fills the Daily card (the padding above is for the other cards) */
+  .menu-name { font-size: clamp(22px, 4.5vmin - 10.5px, 30px); }
+  .daily-option .menu-name { font-size: clamp(19px, 2.7vmin, 24px); }
+  .menu-text, .daily-option .menu-text { font-size: clamp(14px, 1.9vmin, 17px); }
+  .join-row { margin-top: clamp(6px, 1.5vmin, 14px); }
+  .join-row input, .join-row .btn { min-height: clamp(36px, 4.9vmin, 44px); }
+  .home-links { margin: clamp(6px, 1.6vmin, 14px) 0 0; }
+  .home-pill { min-height: clamp(36px, 4.9vmin, 44px); font-size: clamp(17px, 2.2vmin, 20px); }
 }
 
 /* Public drawings as its own page (frontend/public-drawings/). gallery.js draws #gallery into the page there instead
@@ -176,7 +216,7 @@ a.wordmark:focus-visible { outline: 2.5px solid var(--ink); outline-offset: 4px;
 #setup > .app-header { align-items: flex-start; padding-top: 12px; }
 #setup > .app-header .header-actions { margin-left: auto; }
 .home-next { margin: 6px 0 0; }
-#setup a.quiet[href="/logs/"] { font-size: 12px; color: var(--ink-soft); } /* the build log is for the team, not the player */
+#setup a.quiet[href="/logs/"] { min-height: 28px; font-size: 12px; color: var(--ink-soft); } /* the build log is for the team, not the player */
 /* Public drawings: the heart sits under the picture with the caption, not over its corner; Report is quiet. */
 .gallery-grid li .like, .gallery-grid li .like-count { position: static; margin: 0 12px 8px; }
 .gallery-grid .report { opacity: .75; }
@@ -287,8 +327,8 @@ html[data-theme="dark"] .daily-card:hover, html[data-theme="dark"] .daily-card:f
 html[data-theme="dark"] .daily-options, html[data-theme="dark"] .daily-option + .daily-option { border-color: #857d70; }
 html[data-theme="dark"] .daily-option { color: inherit; }
 html[data-theme="dark"] :is(#mode-daily, #mode-scrawl):is(:hover, :focus-visible) { background: var(--picked); }
-html[data-theme="dark"] .public-corner { background: var(--surface); border-color: #857d70; box-shadow: 4px 4px 0 #000; color: inherit; }
-html[data-theme="dark"] .public-corner:hover, html[data-theme="dark"] .public-corner:focus-visible { background: var(--picked); border-color: var(--picked-edge); }
+html[data-theme="dark"] .home-pill { background: var(--surface); border-color: #857d70; box-shadow: 4px 4px 0 #000; color: inherit; }
+html[data-theme="dark"] .home-pill:hover, html[data-theme="dark"] .home-pill:focus-visible { background: var(--picked); border-color: var(--picked-edge); }
 html[data-theme="dark"] .home-bg span { color: #5a4540; opacity: .4; }
 html[data-theme="dark"] .lock-why { color: var(--soft-text); }
 html[data-theme="dark"] :is(.bubble, .help-dot) { border-color: #857d70; }
@@ -316,15 +356,13 @@ html[data-theme="dark"] { --doodles: url("doodles/doodles-wide-dark.svg"); }
 }
 body { background: transparent; } /* flow.css gives body its own paper, which would hide the doodles on the page behind it */
 html { background-image: var(--doodles), var(--grain); background-size: cover, auto; background-repeat: no-repeat, repeat; background-position: center, 0 0; background-attachment: fixed, scroll; }
-#slot, #finish, #lobby, #lobby-game { background-image: var(--doodles), var(--grain); background-size: cover, auto; background-repeat: no-repeat, repeat; background-position: center, 0 0; }
-#gallery, #sketchbook { background-image: var(--doodles); background-size: cover; background-repeat: no-repeat; background-position: center; }
+#slot, #lobby { background-image: var(--doodles), var(--grain); background-size: cover, auto; background-repeat: no-repeat, repeat; background-position: center, 0 0; }
+/* The pages you read (Public drawings, the leaderboard, Scrawdle Party, the finish screen, My drawings) stay plain paper, so the doodles never sit under text. */
+html:has(.gallery-page, .lb-page) { background-image: var(--grain); background-size: auto; background-repeat: repeat; background-attachment: scroll; }
 
-/* A half-screen window on a laptop (700–999px wide, with a mouse): everything a size down, so the cards don't loom. */
-@media (min-width: 700px) and (max-width: 999px) and (pointer: fine) {
-  #setup .home-logo .wordmark { font-size: 64px !important; }
-  .menu-stack { gap: 14px; }
-  .menu-stack .menu-card { width: min(380px, 100%); padding: 12px 18px; }
-  .menu-name { font-size: 24px; }
-  .daily-title { padding: 12px 18px; }
-  .menu-text { font-size: 15px; }
-}
+
+/* Dark mode for the shared control style (flow.css): the same surfaces the home cards use. */
+html[data-theme="dark"] :is(.btn, .app-header .quiet, .party-bar .quiet, .slot-top .quiet, .round-btn, .gallery-grid li, .bubble, .reel) { background: var(--surface); border-color: #857d70; box-shadow: 4px 4px 0 #000; color: inherit; }
+html[data-theme="dark"] :is(.btn:not(:disabled), .app-header .quiet, .party-bar .quiet, .slot-top .quiet, .round-btn):hover { background: var(--picked); border-color: var(--picked-edge); }
+html[data-theme="dark"] .btn.primary.primary, html[data-theme="dark"] .bubble[aria-pressed="true"] { background: var(--yellow); color: #1F1E1B; }
+html[data-theme="dark"] :is(.lobby-join input, .lobby-name input, .lobby-link, .join-row input) { border-color: #857d70; }
