@@ -421,7 +421,8 @@
       const round = board.round;
       $("prompt-label").textContent = round.timed ? `${round.timed.seconds}-second Time Challenge` : round.mode === "scrawl" ? "Daily Doodle" : !round.daily ? "Free Play" : round.mode === "detailed" ? "Detailed" : round.mode === "basic" ? "Basic" : "Daily Scrawl";
       showParts(round.prompts);
-      $("restart").textContent = round.timed ? "New challenge" : round.daily ? "Start over" : "New set";
+      $("restart").textContent = round.timed ? "New challenge" : "Start over";
+      $("restart").hidden = !round.daily && !round.timed; // Free Play has no link here: Clear is on the deck, and the house asks on the way out
       try { sessionStorage.setItem(OPEN_KEY, slotFor(round)); } catch (err) { /* storage blocked: a refresh just goes home */ }
       setupEl.hidden = true;
       gameEl.hidden = false;
@@ -536,7 +537,9 @@
       const parts = partsFor(mode).filter((p) => !timed || !p.optional);
       const today = ScrawdleDrawing.dayKey();
       const results = parts.map((p) => (daily ? p.options[ScrawdleDaily.dailyIndex(today, p.key, p.options.length)] : pickRandom(p.options)));
-      await board.start(mode, parts.map((p, i) => ({ label: p.label, value: results[i], optional: Boolean(p.optional) })), daily, timed);
+      const prompts = parts.map((p, i) => ({ label: p.label, value: results[i], optional: Boolean(p.optional) }));
+      await board.start(mode, prompts, daily, timed);
+      try { localStorage.removeItem(ticksKey(prompts)); } catch (err) { /* storage blocked */ } // a fresh canvas starts with nothing ticked, whatever happened to the last one (the key needs the new round)
       challenge.pending = Boolean(timed);
       board.setLocked(Boolean(timed)); // a challenge's canvas waits for the clock
       showGame();
@@ -587,11 +590,6 @@
     }
 
     // Open Canvas has one save, so a new set replaces whatever is on it.
-    async function startFreePlay(hasDrawing) {
-      if (hasDrawing && !await ask({ title: "New set of parts?", body: "Your Free Play drawing is kept in My drawings.", yes: "New set", no: "Back to my drawing" })) return openSaved("free");
-      start("basic", false);
-    }
-
     // A yes/no question in the game's own box. Resolves true for the first button.
     const askEl = $("ask-box");
     function ask({ title, body, yes, no }) {
@@ -674,8 +672,9 @@
       gameEl.hidden = true;
       gameEl.inert = false;
       slotEl.hidden = true;
-      const daily = document.querySelector(".daily-card"); // the Daily card is closed again, so home is as short as it was
-      daily.classList.remove("open"); daily.querySelector(".daily-title").setAttribute("aria-expanded", "false");
+      for (const card of document.querySelectorAll(".daily-card")) { // the opened cards close again, so home is as short as it was
+        card.classList.remove("open"); card.querySelector(".daily-title").setAttribute("aria-expanded", "false");
+      }
       try { sessionStorage.removeItem(OPEN_KEY); sessionStorage.removeItem(ScrawdleDrawing.FINISH_KEY); } catch (err) { /* storage blocked */ }
       homeDay = ScrawdleDrawing.dayKey();
       saved = await board.drafts();
@@ -683,14 +682,18 @@
       thumbUrls = [];
       const gone = dismissedNotices();
       // A drawing already published is finished, so it isn't offered as "Continue drawing" (publish.js).
-      const cards = [saved.today, saved.scrawl, saved.free].filter((d) => d && d.marked && gone[d.slot] !== noticeId(d) && !isPublishedDraft(d) && !d.finished);
-      $("continue-list").replaceChildren(...cards.map(continueCard));
+      // A drawing left on its slot without Save draft (the tab was closed) is gone; what you kept is in Drafts.
+      for (const slot of ["today", "scrawl", "free"]) {
+        const d = saved[slot];
+        if (d && d.marked && !d.finished && !isPublishedDraft(d)) { await board.forgetSlot(slot); delete saved[slot]; }
+      }
+      $("continue-list").replaceChildren(); // no corner notices
       await showMyDrawingsLink();
-      setupEl.classList.toggle("has-saved", cards.length > 0);
+      setupEl.classList.remove("has-saved");
       setupEl.hidden = false;
       $("home-date").textContent = new Date().toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric" });
       // The daily cards say where you are today: nothing yet, "Continue", or "Done" once it's published.
-      const stateOf = (d) => !d || !d.marked ? "" : isPublishedDraft(d) || d.finished ? " \u00B7 Done" : " \u00B7 Continue";
+      const stateOf = (d) => d && d.marked && (isPublishedDraft(d) || d.finished) ? " \u00B7 Done" : "";
       $("mode-daily").querySelector(".menu-name").textContent = "Daily Scrawl" + stateOf(saved.today && saved.today.mode === "daily" ? saved.today : null);
       $("mode-scrawl").querySelector(".menu-name").textContent = "Daily Doodle" + stateOf(saved.scrawl);
       showNextParts();
@@ -736,7 +739,6 @@
     async function restartRound() {
       const round = board.round;
       if (round.timed) return startTimeChallenge(); // the old one goes to My drawings
-      if (!round.daily) return startFreePlay(!board.isEmpty);
       if (board.isEmpty) return;
       if (!await ask({ title: "Clear the canvas?", body: "Undo brings it back.", yes: "Clear", no: "Keep drawing" })) return;
       board.clear();
@@ -750,7 +752,7 @@
     dailyTitle.addEventListener("click", () => { const open = dailyCard.classList.toggle("open"); dailyTitle.setAttribute("aria-expanded", String(open)); });
     $("mode-daily").addEventListener("click", startDaily);
     $("mode-scrawl").addEventListener("click", startScrawl);
-    $("free-play").addEventListener("click", () => startFreePlay(Boolean(saved.free && saved.free.marked)));
+    $("free-play").addEventListener("click", () => start("basic", false)); // a fresh set every time; a drawing you want back is saved as a draft when you leave
     $("restart").addEventListener("click", restartRound);
     $("join-form").addEventListener("submit", (e) => {
       e.preventDefault();
@@ -820,6 +822,8 @@
       if (choice.dataset.leave === "delete") {
         if (board.round) { try { localStorage.removeItem(ticksKey(board.round.prompts)); } catch (err) { /* storage blocked */ } } // a new drawing starts unticked
         await board.discard();
+      } else if (choice.dataset.leave === "save") {
+        await board.stash(); // into Drafts (My drawings), off its slot
       }
       leaveOk = true;
       goHome();
