@@ -839,7 +839,7 @@
       if (locked || !e.isPrimary || e.button !== 0 || stroke) return;
       e.preventDefault();
       const p = point(e);
-      if (tool === "bucket") return fill(p);
+      if (tool === "bucket") { fill(p); splash(p, color); return; }
       canvas.setPointerCapture(e.pointerId);
       const op = {
         type: "stroke", tool, kind: tool === "brush" ? brushKind : null, color: paintColor(),
@@ -1027,6 +1027,54 @@
       if (rect) ctx.putImageData(image, 0, 0);
       return { rect, before };
     }
+    // A splash when the bucket pours: a blob bursting out from the tap with a few droplets, in the paint's colour, on a
+    // layer over the canvas for a third of a second (the real fill is already underneath). Not with reduced motion.
+    let splashLayer = null;
+    function splash(p, col) {
+      if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+      const parent = canvas.parentElement;
+      if (!parent) return;
+      if (!splashLayer) {
+        splashLayer = document.createElement("canvas");
+        splashLayer.className = "splash-layer";
+        splashLayer.setAttribute("aria-hidden", "true");
+        if (getComputedStyle(parent).position === "static") parent.style.position = "relative";
+        parent.append(splashLayer);
+      }
+      const r = canvas.getBoundingClientRect(), pr = parent.getBoundingClientRect();
+      const dpr = Math.min(2, window.devicePixelRatio || 1);
+      Object.assign(splashLayer.style, { left: `${r.left - pr.left}px`, top: `${r.top - pr.top}px`, width: `${r.width}px`, height: `${r.height}px` });
+      splashLayer.width = Math.round(r.width * dpr);
+      splashLayer.height = Math.round(r.height * dpr);
+      const s = splashLayer.getContext("2d");
+      s.setTransform(dpr, 0, 0, dpr, 0, 0);
+      const cx = p.x / W * r.width, cy = p.y / H * r.height;
+      const R = Math.max(26, Math.min(r.width, r.height) * .11);
+      const lobes = Array.from({ length: 10 }, (_, i) => ({ a: (i / 10) * Math.PI * 2 + (Math.random() - .5) * .4, k: .65 + Math.random() * .7 }));
+      const drops = Array.from({ length: 7 }, () => { const a = Math.random() * Math.PI * 2; return { a, d: R * (1.4 + Math.random() * 1.3), s: 3 + Math.random() * 5 }; });
+      const t0 = performance.now(), DURATION = 380;
+      const tick = (now) => {
+        const t = Math.min(1, (now - t0) / DURATION), ease = 1 - Math.pow(1 - t, 3);
+        s.clearRect(0, 0, r.width, r.height);
+        s.globalAlpha = 1 - t * t;
+        s.fillStyle = col;
+        s.strokeStyle = "rgba(30, 28, 25, .6)";
+        s.lineWidth = 2;
+        s.lineJoin = "round";
+        s.beginPath(); // the blob: a wobbly ring of lobes growing out from the tap
+        lobes.forEach((l, i) => {
+          const rad = R * ease * l.k, x = cx + Math.cos(l.a) * rad, y = cy + Math.sin(l.a) * rad;
+          if (i === 0) s.moveTo(x, y); else s.quadraticCurveTo(cx + Math.cos(l.a - .31) * rad * .55, cy + Math.sin(l.a - .31) * rad * .55, x, y);
+        });
+        s.closePath(); s.fill(); s.stroke();
+        for (const d of drops) { // droplets fly out and fall a little
+          const dist = d.d * ease, x = cx + Math.cos(d.a) * dist, y = cy + Math.sin(d.a) * dist + 16 * t * t;
+          s.beginPath(); s.arc(x, y, d.s * (1 - t * .4), 0, Math.PI * 2); s.fill(); s.stroke();
+        }
+        if (t < 1) requestAnimationFrame(tick); else s.clearRect(0, 0, r.width, r.height);
+      };
+      requestAnimationFrame(tick);
+    }
     function fill(p) {
       const opacity = opacities.bucket / 100;
       const { rect, before } = fillAt(p.x, p.y, color, opacity);
@@ -1101,7 +1149,12 @@
 
     document.addEventListener("keydown", (e) => {
       if (!(e.ctrlKey || e.metaKey) || e.key.toLowerCase() !== "z") return;
-      if (canvas.offsetParent === null || document.querySelector("dialog[open]")) return;
+      if (canvas.offsetParent === null) return;
+      // A box open over the canvas takes the keys (the leave box, an ask box). A canvas that lives inside a dialog
+      // (Scrawdle Party's, in the lobby game) keeps them: its own dialog, and the lobby that stays open underneath, don't count.
+      const own = canvas.closest("dialog");
+      const covered = [...document.querySelectorAll("dialog[open]")].some((d) => d !== own && !d.contains(canvas) && !(own && d.id === "lobby"));
+      if (covered) return;
       e.preventDefault();
       if (e.shiftKey) redo(); else undo();
     });
@@ -1198,7 +1251,7 @@
           }
           const image = await draftImage(draft);
           (await createImageBitmap(image)).close();
-          found[slot] = { slot, mode: draft.mode, daily: draft.daily !== false, day: draft.day, prompts: draft.prompts, timed: draft.timed || null, image, marked: isMarked(draft), savedAt: draft.savedAt || 0 };
+          found[slot] = { slot, mode: draft.mode, daily: draft.daily !== false, day: draft.day, prompts: draft.prompts, timed: draft.timed || null, image, marked: isMarked(draft), finished: Boolean(draft.finished), savedAt: draft.savedAt || 0 };
         } catch (err) { // a damaged save shouldn't stop the game from opening
           await draftStore.remove(slot).catch(() => {});
         }
@@ -1229,7 +1282,7 @@
       ops = Array.isArray(draft.ops) ? draft.ops : [];
       opsAt = ops.length;
       canReplay = Array.isArray(draft.ops) && draft.canReplay !== false;
-      round = { mode: draft.mode, prompts: draft.prompts, daily: draft.daily !== false, day: draft.day, ...(draft.timed ? { timed: { ...draft.timed } } : {}) };
+      round = { mode: draft.mode, prompts: draft.prompts, daily: draft.daily !== false, day: draft.day, ...(draft.timed ? { timed: { ...draft.timed } } : {}), ...(draft.finished ? { finished: true } : {}) };
       history.clear();
       refreshToolbar();
       setStatus("Saved in this browser", "saved");
@@ -1271,6 +1324,8 @@
       save, setLocked,
       // A Time Challenge's progress ({ startedAt } when the clock starts, { used } when it ends), saved with the drawing.
       noteTimed(fields) { if (round && round.timed) { Object.assign(round.timed, fields); scheduleSave(); } },
+      // Done drawing was pressed: the drawing counts as finished for the day (home says Done), published or not.
+      markFinished() { if (round && !round.finished) { round.finished = true; scheduleSave(); } },
       clear: clearAll, // erases the canvas but keeps the round and its parts; Undo brings the drawing back
       get locked() { return locked; },
       get canReplay() { return canReplay && opsAt > 0; },
@@ -1287,7 +1342,7 @@
     const dialog = document.createElement("dialog");
     dialog.id = "finish";
     dialog.innerHTML = `
-      <header class="app-header"><span class="wordmark">Scrawdle</span><button type="button" class="quiet" data-act="home">Back to home</button></header>
+      <header class="app-header"><span class="wordmark">Scrawdle</span><button type="button" class="quiet home-key" data-act="home" aria-label="Back to home" title="Back to home"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M3 11.5 12 4l9 7.5M5.5 10v10h5v-6h3v6h5V10"/></svg></button></header>
       <div class="finish-heading"><p class="finish-date eyebrow"></p><h1>Made by you.</h1><h2 class="finish-prompt"></h2><p class="finish-streak" role="status" hidden></p><p class="finish-timed" hidden></p><p class="finish-next" hidden></p></div>
       <div class="finish-art">
         <img alt="Your finished drawing">

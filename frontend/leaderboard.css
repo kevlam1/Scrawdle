@@ -5,7 +5,7 @@
 /* Links in Scrawdle's ink, not the browser's blue, in both modes. */
 :is(html, html[data-theme="dark"]) .lb-page a.quiet { color: var(--ink); text-decoration-thickness: 1.5px; text-underline-offset: 3px; }
 .lb-page a.quiet:hover { opacity: .75; }
-.lb-page .app-header { max-width: 1000px; margin: 0 auto; }
+.lb-page .app-header { max-width: 1320px; margin: 0 auto; } /* the same rail as every other page */
 .lb-page .gallery-heading { margin: 20px auto 8px; text-align: center; }
 .lb-page h1 { margin: 0; font: 400 40px/1.2 var(--hand); }
 .lb-page .gallery-note { margin: 0 auto 8px; text-align: center; font-size: 13px; color: var(--ink-soft); }

@@ -97,13 +97,15 @@
     /* ---------- screens ---------- */
     const view = el("div", { className: "party" });
     ctx.container.replaceChildren(view);
+    // A yes/no question in the game's own box when the page has one (index.html), the browser's confirm() otherwise.
+    const askBox = (q) => (typeof window.scrawdleAsk === "function" ? window.scrawdleAsk(q) : Promise.resolve(confirm(q.title + (q.body ? "\n" + q.body : ""))));
     // The bar over every Party screen, drawing included: the round, and End game for the host or Leave game for
     // everyone else (it leaves the lobby too, the same as the lobby's own Leave button).
     function partyBar() {
       let action = el("span");
-      if (!game.ended && amHost()) action = el("button", { type: "button", className: "quiet", textContent: "End game", onclick: () => { if (confirm("End the game for everyone?")) ctx.end(); } });
-      else if (!game.ended) action = el("button", { type: "button", className: "quiet", textContent: "Leave game", onclick: () => {
-        if (!confirm("Leave the game? You'll leave the lobby too.")) return;
+      if (!game.ended && amHost()) action = el("button", { type: "button", className: "quiet", textContent: "End game", onclick: async () => { if (await askBox({ title: "End the game for everyone?", yes: "End game", no: "Keep playing" })) ctx.end(); } });
+      else if (!game.ended) action = el("button", { type: "button", className: "quiet", textContent: "Leave game", onclick: async () => {
+        if (!await askBox({ title: "Leave the game?", body: "You'll leave the lobby too.", yes: "Leave", no: "Stay" })) return;
         const leave = document.querySelector('#lobby [data-act="leave"]'); // the game is its own dialog, beside the lobby's
         if (leave) leave.click();
       } });

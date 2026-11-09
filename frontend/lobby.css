@@ -80,8 +80,10 @@ a.quiet { color: #5c584f; } /* the same grey flow.css gives the "Explore sample 
 .lobby-stage-menu { position: fixed; left: 12px; bottom: 56px; z-index: 30; width: min(300px, calc(100vw - 24px)); margin: 0; padding: 8px; list-style: none; display: grid; gap: 6px; background: var(--surface, #fffcf7); border: var(--line); border-radius: 12px; box-shadow: 0 8px 24px #302f2b2e; }
 .lobby-stage-menu[hidden] { display: none; }
 .lobby-stage-menu li { display: flex; align-items: center; gap: 8px; padding: 4px 4px 4px 8px; }
-.lobby-name { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; margin-top: 22px; font-size: 15px; text-align: left; }
+.lobby-name { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 10px; margin-top: 22px; font-size: 15px; text-align: left; }
+.lobby-name label { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; }
 .lobby-name input { width: min(300px, 100%); }
+.lobby-shuffle { min-height: 46px; padding: 0 14px; font-size: 14px; }
 .lobby-game-text { display: flex; flex: 1; flex-direction: column; min-width: 0; }
 .lobby-game-text b { font-weight: 400; font-size: 20px; }
 .lobby-game-text small, .lobby-wait { font-size: 13px; color: var(--ink-soft); }
@@ -102,3 +104,28 @@ a.quiet { color: #5c584f; } /* the same grey flow.css gives the "Explore sample 
   .lobby-invite { width: 100%; }
   .lobby-invite-menu { left: 0; right: 0; }
 }
+
+/* ---------- Seats: one card per player, open seats dashed, in the game's own look ---------- */
+.lobby-players { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
+.lobby-players li.seat {
+  position: relative; flex-direction: column; justify-content: center; gap: 6px; min-height: 136px; padding: 12px 8px 10px;
+  background: #fff; border: 3px solid var(--ink); border-radius: 16px; box-shadow: 4px 4px 0 var(--ink); text-align: center;
+}
+.lobby-players li.seat.open { background: transparent; border: 3px dashed #c9c0af; box-shadow: none; }
+.seat-open-text { font: 15px/1.2 var(--hand); color: var(--ink-soft); }
+.lobby-players li.seat.open.many { grid-column: 1 / -1; min-height: 52px; } /* phones: the open seats as one line */
+.seat .lobby-player-name { flex: none; width: 100%; font: 400 19px/1.2 var(--hand); white-space: normal; overflow-wrap: anywhere; }
+.seat-tags { display: flex; gap: 4px; flex-wrap: wrap; justify-content: center; min-height: 19px; }
+/* The icon: one of the paper's doodles, drawn in ink on a soft colour that comes from the doodle. */
+.seat-icon { display: grid; place-items: center; width: 56px; height: 56px; border-radius: 50%; background: var(--seat-bg, #f7e7bd); }
+.seat-icon svg { width: 38px; height: 38px; fill: none; stroke: var(--ink); stroke-width: 2.6; stroke-linecap: round; stroke-linejoin: round; }
+.seat .seat-kick { position: absolute; top: 5px; right: 5px; width: 26px; height: 26px; min-height: 0; padding: 0; border-radius: 50%; font: 700 18px/1 var(--hand); text-decoration: none; color: var(--ink-soft); }
+.seat .seat-kick::after { content: ""; position: absolute; inset: -9px; } /* a 44px target around the small × */
+.seat .seat-kick:hover { background: rgba(48, 47, 43, .12); color: var(--ink); }
+.seat.new { animation: seat-pop 320ms cubic-bezier(.2, 1.4, .4, 1) 1; }
+@keyframes seat-pop { from { transform: scale(.6); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+@media (max-width: 600px) { .lobby-players { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; } .lobby-players li.seat { min-height: 120px; } }
+@media (prefers-reduced-motion: reduce) { .seat.new { animation: none; } }
+html[data-theme="dark"] .lobby-players li.seat.filled { background: var(--surface); border-color: #857d70; box-shadow: 4px 4px 0 #000; }
+html[data-theme="dark"] .lobby-players li.seat.open { border-color: #5c564d; }
+html[data-theme="dark"] .seat-icon svg { stroke: #1f1e1b; }

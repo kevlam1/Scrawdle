@@ -19,8 +19,10 @@
 .party-field { border: 0; margin: 0; padding: 0; display: flex; flex-direction: column; align-items: center; gap: 8px; }
 .party-field legend { padding: 0; margin-bottom: 8px; font-size: 13px; color: var(--ink-soft); }
 .party-choice { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; }
-.party-choice .chip { min-height: 44px; padding: 0 16px; border: var(--line); border-radius: 9px; background: white; font: 400 19px/1 var(--hand); color: var(--ink); cursor: pointer; }
-.party-choice .chip[aria-pressed="true"] { background: #fff0c4; border-color: #c59a2e; box-shadow: inset 0 0 0 1px #c59a2e; }
+.party-choice .chip { min-height: 44px; padding: 0 16px; border: 2.5px solid var(--ink); border-radius: 10px; background: white; box-shadow: 3px 3px 0 var(--ink); font: 700 17px/1 var(--hand); color: var(--ink); cursor: pointer; } /* the same chunky key as everywhere else */
+.party-choice .chip[aria-pressed="true"] { background: var(--yellow); transform: translate(2px, 2px); box-shadow: 1px 1px 0 var(--ink); }
+html[data-theme="dark"] .party-choice .chip { background: var(--surface); border-color: #857d70; box-shadow: 3px 3px 0 #000; color: inherit; }
+html[data-theme="dark"] .party-choice .chip[aria-pressed="true"] { background: var(--yellow); color: #1F1E1B; }
 
 /* Drawing: the same grid as the main drawing screen */
 .party-draw { display: grid; grid-template-columns: minmax(0, 1fr) 260px; grid-template-areas: "top top" "stage settings" "tools tools" "footer footer"; align-content: center; gap: 14px; width: 100%; max-width: 1380px; min-height: 100dvh; margin: 0 auto; padding: 16px 32px; }
@@ -62,8 +64,11 @@
 .party-scores .points { font-size: 13px; color: var(--ink-soft); }
 
 @media (max-width: 999px) {
-  .party-draw { grid-template-columns: 1fr; grid-template-areas: "top" "stage" "tools" "settings" "footer"; padding: 12px; align-content: start; }
+  .party-draw { grid-template-columns: 1fr; grid-template-areas: "top" "stage" "tools" "footer" "settings"; padding: 12px; align-content: start; }
   .party-board { width: 100%; }
+  /* The clock stays at the top and Undo / Redo / Clear / Done at the bottom while the page scrolls, as on the Daily screen. */
+  .party-top { position: sticky; top: 0; z-index: 5; margin: -12px -12px 0; padding: 10px 12px 8px; background: var(--paper); }
+  .party-draw .studio-footer { position: sticky; bottom: 0; z-index: 5; margin: 0 -12px; padding: 10px 12px calc(10px + env(safe-area-inset-bottom)); background: var(--paper); border-top: var(--line); }
 }
 @media (max-width: 640px) {
   .party-bar { padding: 12px 16px 0; }

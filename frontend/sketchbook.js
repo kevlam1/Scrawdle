@@ -25,7 +25,9 @@
     const note = dialog.querySelector(".gallery-note");
     const grid = dialog.querySelector(".gallery-grid");
     const KEPT_NOTE = "Kept in this browser only, so clearing your browser data deletes them.";
-    const EMPTY_NOTE = "Nothing here yet. A drawing is kept here when its day ends, and so is a Free Play drawing when you start a new set. Kept in this browser only.";
+    // A yes/no question in the game's own box when the page has one (index.html), the browser's confirm() otherwise.
+  const askBox = (q) => (typeof root.scrawdleAsk === "function" ? root.scrawdleAsk(q) : Promise.resolve(confirm(q.title + (q.body ? "\n" + q.body : ""))));
+  const EMPTY_NOTE = "Nothing here yet. A drawing is kept here when its day ends, and so is a Free Play drawing when you start a new set. Kept in this browser only.";
     let urls = [];
     let request = 0;
     const release = () => { urls.forEach((u) => URL.revokeObjectURL(u)); urls = []; };
@@ -79,7 +81,7 @@
       button("Download", () => download(d));
       if (!open) {
         button("Delete", async () => {
-          if (!confirm("Delete this drawing? It can't be brought back.")) return;
+          if (!await askBox({ title: "Delete this drawing?", body: "It can't be brought back.", yes: "Delete", no: "Keep it" })) return;
           await root.ScrawdleDrawing.myDrawings.forget(d.key);
           li.remove();
           if (!grid.children.length) note.textContent = EMPTY_NOTE;
