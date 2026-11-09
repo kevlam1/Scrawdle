@@ -16,7 +16,7 @@
 
   const GROUPS = [
     { id: "daily", label: "Daily Scrawl", modes: ["daily", "basic", "detailed"] },
-    { id: "free", label: "Daily Free Play", modes: ["scrawl"] },
+    { id: "free", label: "Daily Doodle", modes: ["scrawl"] },
   ];
   const TOP = 10;
 
@@ -58,7 +58,7 @@
   // What a winner was drawn to: yesterday's parts, or "Draw anything" for Daily Free Play.
   function winnerCaption(card) {
     if (!card) return "";
-    if (card.mode === "scrawl") return "Daily Free Play · Draw anything";
+    if (card.mode === "scrawl") return "Daily Doodle · Draw anything";
     const parts = (card.prompts || []).map((p) => p && p.value).filter(Boolean).join(", ");
     return parts ? `Daily Scrawl · ${parts}` : "Daily Scrawl";
   }
@@ -140,7 +140,7 @@
     h.id = compact ? "yesterday-home-title" : "yesterday-title";
     sec.append(h);
     const grid = el("ul", "yesterday-grid");
-    for (const [key, label] of [["daily", "Daily Scrawl"], ["free", "Daily Free Play"]]) {
+    for (const [key, label] of [["daily", "Daily Scrawl"], ["free", "Daily Doodle"]]) {
       const cards = (w[key] || []).slice(0, compact ? 1 : 3);
       for (const card of cards) {
         const li = el("li", card.mine ? "yesterday-card mine" : "yesterday-card");
@@ -173,7 +173,7 @@
     home.href = "../";
     home.setAttribute("aria-label", "Scrawdle, back to the home screen");
     header.append(home);
-    const back = el("a", "quiet", "Back to Scrawdle");
+    const back = el("a", "quiet", "Back to home");
     back.href = "../";
     header.append(back);
     const heading = el("div", "gallery-heading");

@@ -17,7 +17,7 @@
     dialog.setAttribute("aria-labelledby", "gallery-title");
     if (page) dialog.className = "gallery-page";
     const wordmark = page ? '<a class="wordmark" href="../" aria-label="Scrawdle, back to the home screen">Scrawdle</a>' : '<span class="wordmark">Scrawdle</span>';
-    dialog.innerHTML = '<header class="app-header">' + wordmark + '<button class="quiet" type="button">Back</button></header><div class="gallery-heading"><h2 id="gallery-title"></h2><p class="gallery-sub">Today\u2019s drawings, posted without names. They leave this page at midnight and are deleted within two days.</p></div><div class="public-filters" hidden></div><p class="gallery-note" role="status"></p><ul class="gallery-grid"></ul>';
+    dialog.innerHTML = '<header class="app-header">' + wordmark + '<button class="quiet" type="button">Back to home</button></header><div class="gallery-heading"><h2 id="gallery-title"></h2><p class="gallery-sub">Today\u2019s drawings, posted without names. They leave this page at midnight and are deleted within two days.</p></div><div class="public-filters" hidden></div><p class="gallery-note" role="status"></p><ul class="gallery-grid"></ul>';
     const closeBtn = dialog.querySelector("button");
     const open = () => { if (!page) dialog.showModal(); };
     const isOpen = () => page || dialog.open;
@@ -96,6 +96,22 @@
     const reportedIds = () => {
       try { return JSON.parse(localStorage.getItem(REPORTED_KEY) || "[]"); } catch (err) { return []; }
     };
+    // The question before a report, in the game's own box (the browser's confirm() looks like an error).
+    let reportBox = null;
+    function askReport() {
+      if (!reportBox) {
+        reportBox = document.createElement("dialog");
+        reportBox.className = "ask-box";
+        reportBox.innerHTML = '<h2>Report this drawing?</h2><p>It is hidden from everyone once 3 players report it.</p><div class="ask-actions"><button type="button" class="btn primary" value="yes">Report drawing</button><button type="button" class="quiet" value="no">Cancel</button></div>';
+        document.body.append(reportBox);
+        reportBox.addEventListener("click", (e) => { const b = e.target.closest("button"); if (b) reportBox.close(b.value); else if (e.target === reportBox) reportBox.close("no"); });
+      }
+      return new Promise((resolve) => {
+        reportBox.addEventListener("close", () => resolve(reportBox.returnValue === "yes"), { once: true });
+        reportBox.returnValue = "no";
+        reportBox.showModal();
+      });
+    }
     function addReport(li, item) {
       const b = document.createElement("button");
       b.type = "button";
@@ -104,7 +120,7 @@
       if (reportedIds().includes(item.id)) reported();
       else b.textContent = "Report";
       b.addEventListener("click", async () => {
-        if (!confirm("Report this drawing? It's hidden from the gallery once 3 players report it.")) return;
+        if (!await askReport()) return;
         b.disabled = true;
         try {
           const { hidden } = await root.scrawdleReport({ drawingId: item.id });
@@ -153,7 +169,7 @@
     // not security: the database lets anyone read published drawings.
     const GROUPS = [
       { id: "daily", label: "Daily Scrawl", modes: ["daily", "basic", "detailed"] },
-      { id: "free", label: "Daily Free Play", modes: ["scrawl"] },
+      { id: "free", label: "Daily Doodle", modes: ["scrawl"] },
     ];
     const LOCK_WHY = "Post your own Daily Scrawl drawing to unlock everyone else's.";
     // A padlock drawn in two halves, so it can break: the shackle pops off and the body splits (see home.css).
@@ -169,7 +185,7 @@
     };
     // Your own drawing on the public page shows how it did, like the old Today's drawings page did.
     function addResult(li, votes) {
-      if (votes) li.append(root.ScrawdleVotes.likeCount(votes.up, votes.up > 0));
+      if (votes) li.append(root.ScrawdleVotes.likeCount(votes.up, false));
       const text = root.ScrawdleVotes.resultText(votes);
       if (!text) return;
       const result = document.createElement("p");
@@ -205,20 +221,31 @@
       why.className = "lock-why";
       why.textContent = LOCK_WHY;
       why.hidden = !lockedOut; // say why straight away when Daily Scrawl was what they came for
-      for (const g of GROUPS) {
+      // One switch with three positions: All, Daily Scrawl, Daily Doodle. Daily Scrawl is locked until you've posted one.
+      const wantDaily = posted && startsOn("daily"); // what the switch should show once the lock has broken
+      let seg = wantDaily && on.free ? "all" : wantDaily ? "daily" : "free";
+      const SEGMENTS = [{ id: "all", label: "All" }, ...GROUPS];
+      const segButtons = {};
+      function select(id) {
+        seg = id;
+        on.daily = (id === "all" || id === "daily") && posted && !lockBreaking;
+        on.free = id === "all" || id === "free";
+        for (const [k, btn] of Object.entries(segButtons)) btn.setAttribute("aria-pressed", String(k === seg));
+        render();
+      }
+      for (const g of SEGMENTS) {
         const b = document.createElement("button");
         b.type = "button";
         b.className = "bubble";
         b.textContent = g.label;
         let locked = g.id === "daily" && (!posted || breaking); // while it breaks, it still looks locked
         if (locked) { b.classList.add("locked"); b.setAttribute("aria-disabled", "true"); b.setAttribute("aria-label", `${g.label}, locked`); b.insertAdjacentHTML("beforeend", LOCK_SVG); }
-        b.setAttribute("aria-pressed", String(on[g.id]));
+        b.setAttribute("aria-pressed", String(g.id === seg));
         b.addEventListener("click", () => {
           if (locked) { why.hidden = false; return; }
-          on[g.id] = !on[g.id];
-          b.setAttribute("aria-pressed", String(on[g.id]));
-          render();
+          select(g.id);
         });
+        segButtons[g.id] = b;
         bubbles[g.id] = b;
         filters.append(b);
         if (locked && !breaking) {
@@ -242,8 +269,7 @@
             b.removeAttribute("aria-disabled");
             b.removeAttribute("aria-label");
             b.querySelector(".lock-icon").remove();
-            on.daily = startsOn("daily");
-            b.setAttribute("aria-pressed", String(on.daily));
+            select(seg); // Daily Scrawl joins in now that the lock has broken
             b.classList.add("unlocked-pop");
             for (let i = 0; i < 8; i++) {
               const spark = document.createElement("i");
@@ -272,7 +298,7 @@
         for (const item of shown) {
           // Daily Scrawl drawings (and the older Basic and Detailed) go under Daily Scrawl; Daily Free Play under its own.
           const kind = GROUPS.find((g) => g.modes.includes(item.mode)).label;
-          const li = addCard(item.imageUrl, item.mine ? `Your drawing · ${kind}` : kind, item.mine);
+          const li = addCard(item.imageUrl, item.mine ? `Your drawing · ${kind}` : seg === "all" ? kind : "", item.mine);
           if (item.mine) { // your own drawing has no vote or report buttons; its votes show as your result
             if (item.votes) addResult(li, item.votes);
             continue;
@@ -280,7 +306,15 @@
           if (canVote && item.votes) addVotes(li, item);
           if (canReport && item.id) addReport(li, item);
         }
-        note.textContent = shown.length || lockBreaking ? "" : !on.daily && !on.free ? "Turn on a bubble to see drawings." : posted ? "No drawings to show yet." : "No Daily Free Play drawings yet today.";
+        note.replaceChildren();
+        note.textContent = shown.length || lockBreaking ? "" : !on.daily && !on.free ? "Pick Daily Scrawl or Daily Doodle above to see drawings." : posted ? "No drawings yet today." : "No Daily Doodle drawings yet today.";
+        if (note.textContent.startsWith("No ") && page) { // the public page: a way to go and draw
+          const go = document.createElement("a");
+          go.className = "quiet";
+          go.href = "../";
+          go.textContent = "Be the first: draw today's parts";
+          note.append(" ", go);
+        }
       }
       open();
       note.textContent = "Loading\u2026";

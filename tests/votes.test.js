@@ -12,8 +12,9 @@ test("one thumbs up wins, whatever the thumbs down", () => {
   assert.equal(isWin(undefined), false);
 });
 
-test("the result text says won, or nothing until someone likes it (the heart shows the count)", () => {
-  assert.equal(resultText({ up: 2, down: 1, mine: 0 }), "You won!");
+test("the result text marks the first like, and otherwise says nothing (the heart shows the count)", () => {
+  assert.equal(resultText({ up: 1, down: 0, mine: 0 }), "Your first like!");
+  assert.equal(resultText({ up: 2, down: 1, mine: 0 }), "");
   assert.equal(resultText({ up: 0, down: 0, mine: 0 }), "");
   assert.equal(resultText({ up: 0, down: 2, mine: 0 }), "");
   assert.equal(resultText(null), "Publish it so others can like it.");

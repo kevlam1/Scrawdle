@@ -70,6 +70,18 @@
 .menu-stack .daily-card { padding: 0; overflow: hidden; }
 .daily-card:hover, .daily-card:focus-within { background: #fff; transform: translate(-3px, -3px); box-shadow: 9px 9px 0 var(--ink); }
 .daily-title { padding: 18px 20px; }
+/* The Daily title is the one thing to do first: yellow, and a real button that opens its two halves (hover opens them too). */
+button.daily-title { display: block; width: 100%; background: var(--yellow); border: 0; border-radius: 0; color: var(--ink); text-align: center; cursor: pointer; } /* keeps .menu-name's font */
+button.daily-title:focus-visible { outline: 2.5px solid var(--ink); outline-offset: -4px; }
+.daily-card.open .daily-more { grid-template-rows: 1fr; opacity: 1; }
+html[data-theme="dark"] button.daily-title { background: var(--yellow); color: #1F1E1B; } /* the same primary yellow as Publish in dark mode */
+/* Join a lobby with a code, under the cards. */
+.join-row { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 8px 10px; margin: 18px auto 0; font: 17px/1.3 var(--hand); }
+.join-row input { width: 7.5ch; min-height: 44px; padding: 0 10px; border: var(--line); border-radius: 9px; background: var(--cream); color: var(--ink); font: 600 18px/1 Arial, sans-serif; letter-spacing: .12em; text-transform: uppercase; text-align: center; }
+.join-row input:focus-visible { outline: 2.5px solid var(--ink); outline-offset: 2px; }
+.join-row .btn { min-height: 44px; padding: 0 18px; }
+.join-help { flex-basis: 100%; text-align: center; font-size: 14px; color: var(--ink-soft); }
+.join-help:empty { display: none; }
 .daily-more { display: grid; grid-template-rows: 0fr; opacity: 0; transition: grid-template-rows .3s ease, opacity .25s ease; }
 .daily-card:hover .daily-more, .daily-card:focus-within .daily-more { grid-template-rows: 1fr; opacity: 1; }
 .daily-options { display: grid; grid-template-columns: 1fr 1fr; min-height: 0; overflow: hidden; border-top: 3px solid var(--ink); }
@@ -93,12 +105,14 @@
   .daily-more { transition: none; }
 }
 
-/* Every card's description is simply shown, on every screen. Opening it on hover moved the cards below (so a quick
-   click could land on the wrong mode) and, on phones, cut the text off mid-line. The cards still lift and tint on hover.
+/* On touch screens (no hover) the descriptions are always open, and here they're shown in full: the rules above
+   cut the text off mid-line on phones. With a mouse, the cards open on hover as above.
    (After the Daily card's own rules above, so it wins over them.) */
-.menu-more, .daily-more { display: block; opacity: 1; }
-.menu-more-inner { overflow: visible; text-align: center; }
-.daily-options { overflow: visible; }
+@media (hover: none) {
+  .menu-more, .daily-more { display: block; opacity: 1; }
+  .menu-more-inner { overflow: visible; text-align: center; }
+  .daily-options { overflow: visible; }
+}
 
 /* ---------- Public drawings, bottom right ---------- */
 .public-corner {
@@ -158,8 +172,22 @@ a.wordmark:focus-visible { outline: 2.5px solid var(--ink); outline-offset: 4px;
 .continue-x:hover { background: rgba(48, 47, 43, .12); color: var(--ink); }
 
 /* On the home page the notices sit small in the top-left corner (in the header), one line each, so they don't push
- * the menu down. The full list of parts is the card's tooltip. */
+ * the menu down. The full list of parts is the card's tooltip. The buttons stay top-right even with no notice. */
 #setup > .app-header { align-items: flex-start; padding-top: 12px; }
+#setup > .app-header .header-actions { margin-left: auto; }
+.home-next { margin: 6px 0 0; }
+#setup a.quiet[href="/logs/"] { font-size: 12px; color: var(--ink-soft); } /* the build log is for the team, not the player */
+/* Public drawings: the heart sits under the picture with the caption, not over its corner; Report is quiet. */
+.gallery-grid li .like, .gallery-grid li .like-count { position: static; margin: 0 12px 8px; }
+.gallery-grid .report { opacity: .75; }
+/* The game's own question box (Report). */
+.ask-box { width: min(380px, calc(100vw - 32px)); padding: 22px 22px 16px; text-align: center; }
+.ask-box h2 { margin: 0 0 6px; }
+.ask-box p { margin: 0 0 16px; color: var(--ink-soft); }
+.ask-actions { display: grid; gap: 10px; }
+.ask-actions .btn { width: 100%; min-height: 48px; }
+.ask-actions .quiet { justify-self: center; background: none; border: 0; text-decoration: underline; text-underline-offset: 3px; color: var(--ink); cursor: pointer; }
+.slot-nav { display: flex; align-items: center; gap: 12px; }
 #setup > .app-header #continue-list { width: min(330px, calc(100% - 128px)); margin: 0; gap: 8px; }
 #setup > .app-header .continue { gap: 10px; padding: 6px 38px 6px 6px; border-width: 2px; border-radius: 12px; box-shadow: none; }
 #setup > .app-header .continue img { width: 54px; height: 36px; border-width: 1.5px; border-radius: 6px; }
@@ -167,6 +195,23 @@ a.wordmark:focus-visible { outline: 2.5px solid var(--ink); outline-offset: 4px;
 #setup > .app-header .continue b { font-size: 13px; line-height: 1.3; }
 #setup > .app-header .continue small { margin-top: 1px; font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 #setup > .app-header .continue-x { top: 50%; right: 6px; width: 26px; height: 26px; margin-top: -13px; font-size: 18px; }
+
+/* ---------- Leaving a drawing: Save draft / Delete drawing / Keep drawing ---------- */
+#leave-drawing { width: min(400px, calc(100vw - 32px)); max-height: calc(100dvh - 32px); padding: 22px 22px 14px; text-align: center; }
+.leave-thumb { display: block; width: 144px; height: 96px; margin: 0 auto 14px; background: #fff; border: var(--line); border-radius: 8px; transform: rotate(-2deg); }
+#leave-drawing h2 { margin: 0 0 4px; }
+#leave-drawing p { margin: 0 0 18px; font-size: 16px; color: var(--ink-soft); }
+.leave-actions { display: grid; gap: 10px; }
+.leave-actions .btn { width: 100%; min-height: 52px; font-size: 17px; }
+/* Discard is a quiet red link under the two buttons, so a thumb can't hit it by mistake. */
+.leave-actions .leave-delete { justify-self: center; min-height: 40px; padding: 0 12px; background: none; border: 0; font-size: 15px; color: #B42318; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
+html[data-theme="dark"] .leave-actions .leave-delete { color: #F3B9A7; }
+/* The share text, in a labelled box so it reads as a preview, not stray copy. */
+.finish-share { position: relative; max-width: 600px; margin: 4px auto 0; padding: 22px 14px 12px; border: 1px solid #d9d2c4; border-radius: 12px; font-size: 14px; line-height: 1.45; color: var(--ink-soft); text-align: left; }
+.finish-share::before { content: "What Share sends"; position: absolute; top: 6px; left: 14px; font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-soft); }
+html[data-theme="dark"] .finish-share { border-color: #857d70; }
+.finish-art .play { background: rgba(48, 47, 43, .92); }
+.finish-art .play:hover { background: var(--ink); }
 
 /* ---------- Dark mode and How to play: icon buttons, top right ---------- */
 /* Drawn like the Public drawings button. The words are hidden but still read out, and show as the tooltip. */
@@ -273,3 +318,13 @@ body { background: transparent; } /* flow.css gives body its own paper, which wo
 html { background-image: var(--doodles), var(--grain); background-size: cover, auto; background-repeat: no-repeat, repeat; background-position: center, 0 0; background-attachment: fixed, scroll; }
 #slot, #finish, #lobby, #lobby-game { background-image: var(--doodles), var(--grain); background-size: cover, auto; background-repeat: no-repeat, repeat; background-position: center, 0 0; }
 #gallery, #sketchbook { background-image: var(--doodles); background-size: cover; background-repeat: no-repeat; background-position: center; }
+
+/* A half-screen window on a laptop (700–999px wide, with a mouse): everything a size down, so the cards don't loom. */
+@media (min-width: 700px) and (max-width: 999px) and (pointer: fine) {
+  #setup .home-logo .wordmark { font-size: 64px !important; }
+  .menu-stack { gap: 14px; }
+  .menu-stack .menu-card { width: min(380px, 100%); padding: 12px 18px; }
+  .menu-name { font-size: 24px; }
+  .daily-title { padding: 12px 18px; }
+  .menu-text { font-size: 15px; }
+}

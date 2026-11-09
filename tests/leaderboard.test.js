@@ -49,7 +49,7 @@ test("each mode belongs to one list, and the older Basic and Detailed count as D
   assert.equal(L.groupOf("daily").label, "Daily Scrawl");
   assert.equal(L.groupOf("basic").label, "Daily Scrawl");
   assert.equal(L.groupOf("detailed").label, "Daily Scrawl");
-  assert.equal(L.groupOf("scrawl").label, "Daily Free Play");
+  assert.equal(L.groupOf("scrawl").label, "Daily Doodle");
   assert.equal(L.groupOf("nope"), null);
   assert.equal(L.TOP, 10);
 });
@@ -68,7 +68,7 @@ test("the top ten shows every drawing tied for tenth, not just the first of them
 test("a winner's caption is yesterday's parts, or Daily Free Play's prompt", () => {
   assert.equal(L.winnerCaption({ mode: "daily", prompts: [{ value: "Cat" }, { value: "Crab claws" }] }), "Daily Scrawl · Cat, Crab claws");
   assert.equal(L.winnerCaption({ mode: "basic", prompts: [{ value: "Owl" }] }), "Daily Scrawl · Owl", "the older modes count as Daily Scrawl");
-  assert.equal(L.winnerCaption({ mode: "scrawl", prompts: [{ value: "Draw anything" }] }), "Daily Free Play · Draw anything");
+  assert.equal(L.winnerCaption({ mode: "scrawl", prompts: [{ value: "Draw anything" }] }), "Daily Doodle · Draw anything");
   assert.equal(L.winnerCaption({ mode: "daily", prompts: null }), "Daily Scrawl");
   assert.equal(L.winnerCaption(null), "");
 });

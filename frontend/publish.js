@@ -28,7 +28,7 @@
   if (!cfg.url || !cfg.anonKey) return; // no project yet; leave both hooks undefined
 
   if (typeof root.supabase === "undefined" || typeof root.supabase.createClient !== "function") {
-    console.error("publish.js: supabase-js didn't load (check the CDN <script> tag in index.html)");
+    console.error("publish.js: supabase-js didn't load (check the vendor/supabase.js <script> tag in index.html)");
     return;
   }
 

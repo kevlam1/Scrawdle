@@ -275,12 +275,6 @@ canvas { touch-action: none; }
   .finish-prompt { font-size: 1.7rem; margin-bottom: .3rem; }
 }
 
-/* Phone on its side: too short for everything at once, so the page scrolls beside the canvas. */
-@media (max-height: 560px) and (min-width: 641px) {
-  #game { height: auto; min-height: 100dvh; }
-  #stage { flex: none; height: 88dvh; }
-}
-
 @media (prefers-reduced-motion: reduce) {
   .btn:active:not(:disabled) { transform: none; }
 }

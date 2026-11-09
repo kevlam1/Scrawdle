@@ -15,7 +15,7 @@
   // The words under the player's own drawing, beside its heart count; "" for none.
   function resultText(votes) {
     if (!votes) return "Publish it so others can like it.";
-    return isWin(votes) ? "You won!" : "";
+    return votes.up === 1 ? "Your first like!" : ""; // the heart shows the count; "won" is for yesterday's winners
   }
 
   // The heart: an outline, filled red once liked. Public drawings, the leaderboard and Scrawdle Party all use it.
