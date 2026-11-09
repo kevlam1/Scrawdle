@@ -38,7 +38,9 @@
   /* One unit for every size on this screen: 1px in a 1440x900 window, and in step with the window otherwise, so the
      note, the keys, the cards and the deck keep their proportions to the canvas at any window size or browser zoom
      (the canvas already sized itself that way). Phones use plain pixels (see the phone block). */
-  --a-u: clamp(.45px, .06945vw, 2px); /* a hair over 1/1440 of the window's width (not its height), so a narrower window shows the same layout, smaller */
+  --a-u: clamp(.45px, min(.06945vw, .1112vh), 2px); /* a hair over 1/1440 of the window's width or 1/900 of its height, whichever is smaller, so a narrower
+                                                        or shorter window (a laptop with the browser's bars showing) shows the same layout, smaller, and the
+                                                        canvas keeps its room instead of the frame and the deck keeping theirs */
   --a-wood: #7A5638;      /* the frame around the canvas */
   --a-ledge: #C9935D;     /* the tray the colors stand in */
   --a-lip: #A8703F;       /* the tray's front */
@@ -370,6 +372,12 @@ html[data-theme="dark"]:has(#game:not([hidden])) { background: #1F1E1B; }
   /* The note never pushes the tools off the screen: with many parts its list scrolls inside the note. */
   :is(html, html[data-theme="dark"]) #game #prompt-text { max-height: max(calc(110 * var(--a-u)), calc(100dvh - calc(590 * var(--a-u)))); overflow-y: auto; overscroll-behavior: contain; }
   :is(html, html[data-theme="dark"]) #game #brush-settings { max-height: calc(100dvh - calc(200 * var(--a-u))); overflow-y: auto; overscroll-behavior: contain; }
+}
+/* A short window (a laptop with the browser's bars showing): the easel's legs fold away behind the deck and the joystick
+   sits lower, so the height they took goes to the canvas instead. */
+@media (min-width: 820px) and (min-height: 500px) and (max-height: 860px) and (min-aspect-ratio: 4/3) {
+  #game .easel { --legs: 0px; margin-bottom: 0; --board: min(100cqw - 2 * var(--rim) - calc(16 * var(--a-u)), (100dvh - calc(374 * var(--a-u))) * 1.5, 1400px); }
+  :is(html, html[data-theme="dark"]) #game .studio-footer .joystick { margin-top: calc(-62 * var(--a-u)); }
 }
 /* Short laptops: smaller keys and tighter lines on the note, so all ten parts still show without scrolling. */
 

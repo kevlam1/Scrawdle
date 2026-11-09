@@ -91,6 +91,9 @@
               <span class="menu-text">No parts, no rules. Draw anything you like today.</span>
             </button>
           </span></span>
+          <span class="menu-more"><span class="menu-more-inner">
+            <span class="menu-text">Daily Scrawl: everyone draws the same parts. Daily Doodle: anything you like. Click to choose.</span>
+          </span></span>
         </div>
         <button class="menu-card" id="multiplayer" type="button">
           <span class="menu-name">Multiplayer</span>
@@ -643,6 +646,8 @@
       gameEl.hidden = true;
       gameEl.inert = false;
       slotEl.hidden = true;
+      const daily = document.querySelector(".daily-card"); // the Daily card is closed again, so home is as short as it was
+      daily.classList.remove("open"); daily.querySelector(".daily-title").setAttribute("aria-expanded", "false");
       try { sessionStorage.removeItem(OPEN_KEY); sessionStorage.removeItem(ScrawdleDrawing.FINISH_KEY); } catch (err) { /* storage blocked */ }
       homeDay = ScrawdleDrawing.dayKey();
       saved = await board.drafts();
