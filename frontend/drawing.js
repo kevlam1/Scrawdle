@@ -286,10 +286,10 @@
   };
   const myDrawings = {
     // Copies a drawing that's about to be thrown away or replaced. Blank rounds aren't kept.
-    async keep(draft, slot) {
+    async keep(draft, slot, extra = {}) {
       if (!draft || !isMarked(draft)) return;
       const blob = await draftImage(draft);
-      const entry = { day: draft.day, mode: draft.mode, daily: draft.daily !== false, prompts: draft.prompts, blob, savedAt: draft.savedAt || Date.now(), ...(draft.timed ? { timed: draft.timed } : {}) };
+      const entry = { day: draft.day, mode: draft.mode, daily: draft.daily !== false, prompts: draft.prompts, blob, savedAt: draft.savedAt || Date.now(), ...(draft.timed ? { timed: draft.timed } : {}), ...extra };
       await draftStore.put(entry, bookKey(entry, slot));
       for (const key of keysToDrop(await draftStore.keys())) await draftStore.remove(key);
     },
@@ -1326,6 +1326,18 @@
       noteTimed(fields) { if (round && round.timed) { Object.assign(round.timed, fields); scheduleSave(); } },
       // Done drawing was pressed: the drawing counts as finished for the day (home says Done), published or not.
       markFinished() { if (round && !round.finished) { round.finished = true; scheduleSave(); } },
+      // Save draft: the drawing is kept in My drawings as a draft and leaves its slot.
+      async stash() {
+        if (!round) return;
+        await flush();
+        const slot = slotOf(round);
+        const draft = await draftStore.get(slot).catch(() => null);
+        if (draft) await myDrawings.keep(draft, slot, { draft: true, savedAt: Date.now() });
+        await discard();
+      },
+      // A drawing left on its slot without Save draft (a closed tab) is dropped the next time home is built.
+      forgetSlot(slot) { return (round && slotOf(round) === slot) ? Promise.resolve() : draftStore.remove(slot).catch(() => {}); },
+
       clear: clearAll, // erases the canvas but keeps the round and its parts; Undo brings the drawing back
       get locked() { return locked; },
       get canReplay() { return canReplay && opsAt > 0; },

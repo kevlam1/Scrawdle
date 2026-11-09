@@ -59,7 +59,7 @@
       const caption = document.createElement("p");
       const title = document.createElement("b");
       // A Time Challenge on its slot is over (it ends when you leave it), so it isn't "in progress".
-      title.textContent = `${modeName(d)} · ${open ? (d.timed ? "today" : "in progress") : dateOf(d.day)}`;
+      title.textContent = `${modeName(d)} · ${d.draft ? "draft" : open ? (d.timed ? "today" : "in progress") : dateOf(d.day)}`;
       caption.append(title);
       if (parts) {
         const small = document.createElement("small");

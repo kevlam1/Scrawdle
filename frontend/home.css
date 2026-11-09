@@ -366,3 +366,4 @@ html[data-theme="dark"] :is(.btn, .app-header .quiet, .party-bar .quiet, .slot-t
 html[data-theme="dark"] :is(.btn:not(:disabled), .app-header .quiet, .party-bar .quiet, .slot-top .quiet, .round-btn):hover { background: var(--picked); border-color: var(--picked-edge); }
 html[data-theme="dark"] .btn.primary.primary, html[data-theme="dark"] .bubble[aria-pressed="true"] { background: var(--yellow); color: #1F1E1B; }
 html[data-theme="dark"] :is(.lobby-join input, .lobby-name input, .lobby-link, .join-row input) { border-color: #857d70; }
+
