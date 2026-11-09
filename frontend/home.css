@@ -33,25 +33,18 @@
 .menu-card:focus-visible { outline: 2.5px solid var(--ink); outline-offset: 4px; }
 .menu-name { display: block; font: 700 30px/1.2 var(--hand); }
 
-/* The description opens inside the card. */
-/* With a mouse, the description is a small note beside the card (under it in a narrower window), shown after a
-   moment's hover. It sits outside the page's flow, so the cards below never move: a click lands on the card you aimed
-   at. (Growing the card in place pushed the cards under it down, and a click meant for one of them landed elsewhere.) */
+/* The description opens inside the card, under its name: the card grows to fit it. The cards below move down with it,
+   so it opens after a short moment's hover (a mouse passing over on its way to another card doesn't open it) and
+   closes straight away (the cards below don't linger where they were). (It was a note beside the card for a while, and
+   under it for a moment; this is the card growing in place again.) */
 .menu-card { position: relative; }
-.menu-card:hover, .menu-card:focus-visible { z-index: 2; } /* the note shows over the next card, not under it */
-.menu-more {
-  position: absolute; z-index: 3; left: calc(100% + 18px); top: 50%; width: 220px; translate: 0 -50%;
-  padding: 10px 14px; background: #fffdf8; border: 2.5px solid var(--ink); border-radius: 12px; box-shadow: 3px 3px 0 var(--ink);
-  opacity: 0; visibility: hidden; pointer-events: none;
-  transition: opacity .15s ease, visibility 0s linear .15s;
-}
-.menu-card:hover .menu-more, .menu-card:focus-visible .menu-more, .daily-card:focus-within > .menu-more { opacity: 1; visibility: visible; transition: opacity .2s ease .18s, visibility 0s linear .18s; }
-html[data-theme="dark"] .menu-more { background: var(--surface); border-color: #857d70; box-shadow: 3px 3px 0 #000; color: inherit; }
-.menu-more-inner { display: block; text-align: left; font: 16px/1.35 var(--hand); }
-.menu-more .menu-text { margin-top: 0; }
-@media (max-width: 899px) {
-  .menu-more { left: 50%; top: calc(100% + 10px); width: min(320px, 92%); translate: -50% 0; }
-}
+.menu-more { display: grid; grid-template-rows: 0fr; opacity: 0; transition: grid-template-rows .2s ease, opacity .15s ease; }
+.menu-card:hover .menu-more, .menu-card:focus-visible .menu-more, .daily-card:focus-within > .menu-more { grid-template-rows: 1fr; opacity: 1; transition: grid-template-rows .3s ease .15s, opacity .25s ease .15s; }
+.menu-more-inner { display: block; min-height: 0; overflow: hidden; text-align: center; font: 17px/1.35 var(--hand); }
+.menu-more .menu-text { margin-top: 8px; }
+/* The Daily card has no padding of its own (its title button and halves reach the edges), so its note brings its own. */
+.daily-card > .menu-more .menu-more-inner { padding: 0 20px; }
+.daily-card > .menu-more .menu-text { margin: -6px 0 0; padding-bottom: 16px; }
 .menu-text { display: block; margin-top: 12px; }
 .menu-line { display: block; }
 .menu-line:first-of-type { margin-top: 12px; }
@@ -88,13 +81,13 @@ html[data-theme="dark"] .menu-more { background: var(--surface); border-color: #
 .daily-title { padding: 18px 20px; }
 /* The Daily title is the one thing to do first: yellow, and a real button that opens its two halves (hover opens them too). */
 button.daily-title { display: block; width: 100%; background: var(--yellow); border: 0; border-radius: 14px; color: var(--ink); text-align: center; cursor: pointer; } /* keeps .menu-name's font */
-.daily-card.open button.daily-title { border-radius: 14px 14px 0 0; }
+.daily-card:is(.open, :hover, :focus-within) button.daily-title { border-radius: 14px 14px 0 0; }
 /* A small arrow on the title says it opens; it turns when the halves are out. */
 button.daily-title::after { content: ""; display: inline-block; width: .4em; height: .4em; margin: 0 0 .2em .5em; border: solid currentColor; border-width: 0 3px 3px 0; transform: rotate(45deg); transition: transform .2s ease; }
-.daily-card.open button.daily-title::after { transform: rotate(-135deg); margin-bottom: -.1em; }
-.daily-card.open > .menu-more { display: none; } /* the halves are out: no need for the note */
+.daily-card:is(.open, :hover, :focus-within) button.daily-title::after { transform: rotate(-135deg); margin-bottom: -.1em; }
+.daily-card:is(.open, :hover, :focus-within) > .menu-more { display: none; } /* the halves are out: no need for the note */
 button.daily-title:focus-visible { outline: 2.5px solid var(--ink); outline-offset: -4px; }
-.daily-card.open .daily-more { grid-template-rows: 1fr; opacity: 1; }
+.daily-card:is(.open, :hover, :focus-within) .daily-more { grid-template-rows: 1fr; opacity: 1; }
 html[data-theme="dark"] button.daily-title { background: var(--yellow); color: #1F1E1B; } /* the same primary yellow as Publish in dark mode */
 /* Join a lobby with a code, under the cards. */
 .join-row { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 8px 10px; margin: 18px auto 0; font: 17px/1.3 var(--hand); }
@@ -105,9 +98,12 @@ html[data-theme="dark"] button.daily-title { background: var(--yellow); color: #
 .join-row .btn { min-height: 44px; padding: 0 18px; }
 .join-help { flex-basis: 100%; text-align: center; font-size: 14px; color: var(--ink-soft); }
 .join-help:empty { display: none; }
-/* The two halves open on a click of the title (on a touch screen they are always out), never on hover: opening them
-   pushes the cards below down, and when hover did that, a click meant for Multiplayer landed on Daily Doodle. */
+/* The two halves open on hover (after a short moment, so a mouse passing over on its way to another card doesn't open
+   them), on keyboard focus, or at once on a click of the title; on a touch screen they are always out. They close as soon
+   as the mouse leaves. They push the cards below down, which is why they once opened on a click only (a click meant for
+   Multiplayer landed on Daily Doodle); the delay and the instant close are there to make that rare. */
 .daily-more { display: grid; grid-template-rows: 0fr; opacity: 0; visibility: hidden; transition: grid-template-rows .3s ease, opacity .25s ease, visibility 0s linear .3s; } /* hidden: the closed halves can't be tabbed to or clicked */
+.daily-card:is(:hover, :focus-within) .daily-more { visibility: visible; transition: grid-template-rows .3s ease .15s, opacity .25s ease .15s, visibility 0s linear .15s; }
 .daily-card.open .daily-more { visibility: visible; transition-delay: 0s; }
 .daily-options { display: grid; grid-template-columns: 1fr 1fr; min-height: 0; overflow: hidden; border-top: 3px solid var(--ink); border-radius: 0 0 14px 14px; }
 .daily-option { display: flex; flex-direction: column; align-items: center; justify-content: flex-start; padding: 14px 16px 18px; border: 0; background: transparent; color: var(--ink); font: inherit; text-align: center; cursor: pointer; }

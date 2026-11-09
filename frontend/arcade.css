@@ -83,9 +83,10 @@ html[data-theme="dark"] #game {
 /* While the parts reveal shows, the drawing screen behind it is hidden, not just switched off (index.html makes it
    inert): on a phone the page could otherwise scroll down past the reveal into the tools and Done drawing. */
 html:has(#slot:not([hidden])) #game { display: none; }
-/* While drawing, the page behind is one flat colour, not the home page's doodled paper: the drawing is the picture. */
-html:has(#game:not([hidden])) { background: #E6E1D6; }
-html[data-theme="dark"]:has(#game:not([hidden])) { background: #1F1E1B; }
+/* While drawing, the page behind is a flat colour with the same faint doodles as the other pages (frontend/doodles,
+   chosen in home.css), and no paper grain: the drawing is still the picture. */
+html:has(#game:not([hidden])) { background: #E6E1D6 var(--doodles) center / cover no-repeat fixed; }
+html[data-theme="dark"]:has(#game:not([hidden])) { background: #1F1E1B var(--doodles) center / cover no-repeat fixed; }
 :is(html, html[data-theme="dark"]) #game {
   display: grid; width: 100%; max-width: none; min-width: 0; min-height: 100dvh; height: auto; margin: 0; padding: 0 calc(12 * var(--a-u));
   grid-template-columns: minmax(0, 1fr); grid-template-rows: none;
@@ -102,10 +103,22 @@ html[data-theme="dark"]:has(#game:not([hidden])) { background: #1F1E1B; }
 @media (min-width: 1000px) and (min-aspect-ratio: 4/3), (min-width: 820px) and (min-height: 500px) and (min-aspect-ratio: 4/3) {
   :is(html, html[data-theme="dark"]) #game {
     height: auto; min-height: 100dvh; padding: 0 calc(36 * var(--a-u)); /* the canvas sets the height; a short window scrolls instead of shrinking it */
-    grid-template-columns: calc(245 * var(--a-u)) minmax(0, 1fr) calc(216 * var(--a-u));
-    grid-template-rows: auto auto minmax(auto, 1fr) auto;
-    grid-template-areas: "header header header" "note stage settings" "tools stage settings" "footer footer footer";
-    column-gap: calc(29 * var(--a-u)); row-gap: calc(16 * var(--a-u)); align-content: stretch; align-items: start;
+    /* Three columns sit together in the middle: the note with the tool keys under it on the left, the canvas, and Size,
+       opacity and the brush options on the right. --bw is the canvas width: as wide as the window's height allows (3:2, with the top row, the frame and the
+       deck taken off), or as wide as the room between the two side columns. Any room left over goes to the two outer
+       columns equally, so the canvas stays close to the note and the tools however wide the window is. The 22 units
+       between columns are tracks of their own, so the top row and the deck still span the whole window. */
+    --bw: min(calc((100dvh - 255 * var(--a-u)) * 1.5), calc(100vw - 696 * var(--a-u)), 1500px);
+    --stagew: calc(var(--bw) + 80 * var(--a-u));
+    grid-template-columns: minmax(0, 1fr) calc(250 * var(--a-u)) calc(22 * var(--a-u)) var(--stagew) calc(22 * var(--a-u)) calc(250 * var(--a-u)) minmax(0, 1fr);
+    grid-template-rows: auto auto auto minmax(0, 1fr) auto;
+    grid-template-areas:
+      "header header header header header header header"
+      ". note . stage . settings ."
+      ". tools . stage . settings ."
+      ". . . stage . settings ."
+      "footer footer footer footer footer footer footer";
+    column-gap: 0; row-gap: calc(14 * var(--a-u)); align-content: stretch; align-items: start;
     box-shadow: none; /* the cabinet's side panels */
   }
 }
@@ -175,7 +188,8 @@ html[data-theme="dark"]:has(#game:not([hidden])) { background: #1F1E1B; }
   position: absolute; left: 0; top: calc(1 * var(--a-u)); appearance: none; -webkit-appearance: none; display: grid; place-content: center;
   width: calc(22 * var(--a-u)); height: calc(22 * var(--a-u)); margin: 0; background: #fff; border: calc(3 * var(--a-u)) solid var(--a-ink); border-radius: calc(5 * var(--a-u)); cursor: pointer;
 }
-#game #prompt-text .part input:checked::after { content: "\2713"; font: 700 calc(24 * var(--a-u))/1 var(--a-hand); color: var(--a-red); transform: rotate(-10deg) translate(calc(1 * var(--a-u)), calc(-4 * var(--a-u))); }
+/* The tick sits inside the box (which is 22 units wide with a 3 unit border, so 16 inside): small enough not to touch the edge, and nudged up a hair because this font's tick sits low. */
+#game #prompt-text .part input:checked::after { content: "\2713"; font: 700 calc(15 * var(--a-u))/1 var(--a-hand); color: var(--a-red); transform: rotate(-8deg) translateY(calc(-1 * var(--a-u))); }
 :is(html, html[data-theme="dark"]) #game #prompt-text .part input:focus-visible { outline: calc(3 * var(--a-u)) solid #3454D1; outline-offset: calc(2 * var(--a-u)); } /* blue reads on yellow paper */
 /* One thing at a time: the part you're on (the first one not ticked) is bigger, with a marker band under it; ticked
    parts step back. Everything stays on the note, so the whole creature can still be planned. */
@@ -364,28 +378,30 @@ html[data-theme="dark"]:has(#game:not([hidden])) { background: #1F1E1B; }
 
 /* ---------- Big screens: everything fits one window, the easel as big as the middle allows ---------- */
 @media (min-width: 1000px) and (min-aspect-ratio: 4/3), (min-width: 820px) and (min-height: 500px) and (min-aspect-ratio: 4/3) {
-  /* The easel stands at the bottom of the middle, its legs reaching down behind the control deck. */
-  :is(html, html[data-theme="dark"]) #game #stage { container-type: inline-size; display: grid; place-items: start center; height: auto; } /* the easel hangs from the top, level with the note, whatever the window's height */ /* drawing.css makes it 88dvh tall under 1000px wide */
-  /* The canvas is as wide as its column, but no taller than fits between the top row and the deck, so a laptop
-     window shows the whole easel, tray included, without scrolling. (Tall or narrow windows use the stacked layout.) */
-  #game .easel { --legs: calc(54 * var(--a-u)); --board: min(100cqw - 2 * var(--rim) - calc(16 * var(--a-u)), (100dvh - calc(420 * var(--a-u))) * 1.5, 1400px); margin-bottom: calc(-20 * var(--a-u)); }
+  /* The easel hangs from the top, level with the note, and the crayon ledge under the canvas hangs over the control deck:
+     the stage is drawn above the deck, and the ledge's bottom part doesn't count toward the stage's height. */
+  :is(html, html[data-theme="dark"]) #game #stage { container-type: inline-size; display: grid; place-items: start center; height: auto; position: relative; z-index: 8; } /* drawing.css makes it 88dvh tall under 1000px wide */
+  /* The canvas is --bw wide (see the grid above): as big as the window's height and the room between the side columns
+     allow. There are no legs on a desktop window, so the height they took goes to the canvas. (Tall or narrow windows use the stacked layout.) */
+  :is(html, html[data-theme="dark"]) #game .easel { --legs: 0px; --board: var(--bw); margin-bottom: 0; background: none; }
+  #game .easel::before, #game .easel::after { display: none; }
+  #game .easel-board { margin-top: calc(30 * var(--a-u)); }
+  #game .easel-ledge { margin-bottom: calc(-92 * var(--a-u)); }
   #game #stage::before { /* the post the frame hangs from, coming down from the marquee and ending behind the frame */
     content: ""; position: absolute; top: calc(-18 * var(--a-u)); bottom: calc(160 * var(--a-u)); left: 50%; width: calc(30 * var(--a-u)); margin-left: calc(-15 * var(--a-u)); pointer-events: none;
     background: linear-gradient(90deg, #4E4F54 0 calc(5 * var(--a-u)), var(--a-slate) calc(5 * var(--a-u))); border: solid var(--a-ink); border-width: 0 calc(4 * var(--a-u));
   }
   /* The marquee and the deck sit in front, so the post and the legs go in behind them. */
-  :is(html, html[data-theme="dark"]) #game .game-top { position: relative; z-index: 1; } /* above the post that hangs from it; the deck is sticky, see above */
-  /* The note never pushes the tools off the screen: with many parts its list scrolls inside the note. */
-  :is(html, html[data-theme="dark"]) #game #prompt-text { max-height: max(calc(110 * var(--a-u)), calc(100dvh - calc(590 * var(--a-u)))); overflow-y: auto; overscroll-behavior: contain; }
+  :is(html, html[data-theme="dark"]) #game .game-top { position: relative; z-index: 9; } /* above the stage and the post that hangs from it; the deck is sticky, see above */
+  /* The note never pushes the tool keys under it off the screen: with many parts its list scrolls inside the note (540 units, because the text sizes in a small window do not shrink all the way). */
+  :is(html, html[data-theme="dark"]) #game #prompt-text { max-height: max(calc(110 * var(--a-u)), calc(100dvh - calc(540 * var(--a-u)))); overflow-y: auto; overscroll-behavior: contain; }
   :is(html, html[data-theme="dark"]) #game #brush-settings { max-height: calc(100dvh - calc(200 * var(--a-u))); overflow-y: auto; overscroll-behavior: contain; }
+  /* A slimmer control deck, so the canvas gets the height: smaller round buttons, a smaller joystick and Done drawing. */
+  :is(html, html[data-theme="dark"]) #game .studio-footer { padding-top: calc(6 * var(--a-u)); padding-bottom: calc(8 * var(--a-u)); }
+  :is(html, html[data-theme="dark"]) #game .studio-footer .joystick { width: calc(80 * var(--a-u)); height: calc(100 * var(--a-u)); margin: calc(-22 * var(--a-u)) calc(6 * var(--a-u)) calc(-2 * var(--a-u)) calc(-8 * var(--a-u)); }
+  :is(html, html[data-theme="dark"]) #game .history-actions .tool-icon { width: calc(48 * var(--a-u)); height: calc(48 * var(--a-u)); }
+  :is(html, html[data-theme="dark"]) #game .btn.primary.done { width: calc(84 * var(--a-u)); height: calc(84 * var(--a-u)); padding: calc(8 * var(--a-u)); font-size: calc(14 * var(--a-u)); }
 }
-/* A short window (a laptop with the browser's bars showing): the easel's legs fold away behind the deck and the joystick
-   sits lower, so the height they took goes to the canvas instead. */
-@media (min-width: 820px) and (min-height: 500px) and (max-height: 860px) and (min-aspect-ratio: 4/3) {
-  #game .easel { --legs: 0px; margin-bottom: 0; --board: min(100cqw - 2 * var(--rim) - calc(16 * var(--a-u)), (100dvh - calc(374 * var(--a-u))) * 1.5, 1400px); }
-  :is(html, html[data-theme="dark"]) #game .studio-footer .joystick { margin-top: calc(-62 * var(--a-u)); }
-}
-/* Short laptops: smaller keys and tighter lines on the note, so all ten parts still show without scrolling. */
 
 /* ---------- Phones and tablets: one column, the note above the easel ---------- */
 @media (max-width: 819px), (max-width: 999px) and (max-height: 499px), not all and (min-aspect-ratio: 4/3) {
@@ -519,29 +535,45 @@ html[data-theme="dark"]:has(#game:not([hidden])) { background: #1F1E1B; }
 /* The key: a dot showing the size, color and opacity, labelled "Size". */
 :is(html, html[data-theme="dark"]) #game .tray-tools .settings-toggle .st-dot { display: grid; place-items: center; width: 32px; height: 32px; }
 #game .settings-toggle .st-dot i { display: block; border-radius: 50%; box-shadow: 0 0 0 2px var(--a-ink); }
-/* Laptops: the right-hand column is gone, so the canvas gets that room; the key is a wide one under the tools. */
-@media (min-width: 1000px) and (min-aspect-ratio: 4/3), (min-width: 820px) and (min-height: 500px) and (min-aspect-ratio: 4/3) {
-  :is(html, html[data-theme="dark"]) #game {
-    grid-template-columns: calc(245 * var(--a-u)) minmax(0, 1fr);
-    grid-template-areas: "header header" "note stage" "tools stage" "footer footer";
-  }
-  /* Keys a little shorter, so the note, the tools and the Size key fit above the deck in a 720px-tall window. */
-  :is(html, html[data-theme="dark"]) #game .tray-tools .tool { min-height: calc(64 * var(--a-u)); }
-  :is(html, html[data-theme="dark"]) #game .tray-tools { gap: calc(8 * var(--a-u)); }
-  :is(html, html[data-theme="dark"]) #game .tray-tools .settings-toggle { grid-column: 1 / -1; display: flex; flex-direction: row; align-items: center; justify-content: center; gap: calc(10 * var(--a-u)); min-height: calc(40 * var(--a-u)); padding: calc(4 * var(--a-u)); }
-  /* The note's list scrolls inside itself when the window is short, so the note, the tools and the Size key always
-     end above the deck (the left column is sized by the window's width, the window's height is whatever it is). */
-  :is(html, html[data-theme="dark"]) #game #prompt-text { max-height: max(110px, calc(100dvh - 450 * var(--a-u))); overflow-y: auto; overscroll-behavior: contain; }
-}
-/* Wide windows (1200px and up): the canvas is limited by the window's height there, so a right-hand column costs it
-   nothing. Size, opacity and Small / Medium / Large stay on screen, and the Size key goes away. */
-@media (min-width: 1200px) and (min-aspect-ratio: 4/3) {
-  :is(html, html[data-theme="dark"]) #game {
-    grid-template-columns: calc(245 * var(--a-u)) minmax(0, 1fr) calc(216 * var(--a-u));
-    grid-template-areas: "header header header" "note stage settings" "tools stage settings" "footer footer footer";
-  }
+/* Windows at least 17:10 wide (a 1920x1080 or 1366x768 screen, or a laptop with the browser's bars showing; the layout is the
+   grid at the top): the tool keys sit under the note on the left, and Size, opacity and Small / Medium / Large, with the
+   brush options when the Brush is picked, are the right-hand column, always on screen, so the Size key (a pop-up card) is
+   only for phones and squarer windows. */
+@media (min-width: 1000px) and (min-aspect-ratio: 17/10), (min-width: 820px) and (min-height: 500px) and (min-aspect-ratio: 17/10) {
   :is(html, html[data-theme="dark"]) #game #brush-settings:not(.open) { display: grid !important; }
   :is(html, html[data-theme="dark"]) #game .tray-tools .settings-toggle { display: none; }
+  /* If the pop-up was open when the window grew, it docks into the column like the closed one (its position was set by script). */
+  :is(html, html[data-theme="dark"]) #game #brush-settings.open { position: static; width: auto !important; left: auto !important; top: auto !important; bottom: auto !important; padding: 0 calc(4 * var(--a-u)) calc(6 * var(--a-u)) 0; background: none; border: 0; border-radius: 0; box-shadow: none; }
+  /* Keys a little shorter, so the note and the tools fit above the deck in a 720px-tall window. */
+  :is(html, html[data-theme="dark"]) #game .tray-tools .tool { min-height: calc(70 * var(--a-u)); }
+  /* Small / Medium / Large side by side, then the size slider and Opacity each on a line of their own. */
+  :is(html, html[data-theme="dark"]) #game #brush-settings .tray-sizes { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: calc(8 * var(--a-u)); }
+  :is(html, html[data-theme="dark"]) #game #brush-settings .size-dot { grid-column: auto; min-height: calc(56 * var(--a-u)); padding: calc(8 * var(--a-u)) calc(8 * var(--a-u)); font-size: calc(15 * var(--a-u)); }
+  :is(html, html[data-theme="dark"]) #game #brush-settings .size-value { grid-column: 1 / 3; }
+  :is(html, html[data-theme="dark"]) #game #brush-settings .stroke-preview { grid-column: 3; }
+}
+/* Windows closer to square than 17:10 (a 1440x900 laptop, a 4:3 monitor, a tablet on its side): a right-hand column would
+   take more width than the height ever gives back, so there are two columns instead. The note and the tools are on the
+   left, the canvas as big as the room allows, and Size and opacity open from the Size key under the tools. */
+@media (min-width: 1000px) and (min-aspect-ratio: 4/3) and (max-aspect-ratio: 169/100), (min-width: 820px) and (min-height: 500px) and (min-aspect-ratio: 4/3) and (max-aspect-ratio: 169/100) {
+  /* The canvas is wider than the gap between the joystick and Undo here, so the crayon ledge stays above the deck instead
+     of hanging over it (350 units: the top row, the frame, the ledge and the deck). */
+  #game .easel-ledge { margin-bottom: 0; }
+  :is(html, html[data-theme="dark"]) #game {
+    --bw: min(calc((100dvh - 350 * var(--a-u)) * 1.5), calc(100vw - 430 * var(--a-u)), 1500px);
+    grid-template-columns: minmax(0, 1fr) calc(245 * var(--a-u)) calc(22 * var(--a-u)) var(--stagew) minmax(0, 1fr);
+    grid-template-rows: auto auto minmax(0, 1fr) auto;
+    grid-template-areas:
+      "header header header header header"
+      ". note . stage ."
+      ". tools . stage ."
+      "footer footer footer footer footer";
+  }
+  :is(html, html[data-theme="dark"]) #game .tray-tools { gap: calc(8 * var(--a-u)); }
+  :is(html, html[data-theme="dark"]) #game .tray-tools .tool { min-height: calc(64 * var(--a-u)); }
+  :is(html, html[data-theme="dark"]) #game .tray-tools .settings-toggle { grid-column: 1 / -1; display: flex; flex-direction: row; align-items: center; justify-content: center; gap: calc(10 * var(--a-u)); min-height: calc(40 * var(--a-u)); padding: calc(4 * var(--a-u)); }
+  /* The note's list scrolls inside itself when the window is short, so the note, the tools and the Size key end above the deck. */
+  :is(html, html[data-theme="dark"]) #game #prompt-text { max-height: max(110px, calc(100dvh - 450 * var(--a-u))); }
 }
 /* Phones held upright: the key is a seventh tool key. */
 @media (max-width: 819px), (max-width: 999px) and (max-height: 499px), not all and (min-aspect-ratio: 4/3) {
