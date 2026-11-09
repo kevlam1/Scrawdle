@@ -40,11 +40,30 @@
       <li>Press Done drawing to publish it, download it, or watch it replay.</li>
       <li>On Public drawings, tap the heart on the drawings you like. Once anyone likes your published drawing, you win!</li>
     </ol>
-    <p><strong>Daily Free Play</strong> has no parts: draw anything you like today.</p>
+    <p><strong>Daily Doodle</strong> has no parts: draw anything you like today.</p>
     <p><strong>Free Play</strong> gives you random parts any time, as often as you like.</p>
     <p><strong>Time Challenge</strong> gives you four random parts and 30, 60 or 90 seconds. The canvas locks at 0:00.</p>
     <p><strong>Multiplayer</strong> makes a private lobby you can invite friends to, for Scrawdle Party.</p>
     <p>Public drawings shows what everyone has posted today; drawings leave at midnight. Daily Scrawl's drawings unlock once you post yours.</p>
+  </dialog>
+
+  <!-- A yes/no question in the game's own box (Start over, replacing a drawing): never the browser's grey confirm. -->
+  <dialog id="ask-box" class="ask-box" aria-labelledby="ask-title" aria-describedby="ask-body">
+    <h2 id="ask-title"></h2>
+    <p id="ask-body"></p>
+    <div class="ask-actions"><button type="button" class="btn primary" value="yes"></button><button type="button" class="quiet" value="no"></button></div>
+  </dialog>
+
+  <!-- Leaving a drawing: one quick choice, all on one screen. -->
+  <dialog id="leave-drawing" aria-labelledby="leave-title" aria-describedby="leave-note">
+    <canvas class="leave-thumb" width="300" height="200" aria-hidden="true"></canvas>
+    <h2 id="leave-title">Leave your drawing?</h2>
+    <p id="leave-note">Save it as a draft to finish later, or discard it.</p>
+    <div class="leave-actions">
+      <button class="btn primary" type="button" data-leave="save">Save draft</button>
+      <button class="btn" type="button" data-leave="stay">Keep drawing</button>
+      <button class="quiet leave-delete" type="button" data-leave="delete">Discard</button>
+    </div>
   </dialog>
 
   <main id="setup">
@@ -56,18 +75,19 @@
       <span class="wm-slot home-logo"></span>
       <p class="eyebrow" id="home-date"></p>
       <p class="home-streak" id="home-streak" hidden></p>
+      <p class="home-next eyebrow" id="home-next" hidden></p>
       <h1>Ready to draw?</h1>
       <div class="menu-stack">
         <!-- Daily opens into two halves (hover, keyboard focus, or always on a touch screen); each half is its own button. -->
         <div class="menu-card daily-card" role="group" aria-label="Daily">
-          <span class="menu-name daily-title">Daily</span>
+          <button class="menu-name daily-title" type="button" aria-expanded="false">Daily</button>
           <span class="daily-more"><span class="daily-options">
             <button class="daily-option" id="mode-daily" type="button">
               <span class="menu-name">Daily Scrawl</span>
               <span class="menu-text">Everyone gets the same set of animal parts and has to draw a creature with those.</span>
             </button>
             <button class="daily-option" id="mode-scrawl" type="button">
-              <span class="menu-name">Daily Free Play</span>
+              <span class="menu-name">Daily Doodle</span>
               <span class="menu-text">No parts, no rules. Draw anything you like today.</span>
             </button>
           </span></span>
@@ -91,6 +111,12 @@
           </span></span>
         </button>
       </div>
+      <form class="join-row" id="join-form" autocomplete="off">
+        <label for="join-code">Have an invite code?</label>
+        <input id="join-code" type="text" inputmode="text" autocapitalize="characters" maxlength="5" placeholder="BCDFG" aria-describedby="join-help">
+        <button class="btn" type="submit">Join</button>
+        <span id="join-help" class="join-help" role="status"></span>
+      </form>
       <div id="multiplayer-error"></div>
       <p id="setup-error" role="alert" hidden></p><!-- right under the buttons, so "the parts couldn't load" is seen -->
       <button class="quiet" id="my-drawings" type="button" hidden>My drawings</button>
@@ -104,7 +130,7 @@
   <div id="slot" hidden>
     <header class="slot-top">
       <span class="wm-slot"></span>
-      <button class="help-open round-btn" type="button" aria-label="Help">?</button>
+      <span class="slot-nav"><button class="quiet" id="slot-back" type="button">Back to home</button><button class="help-open round-btn" type="button" aria-label="Help">?</button></span>
     </header>
     <div class="slot-body">
       <p class="slot-label eyebrow"></p>
@@ -164,7 +190,7 @@
   <script src="gallery.js"></script>
   <script src="sketchbook.js"></script>
   <!-- Publishing: no-ops until supabase-config.js has a real project (see backend/README.md). -->
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="vendor/supabase.js"></script>
   <script src="supabase-config.js"></script>
   <script src="publish.js"></script>
   <!-- Lobbies: adds the Lobby card to the home screen. Games register with ScrawdleLobby.registerGame
@@ -283,7 +309,7 @@
 
     function spin(parts, results, mode, daily) {
       const timed = board.round && board.round.timed;
-      slotEl.querySelector(".slot-label").textContent = timed ? "Time Challenge" : !daily ? "Free Play" : mode === "detailed" ? "Today's Detailed parts" : mode === "basic" ? "Today's Basic parts" : "Today's Daily Scrawl parts";
+      slotEl.querySelector(".slot-label").textContent = timed ? "Time Challenge" : !daily ? "Free Play" : "Today's parts";
       $("slot-start").textContent = timed ? "Start the clock" : "Start drawing";
       $("slot-times").hidden = true;
       slotEl.hidden = false;
@@ -326,7 +352,7 @@
     // older Basic and Detailed), or Open Canvas (what used to be called Free play; its slot is still "free").
     const slotFor = (round) => ScrawdleDrawing.slotOf(round); // a Time Challenge has its own, "timed"
     // Daily Free Play is a free draw, so its one "prompt" is just a label (this also fills the finished PNG).
-    const SCRAWL_PROMPTS = [{ label: "Daily Free Play", value: "Draw anything", optional: false }];
+    const SCRAWL_PROMPTS = [{ label: "Daily Doodle", value: "Draw anything", optional: false }];
 
     // The note's short names: "Arms" for "Arms / Front Limbs", "Extra" for "Wings / Back / Skin / Extra". The
     // downloaded picture and the share text still use the full names.
@@ -373,7 +399,7 @@
 
     function showGame() {
       const round = board.round;
-      $("prompt-label").textContent = round.timed ? `${round.timed.seconds}-second Time Challenge` : round.mode === "scrawl" ? "Daily Free Play" : !round.daily ? "Free Play" : round.mode === "detailed" ? "Detailed" : round.mode === "basic" ? "Basic" : "Daily Scrawl";
+      $("prompt-label").textContent = round.timed ? `${round.timed.seconds}-second Time Challenge` : round.mode === "scrawl" ? "Daily Doodle" : !round.daily ? "Free Play" : round.mode === "detailed" ? "Detailed" : round.mode === "basic" ? "Basic" : "Daily Scrawl";
       showParts(round.prompts);
       $("restart").textContent = round.timed ? "New challenge" : round.daily ? "Start over" : "New set";
       try { sessionStorage.setItem(OPEN_KEY, slotFor(round)); } catch (err) { /* storage blocked: a refresh just goes home */ }
@@ -385,7 +411,7 @@
       timer.hidden = !round.timed;
       if (round.timed && !challenge.pending && !challenge.stop) {
         board.setLocked(true);
-        timer.textContent = round.timed.startedAt ? "Time's up" : "Not started"; // left during the 3-2-1
+        timer.textContent = !round.timed.startedAt ? "Not started" : round.timed.left ? "Ended" : "Time's up"; // left during the 3-2-1, walked out, or ran down
         timer.classList.remove("hurry");
       } else if (!round.timed) board.setLocked(false);
       markGameEntry();
@@ -467,7 +493,7 @@
       challenge.stop();
       challenge.stop = null;
       const t = board.round.timed;
-      board.noteTimed({ used: timeUp ? t.seconds : ScrawdleTimer.secondsUsed(t.startedAt, Date.now(), t.seconds) });
+      board.noteTimed({ used: timeUp ? t.seconds : ScrawdleTimer.secondsUsed(t.startedAt, Date.now(), t.seconds), left: quiet && !timeUp }); // left: walked out before the clock ran down
       board.setLocked(true);
       if (quiet) return;
       if (timeUp) await bigWord("Time's up!", 1100);
@@ -498,17 +524,19 @@
 
     // Today has one save. Pressing Daily Scrawl again goes back to it. A drawing started in the older Basic or
     // Detailed mode is on the same save, so it's replaced (and kept in My drawings) only after asking.
-    function startDaily() {
+    async function startDaily() {
+      if (homeDay !== ScrawdleDrawing.dayKey()) saved = await board.drafts(); // a new day since home was drawn: yesterday's goes to My drawings
       const today = saved.today;
       if (today && today.marked) {
         if (today.mode === "daily") return openSaved("today");
-        if (!confirm("Start Daily Scrawl? Your Basic or Detailed drawing for today will be replaced, and kept in My drawings.")) return;
+        if (!await ask({ title: "Start Daily Scrawl?", body: "Your drawing for today is replaced and kept in My drawings.", yes: "Start", no: "Keep my drawing" })) return;
       }
       start("daily");
     }
 
     // Daily Free Play has one save a day and no parts or slot machine. Pressing it again goes back to that drawing.
     async function startScrawl() {
+      if (homeDay !== ScrawdleDrawing.dayKey()) saved = await board.drafts();
       if (saved.scrawl && saved.scrawl.marked) return openSaved("scrawl");
       await board.flush();
       challenge.pending = false;
@@ -516,14 +544,44 @@
       showGame();
     }
 
+    // Play again, from the finish screen: a clean canvas with the same parts. The drawing just finished goes to
+    // My drawings (drawing.js start() keeps the old one). A Time Challenge gets a whole new challenge instead.
+    async function playAgain() {
+      const round = board.round;
+      if (!round) return;
+      if (round.timed) return startTimeChallenge();
+      await board.flush();
+      try { localStorage.removeItem(ticksKey(round.prompts)); } catch (err) { /* storage blocked */ }
+      await board.start(round.mode, round.prompts, round.daily);
+      showGame();
+    }
+
     // Open Canvas has one save, so a new set replaces whatever is on it.
-    function startFreePlay(hasDrawing) {
-      if (hasDrawing && !confirm("Replace your Free Play drawing with a new set of parts? The old one is kept in My drawings.")) return;
+    async function startFreePlay(hasDrawing) {
+      if (hasDrawing && !await ask({ title: "New set of parts?", body: "Your Free Play drawing is kept in My drawings.", yes: "New set", no: "Back to my drawing" })) return openSaved("free");
       start("basic", false);
     }
 
+    // A yes/no question in the game's own box. Resolves true for the first button.
+    const askEl = $("ask-box");
+    function ask({ title, body, yes, no }) {
+      askEl.querySelector("#ask-title").textContent = title;
+      askEl.querySelector("#ask-body").textContent = body || "";
+      askEl.querySelector("#ask-body").hidden = !body;
+      askEl.querySelector('[value="yes"]').textContent = yes;
+      askEl.querySelector('[value="no"]').textContent = no;
+      return new Promise((resolve) => {
+        askEl.addEventListener("close", () => resolve(askEl.returnValue === "yes"), { once: true });
+        askEl.returnValue = "no";
+        askEl.showModal();
+        askEl.querySelector('[value="yes"]').focus();
+      });
+    }
+    askEl.addEventListener("click", (e) => { const b = e.target.closest("button"); if (b) askEl.close(b.value); else if (e.target === askEl) askEl.close("no"); });
+
     let saved = {};
     let thumbUrls = [];
+    let homeDay = null; // the day the home screen was built for; a new day rebuilds it (see below)
 
     // The "Continue drawing" notices can be closed with an x. That only hides the notice, like reading it:
     // the drawing stays saved, can still be opened from its card, and stays in My drawings. A notice comes
@@ -551,7 +609,7 @@
       const title = document.createElement("b");
       title.textContent = "Continue drawing";
       const prompt = document.createElement("small");
-      prompt.textContent = (draft.slot === "free" ? "Free Play: " : draft.slot === "scrawl" ? "Daily Free Play: " : "") + draft.prompts.map((p) => p.value).join(", ");
+      prompt.textContent = (draft.slot === "free" ? "Free Play: " : draft.slot === "scrawl" ? "Daily Doodle: " : "Daily Scrawl: ") + draft.prompts.map((p) => p.value).join(", ");
       text.append(title, prompt);
       card.title = prompt.textContent; // the notice is one short line, so the full list of parts shows on hover
       card.append(thumb, text);
@@ -586,6 +644,7 @@
       gameEl.inert = false;
       slotEl.hidden = true;
       try { sessionStorage.removeItem(OPEN_KEY); sessionStorage.removeItem(ScrawdleDrawing.FINISH_KEY); } catch (err) { /* storage blocked */ }
+      homeDay = ScrawdleDrawing.dayKey();
       saved = await board.drafts();
       thumbUrls.forEach((u) => URL.revokeObjectURL(u));
       thumbUrls = [];
@@ -597,11 +656,29 @@
       setupEl.classList.toggle("has-saved", cards.length > 0);
       setupEl.hidden = false;
       $("home-date").textContent = new Date().toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric" });
+      // The daily cards say where you are today: nothing yet, "Continue", or "Done" once it's published.
+      const stateOf = (d) => !d || !d.marked ? "" : isPublishedDraft(d) ? " \u00B7 Done \u2713" : " \u00B7 Continue";
+      $("mode-daily").querySelector(".menu-name").textContent = "Daily Scrawl" + stateOf(saved.today && saved.today.mode === "daily" ? saved.today : null);
+      $("mode-scrawl").querySelector(".menu-name").textContent = "Daily Doodle" + stateOf(saved.scrawl);
+      showNextParts();
       // The streak of days in a row with a finished daily drawing (streak.js). Hidden until there is one.
       const streakText = window.ScrawdleStreak ? ScrawdleStreak.homeText(ScrawdleStreak.read(ScrawdleDrawing.dayKey())) : "";
       $("home-streak").textContent = streakText;
       $("home-streak").hidden = !streakText;
     }
+
+    // A tab left open on home past midnight: when it's looked at again on a new day, home is rebuilt for today.
+    document.addEventListener("visibilitychange", () => {
+      if (document.visibilityState === "visible" && !setupEl.hidden && homeDay && homeDay !== ScrawdleDrawing.dayKey()) showHome();
+    });
+
+    // Once today's Daily Scrawl is drawn, home says when the next parts come (ScrawdleDrawing.nextPartsIn). Updated each minute.
+    function showNextParts() {
+      const done = saved.today && saved.today.marked && saved.today.mode === "daily";
+      $("home-next").textContent = done ? `New parts in ${ScrawdleDrawing.nextPartsIn()}` : "";
+      $("home-next").hidden = !done;
+    }
+    setInterval(() => { if (!setupEl.hidden) showNextParts(); }, 60000);
 
     // My drawings only shows once there's something in it: a drawing in progress or one already kept.
     async function showMyDrawingsLink() {
@@ -613,34 +690,50 @@
     async function openSaved(slot) {
       const round = board.round;
       // Still the drawing on the canvas, so its undo history comes along too.
-      if (round && slotFor(round) === slot) { showGame(); return; }
+      // Reopening today's Daily Scrawl or Daily Free Play: the note says so, so it doesn't look like a new game.
+      const continued = () => { if (slot === "today" || slot === "scrawl") $("prompt-label").textContent += " \u00B7 continued"; };
+      if (round && slotFor(round) === slot && round.day === ScrawdleDrawing.dayKey()) { showGame(); continued(); return; }
       await board.flush();
-      if (await board.restore(slot)) showGame();
+      if (await board.restore(slot)) { showGame(); continued(); }
       else showHome();
     }
 
     // Start over (the daily modes) erases the canvas and stays on the same drawing with the same parts. It is the
     // same erase as the Clear button, so Undo brings the drawing back. New set (Free Play) is a different round.
-    function restartRound() {
+    async function restartRound() {
       const round = board.round;
       if (round.timed) return startTimeChallenge(); // the old one goes to My drawings
       if (!round.daily) return startFreePlay(!board.isEmpty);
       if (board.isEmpty) return;
-      if (!confirm("Start over? This erases your drawing, but Undo can bring it back.")) return;
+      if (!await ask({ title: "Clear the canvas?", body: "Undo brings it back.", yes: "Clear", no: "Keep drawing" })) return;
       board.clear();
+      bigWord("Cleared!", 700); // Undo brings it back
+      try { localStorage.removeItem(ticksKey(round.prompts)); } catch (err) { /* storage blocked */ }
+      showParts(round.prompts); // the ticks on the note start over too
     }
 
+    // The Daily title opens its two halves (hover does too, on a mouse); a tap on it never starts anything by surprise.
+    const dailyCard = document.querySelector(".daily-card"), dailyTitle = dailyCard.querySelector(".daily-title");
+    dailyTitle.addEventListener("click", () => { const open = dailyCard.classList.toggle("open"); dailyTitle.setAttribute("aria-expanded", String(open)); });
     $("mode-daily").addEventListener("click", startDaily);
     $("mode-scrawl").addEventListener("click", startScrawl);
     $("free-play").addEventListener("click", () => startFreePlay(Boolean(saved.free && saved.free.marked)));
     $("restart").addEventListener("click", restartRound);
+    $("join-form").addEventListener("submit", (e) => {
+      e.preventDefault();
+      const code = $("join-code").value.trim().toUpperCase();
+      if (!/^[A-Z]{5}$/.test(code)) { $("join-help").textContent = "A code is 5 letters, like BCDFG."; return; }
+      $("join-help").textContent = "";
+      location.href = `${location.pathname}?${code}`; // the same address an invite link opens
+    });
     $("time-challenge").addEventListener("click", startTimeChallenge);
     $("slot-new").addEventListener("click", () => {
       slotEl.hidden = true;
       const t = board.round && board.round.timed;
       start("basic", false, t ? { seconds: t.seconds } : null);
     });
-    $("back-home").addEventListener("click", goHome);
+    $("back-home").addEventListener("click", askLeave);
+    $("slot-back").addEventListener("click", () => { leaveOk = true; goHome(); }); // nothing is drawn yet on the reveal screen
 
     /* ---------- The browser's Back button ---------- */
     // The game is one page, so the browser can't tell when a drawing opens, and Back used to leave the
@@ -656,9 +749,52 @@
     // The in-page "Back to home" buttons go through history too, so the browser's Back afterwards leaves.
     async function goHome() {
       if (onGameEntry()) { history.back(); return; }
+      leaveOk = false;
+      lastSlot = board.round ? slotFor(board.round) : null;
       await board.flush();
       showHome();
     }
+
+    /* ---------- Leaving a drawing: save it for later, or delete it ---------- */
+    // The house button, the Scrawdle name and the browser's Back all ask first, unless there's nothing to
+    // keep: the canvas is empty, the drawing is already published, or it's a finished Time Challenge.
+    // Save draft keeps it (it's already saved as you draw) and shows it as "Continue drawing" on home;
+    // Delete drawing removes it. The browser's Back has already moved by then, so the choice finishes
+    // the trip home, and Keep drawing puts the drawing's history entry back.
+    const leaveEl = $("leave-drawing");
+    let leaveOk = false;   // the player chose, so the trip home doesn't ask again
+    let leaving = false;   // closing the dialog because they chose Save or Delete, not Keep drawing
+    // A running Time Challenge isn't asked either: leaving ends it and keeps the drawing, as before.
+    const nothingToAsk = () => gameEl.hidden || !slotEl.hidden || board.locked || Boolean(challenge.stop)
+      || (board.round && typeof window.scrawdleIsPublished === "function" && window.scrawdleIsPublished(board.round.day, board.round.mode))
+      || board.isEmpty; // last: it scans the canvas
+    function askLeave() {
+      if (nothingToAsk()) { leaveOk = true; goHome(); return; }
+      const thumb = leaveEl.querySelector(".leave-thumb");
+      const ctx = thumb.getContext("2d");
+      ctx.fillStyle = "#fff";
+      ctx.fillRect(0, 0, thumb.width, thumb.height);
+      ctx.drawImage($("board"), 0, 0, thumb.width, thumb.height);
+      if (!leaveEl.open) leaveEl.showModal();
+      leaveEl.querySelector('[data-leave="save"]').focus();
+    }
+    leaveEl.addEventListener("click", async (e) => {
+      const choice = e.target.closest("[data-leave]");
+      if (!choice) { if (e.target === leaveEl) leaveEl.close(); return; } // a click outside the box keeps drawing
+      if (choice.dataset.leave === "stay") { leaveEl.close(); return; }
+      leaving = true;
+      leaveEl.close();
+      if (choice.dataset.leave === "delete") {
+        if (board.round) { try { localStorage.removeItem(ticksKey(board.round.prompts)); } catch (err) { /* storage blocked */ } } // a new drawing starts unticked
+        await board.discard();
+      }
+      leaveOk = true;
+      goHome();
+    });
+    leaveEl.addEventListener("close", () => {
+      if (leaving) { leaving = false; return; }
+      if (!gameEl.hidden) markGameEntry(); // Keep drawing, or Esc
+    });
     window.addEventListener("popstate", async () => {
       const open = ["finish", "gallery", "help"].map((id) => document.getElementById(id)).find((d) => d && d.open);
       if (open) {
@@ -672,6 +808,8 @@
         return;
       }
       if (!gameEl.hidden || !slotEl.hidden) {
+        if (!leaveOk && !nothingToAsk()) { askLeave(); return; }
+        leaveOk = false;
         lastSlot = board.round ? slotFor(board.round) : null;
         await board.flush();
         showHome();
@@ -684,11 +822,13 @@
     async function wordmarkHome() {
       const room = document.getElementById("lobby");
       if (room && room.open) room.querySelector('[data-act="leave"]').click();
+      const finished = $("finish") && $("finish").open;
       for (const id of ["finish", "gallery", "sketchbook", "help"]) {
         const d = document.getElementById(id);
         if (d && d.open) d.close();
       }
-      if (!gameEl.hidden || !slotEl.hidden) goHome();
+      if (gameEl.hidden && slotEl.hidden) return;
+      if (finished) { leaveOk = true; goHome(); } else askLeave();
     }
     function makeWordmarksLinks() {
       for (const mark of document.querySelectorAll(".wordmark")) {
@@ -729,21 +869,84 @@
     } else $("multiplayer").hidden = true;
     $("sketchbook").addEventListener("close", showMyDrawingsLink); // in case the last one was deleted
     const finish = ScrawdleDrawing.createFinishScreen(board, gallery, {
-      onHome: goHome,
+      onHome: () => { leaveOk = true; goHome(); }, // finished, so no "Leave your drawing?"
+      onPlayAgain: playAgain,
     });
     // Done drawing during a Time Challenge stops the clock first, so the finish screen shows the time it took.
-    board.onDone = () => (challenge.stop ? endChallenge(false) : finish.open());
+    board.onDone = () => {
+      if (board.isEmpty) { bigWord("Draw something!", 900); return; } // a blank canvas isn't finished
+      return challenge.stop ? endChallenge(false) : finish.open();
+    };
     makeWordmarksLinks(); // after every screen with a wordmark exists
+
+    /* ---------- Size and opacity: one key beside the tools that opens them (from the v2 private copy) ---------- */
+    // Drawing apps keep size and opacity one tap away instead of always on screen (Tayasui Sketches and Infinite
+    // Painter open them as a small pop-up). The key shows the current size, color and opacity as a dot; pressing it
+    // opens the settings as a card next to it, and a tap anywhere else, or Escape, closes it.
+    (() => {
+      const panel = $("brush-settings");
+      const tray = $("tools").querySelector(".tray-tools");
+      if (!panel || !tray) return;
+      const key = document.createElement("button");
+      key.type = "button";
+      key.className = "tool settings-toggle";
+      key.setAttribute("aria-controls", "brush-settings");
+      key.setAttribute("aria-expanded", "false");
+      key.innerHTML = '<span class="st-dot" aria-hidden="true"><i></i></span><span class="tool-label">Size</span>';
+      tray.append(key);
+      const dot = key.querySelector(".st-dot i");
+      function describe() {
+        const size = panel.querySelector(".size-value")?.textContent || "";
+        const opacity = panel.querySelector(".opacity-value")?.textContent || "100%";
+        const px = parseInt(size, 10);
+        const swatch = document.querySelector('#easel-ledge .swatch[aria-pressed="true"]');
+        const eraser = /eraser/i.test(panel.querySelector(".settings-title")?.textContent || "");
+        dot.style.width = dot.style.height = `${Number.isFinite(px) ? Math.max(5, Math.min(26, 4 + px / 2)) : 18}px`;
+        dot.style.background = eraser ? "#fff" : (swatch ? getComputedStyle(swatch).getPropertyValue("--swatch") : "") || "#2d2a25";
+        dot.style.opacity = String(Math.max(0.15, parseInt(opacity, 10) / 100 || 1));
+        const text = `Size and opacity: ${size || "fill"}, ${opacity}`;
+        key.title = text;
+        key.setAttribute("aria-label", text);
+      }
+      new MutationObserver(describe).observe(panel, { subtree: true, childList: true, characterData: true });
+      $("easel-ledge").addEventListener("click", () => setTimeout(describe, 0));
+      describe();
+      function place() {
+        const r = key.getBoundingClientRect();
+        const w = Math.min(300, innerWidth - 24);
+        panel.style.width = `${w}px`;
+        panel.style.left = `${Math.max(12, Math.min(innerWidth - w - 12, r.left))}px`;
+        const below = innerHeight - r.bottom, above = r.top;
+        const h = panel.offsetHeight;
+        if (below >= h + 12 || below >= above) { panel.style.top = `${r.bottom + 8}px`; panel.style.bottom = ""; }
+        else { panel.style.top = ""; panel.style.bottom = `${innerHeight - r.top + 8}px`; }
+      }
+      const isOpen = () => panel.classList.contains("open");
+      function setOpen(open) {
+        panel.classList.toggle("open", open);
+        key.setAttribute("aria-expanded", String(open));
+        key.setAttribute("aria-pressed", String(open));
+        if (open) place();
+      }
+      key.addEventListener("click", () => setOpen(!isOpen()));
+      document.addEventListener("pointerdown", (e) => { if (isOpen() && !panel.contains(e.target) && !key.contains(e.target)) setOpen(false); });
+      document.addEventListener("keydown", (e) => { if (e.key === "Escape" && isOpen()) { setOpen(false); key.focus(); } });
+      addEventListener("resize", () => { if (isOpen()) place(); });
+      addEventListener("scroll", () => { if (isOpen()) place(); }, { passive: true });
+      new MutationObserver(() => { if (gameEl.hidden && isOpen()) setOpen(false); }).observe(gameEl, { attributes: true, attributeFilter: ["hidden"] });
+    })();
 
     // A refresh (or the browser's Back/Forward) returns to the drawing this tab was on, and to the finish screen if
     // that was open. A new visit, or a link to home (the name on Public drawings, "Back to Scrawdle" on the
     // leaderboard), starts at home.
     (async () => {
       const nav = performance.getEntriesByType ? performance.getEntriesByType("navigation")[0] : null;
-      let fromOtherPage = false; // a link from Public drawings or the leaderboard
-      try { const r = new URL(document.referrer); fromOtherPage = r.origin === location.origin && r.pathname !== location.pathname; } catch (err) { /* no referrer */ }
-      const resumed = !nav || nav.type === "reload" || nav.type === "back_forward" || !fromOtherPage;
       const session = (k) => { try { return sessionStorage.getItem(k); } catch (err) { return null; } };
+      // A reload or Back/Forward comes back to the drawing; a visit typed into the address bar goes home. (A browser
+      // that reports a reload as "navigate" still counts when this same page is the referrer.)
+      let fromSelf = false;
+      try { const r = new URL(document.referrer); fromSelf = r.origin === location.origin && r.pathname === location.pathname; } catch (err) { /* no referrer */ }
+      const resumed = !nav || nav.type === "reload" || nav.type === "back_forward" || (nav.type === "navigate" && fromSelf);
       const open = resumed ? session(OPEN_KEY) : null;
       const found = await board.drafts();
       if (open && found[open] && await board.restore(open)) {

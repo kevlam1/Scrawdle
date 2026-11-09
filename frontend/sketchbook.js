@@ -7,7 +7,7 @@
  */
 (function (root) {
   "use strict";
-  const MODE_NAMES = { daily: "Daily Scrawl", basic: "Basic", detailed: "Detailed", scrawl: "Daily Free Play" };
+  const MODE_NAMES = { daily: "Daily Scrawl", basic: "Basic", detailed: "Detailed", scrawl: "Daily Doodle" };
   const modeName = (d) => (d.timed && d.timed.seconds ? `${d.timed.seconds}-second Time Challenge` : d.mode === "scrawl" ? MODE_NAMES.scrawl : d.daily === false ? "Free Play" : MODE_NAMES[d.mode] || "Drawing");
   const dateOf = (day) => new Date(`${day}T12:00:00`).toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric" });
   const partsOf = (d) => (d.mode === "scrawl" ? "" : (d.prompts || []).map((p) => p.value).join(", "));

@@ -256,12 +256,22 @@
   function timedText(timed) {
     if (!timed || !timed.seconds) return "";
     if (typeof timed.used !== "number") return `⏱ ${timed.seconds}-second Time Challenge. It ended when you left the drawing.`;
+    if (timed.left) return `⏱ ${timed.seconds}-second Time Challenge. You left after ${timed.used} ${timed.used === 1 ? "second" : "seconds"}.`;
     if (timed.used >= timed.seconds) return `⏱ Drawn in ${timed.seconds} seconds!`;
     return `⏱ Finished in ${timed.used} of ${timed.seconds} seconds!`;
   }
+  // How long until local midnight, when the next day's parts arrive: "7h 12m", "12m", or "under a minute".
+  function nextPartsIn(now = new Date()) {
+    const midnight = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
+    const mins = Math.max(0, Math.round((midnight - now) / 60000));
+    if (mins < 1) return "under a minute";
+    const h = Math.floor(mins / 60), m = mins % 60;
+    return h ? `${h}h ${m}m` : `${m}m`;
+  }
   const draftImage = async (draft) => draft.blob || (await fetch(draft.dataUrl)).blob();
   // A drawing with something in it, as opposed to a round that was opened and left blank.
-  const isMarked = (draft) => !Array.isArray(draft.ops) || draft.ops.length > 0 || draft.canReplay === false;
+  // A canvas that was cleared and not drawn on again counts as blank: no "Continue drawing", nothing kept.
+  const isMarked = (draft) => !Array.isArray(draft.ops) || draft.canReplay === false || (draft.ops.length > 0 && draft.ops[draft.ops.length - 1].type !== "clear");
 
   /* ---------- My drawings: finished drawings kept after their day ends (in this browser only) ---------- */
   // Stored in the same "drafts" store under keys starting "book|". A new store would mean a new database
@@ -305,7 +315,7 @@
   function shareLine({ mode, daily, prompts, day, timed }, url, streak = 0) {
     const date = new Date(`${day}T12:00:00`).toLocaleDateString(undefined, { month: "long", day: "numeric" });
     const fire = streak >= 3 ? ` · ${streak}-day streak` : "";
-    if (mode === "scrawl") return `My Scrawdle Daily Free Play drawing for ${date}. Draw yours: ${url}${fire}`;
+    if (mode === "scrawl") return `My Scrawdle Daily Doodle drawing for ${date}. Draw yours: ${url}${fire}`;
     const parts = prompts.map((p) => p.value).join(", ");
     if (timed && timed.seconds) return `My Scrawdle ${timed.seconds}-second Time Challenge: ${parts}. Draw yours: ${url}`;
     if (daily === false) return `My Scrawdle Free Play drawing: ${parts}. Draw yours: ${url}`;
@@ -413,6 +423,11 @@
     wheel.setAttribute("aria-label", "Pick any color");
     const picker = root.ScrawdleColorPicker ? root.ScrawdleColorPicker.create({ anchor: wheel, onInput: (c) => setColor(c) }) : null;
     wheel.addEventListener("click", () => { if (picker) picker.toggle(color); });
+    // On the main drawing screen a joystick stands on the control deck. It is a real control: it opens the same
+    // custom colour picker as the rainbow marker (arcade.css draws it; Party's board has no deck for it).
+    const joystick = el("button", { type: "button", className: "joystick", title: "Pick any color" });
+    joystick.setAttribute("aria-label", "Pick any color");
+    joystick.addEventListener("click", () => { if (picker) picker.toggle(color); });
     const sizeInput = el("input", { type: "range", min: 1, max: 60, value: 3, id: `${idPrefix}tool-size`, oninput: (e) => {
       if (sizes[tool] !== null) sizes[tool] = Number(e.target.value);
       refreshToolbar();
@@ -484,7 +499,7 @@
         el("div", {className: "tray-group tray-tools"}, ...Object.values(toolButtons)),
         ...(palette ? [] : [colorGroup]),
         ...(settings ? [] : [sizeGroup])),
-      el("div", {className: "studio-footer"}, status,
+      el("div", {className: "studio-footer"}, ...(palette ? [joystick] : []), status,
         el("div", {className: "history-actions"}, undoBtn, redoBtn, clearBtn), doneBtn)
     );
 
@@ -513,6 +528,7 @@
       brushControls.hidden = tool !== "brush";
       brushToggle.textContent = `${BRUSHES.find(b => b.id === brushKind).label} · brush settings`;
       brushChoices.forEach(b => b.setAttribute("aria-pressed", String(b.dataset.kind === brushKind)));
+      markDone(); // a fresh or restored canvas dims Done until something is drawn
       sizeValue.textContent = noSize ? "Fill area" : `${sizes[tool]} px`;
       if (!noSize) {
         sizeInput.value = sizes[tool];
@@ -1095,7 +1111,11 @@
       status.textContent = text;
       status.dataset.state = state || "";
     }
+    // Done drawing looks dimmed while there is nothing on the canvas (index.html refuses it then).
+    const blankNow = () => opsAt === 0 || (ops[opsAt - 1] && ops[opsAt - 1].type === "clear");
+    function markDone() { doneBtn.classList.toggle("blank", blankNow()); }
     function scheduleSave() {
+      markDone();
       clearTimeout(saveTimer);
       saveGeneration++;
       unsaved = true;
@@ -1106,7 +1126,9 @@
       return new Promise((resolve) => canvas.toBlob(resolve, "image/png"));
     }
     const draftOf = (image) => ({ ...round, ...image, ops: ops.slice(0, opsAt), canReplay, savedAt: Date.now() });
-    async function save() {
+    let pendingSave = null; // the save in flight, so discard() can wait for it
+    function save() { pendingSave = saveDraft().finally(() => { pendingSave = null; }); return pendingSave; }
+    async function saveDraft() {
       if (!round) return;
       const generation = saveGeneration;
       try {
@@ -1188,6 +1210,11 @@
       let draft;
       try { draft = await draftStore.get(slot); } catch (err) { return null; }
       if (!draft) return null;
+      if (draft.day !== dayKey()) { // its day is over (a tab left open past midnight): it goes to My drawings, like drafts() does
+        await myDrawings.keep(draft, slot).catch(() => {});
+        await draftStore.remove(slot).catch(() => {});
+        return null;
+      }
       try {
         const bitmap = await createImageBitmap(await draftImage(draft));
         ctx.drawImage(bitmap, 0, 0, W, H);
@@ -1221,7 +1248,11 @@
       canReplay = true;
       setStatus("");
       refreshToolbar();
-      return slot ? draftStore.remove(slot).catch(() => {}) : Promise.resolve();
+      const inFlight = pendingSave;
+      return (async () => {
+        if (inFlight) await inFlight.catch(() => {});
+        if (slot) await draftStore.remove(slot).catch(() => {});
+      })();
     }
     function setLocked(value) {
       locked = value;
@@ -1252,12 +1283,12 @@
   /* ---------- Finish screen ---------- */
   // Set while the finish screen is open in this tab, so a refresh comes back to it (see index.html).
   const FINISH_KEY = "scrawdle-finish";
-  function createFinishScreen(board, gallery, { onHome } = {}) {
+  function createFinishScreen(board, gallery, { onHome, onPlayAgain } = {}) {
     const dialog = document.createElement("dialog");
     dialog.id = "finish";
     dialog.innerHTML = `
       <header class="app-header"><span class="wordmark">Scrawdle</span><button type="button" class="quiet" data-act="home">Back to home</button></header>
-      <div class="finish-heading"><p class="finish-date eyebrow"></p><h1>Made by you.</h1><h2 class="finish-prompt"></h2><p class="finish-streak" role="status" hidden></p><p class="finish-timed" hidden></p></div>
+      <div class="finish-heading"><p class="finish-date eyebrow"></p><h1>Made by you.</h1><h2 class="finish-prompt"></h2><p class="finish-streak" role="status" hidden></p><p class="finish-timed" hidden></p><p class="finish-next" hidden></p></div>
       <div class="finish-art">
         <img alt="Your finished drawing">
         <canvas class="replay" hidden aria-label="Your drawing being redrawn"></canvas>
@@ -1271,7 +1302,9 @@
         </div>
         <p class="publish-disclosure" hidden>Publishing shares your drawing with today’s gallery.</p>
         <p class="finish-note" role="status"></p>
+        <p class="finish-share" hidden></p>
         <div class="finish-secondary">
+          <button type="button" class="quiet" data-act="again">Play again</button>
           <button type="button" class="quiet" data-act="keep">Keep drawing</button>
           <button type="button" class="quiet" data-act="gallery">See public drawings</button>
           <a class="quiet" data-act="leaderboard" href="leaderboard/">Today's leaderboard</a>
@@ -1284,6 +1317,9 @@
     const downloadBtn = dialog.querySelector('[data-act="download"]');
     const shareBtn = dialog.querySelector('[data-act="share"]');
     const galleryBtn = dialog.querySelector('[data-act="gallery"]');
+    galleryBtn.className = "btn"; // a real button, next to Publish: it shows once the drawing is published
+    galleryBtn.textContent = "See it in Public drawings";
+    dialog.querySelector(".finish-actions").prepend(galleryBtn);
     const replayBtn = dialog.querySelector('[data-act="replay"]');
     const replayCanvas = dialog.querySelector(".replay");
     // What to say for each day and mode already published. A player gets one drawing per round, so
@@ -1319,9 +1355,10 @@
     });
     // Goes to the same Public drawings page as the home screen's link (public-drawings/), starting on this
     // drawing's own kind. The drawing is already saved, so leaving the game screen loses nothing.
-    galleryBtn.addEventListener("click", () => {
+    const goToGallery = () => {
       location.href = `public-drawings/?focus=${board.round.mode === "scrawl" ? "free" : "daily"}`;
-    });
+    };
+    galleryBtn.addEventListener("click", goToGallery);
     let viewUrl = null; // the drawing on its own, for the screen
     let exportUrl = null; // the drawing with its prompt and date, for the download
     let exportBlob = null; // the same picture, for sharing
@@ -1334,6 +1371,9 @@
     const close = () => { dialog.close(); release(); };
     const keepBtn = dialog.querySelector('[data-act="keep"]');
     keepBtn.addEventListener("click", close);
+    // Play again: a clean canvas with the same parts; this drawing is kept in My drawings (index.html does the start).
+    const againBtn = dialog.querySelector('[data-act="again"]');
+    againBtn.addEventListener("click", () => { close(); if (onPlayAgain) onPlayAgain(); });
     dialog.querySelector('[data-act="home"]').addEventListener("click", () => { close(); if (onHome) onHome(); });
 
     downloadBtn.addEventListener("click", () => {
@@ -1384,6 +1424,7 @@
         note.textContent = "Your drawing is published. See it under Public drawings." + (board.round.mode === "scrawl" ? "" : " Everyone's Daily Scrawl drawings are now unlocked there.");
         published.set(key, note.textContent);
         showPublish("done");
+        if (dialog.open) goToGallery(); // straight on to Public drawings, where the drawing now is
       } catch (err) {
         note.textContent = err.userMessage || "Couldn't publish. Your drawing is still saved here, so try again.";
         if (err.alreadyPublished) {
@@ -1406,36 +1447,51 @@
       const { daily, day, prompts } = board.round;
       const empty = board.isEmpty;
       const ready = daily && !empty && typeof window.scrawdlePublish === "function";
-      dialog.querySelector(".publish-disclosure").hidden = !ready;
       publishBtn.hidden = !ready;
       // Published earlier (another visit or before a refresh): publish.js remembers it in this browser.
       const publishedNote = published.get(roundKey())
-        || (typeof root.scrawdleIsPublished === "function" && root.scrawdleIsPublished(day, board.round.mode) ? "You've already published this drawing. See it under Public drawings. Changes you make now stay in this browser." : null);
+        || (typeof root.scrawdleIsPublished === "function" && root.scrawdleIsPublished(day, board.round.mode) ? "You've already published a drawing for this today, so this one stays in this browser. See the published one under Public drawings." : null);
       showPublish(publishedNote ? "done" : "ready");
+      dialog.querySelector(".publish-disclosure").hidden = !ready || Boolean(publishedNote); // nothing left to publish
       publishBtn.classList.toggle("primary", ready);
       downloadBtn.classList.toggle("primary", !ready);
-      galleryBtn.hidden = !daily || empty || typeof window.scrawdlePublicGallery !== "function";
-      dialog.querySelector('[data-act="leaderboard"]').hidden = galleryBtn.hidden;
+      const canSee = daily && !empty && typeof window.scrawdlePublicGallery === "function";
+      galleryBtn.hidden = !(canSee && publishedNote); // published: the way to see it; not yet: Publish takes you there
+      galleryBtn.classList.toggle("primary", !galleryBtn.hidden);
+      publishBtn.hidden = !ready; // once published it stays as a greyed "Published ✓", next to the way to see it
+      dialog.querySelector('[data-act="leaderboard"]').hidden = galleryBtn.hidden; // the leaderboard means something once you're on it
       replayBtn.hidden = empty || !board.canReplay;
       shareBtn.hidden = empty;
       keepBtn.textContent = board.locked ? "Back" : "Keep drawing";
+      againBtn.hidden = empty || !onPlayAgain;
       dialog.querySelector(".finish-prompt").textContent = prompts.map((p) => p.value).join(", ");
       dialog.querySelector(".finish-date").textContent = new Date(`${day}T12:00:00`).toLocaleDateString(undefined, { weekday: "long", year: "numeric", month: "long", day: "numeric" });
       note.textContent = empty ? "Draw something first." : (ready && publishedNote) || "";
       // Finishing a daily drawing (not Free Play, not a blank one) counts today for the streak (streak.js).
       const streakEl = dialog.querySelector(".finish-streak");
       streakEl.textContent = "";
+      let streakNow = 0;
       if (daily && !empty && root.ScrawdleStreak) {
         const s = root.ScrawdleStreak.record(day, dayKey());
+        streakNow = s.current;
         streakEl.textContent = root.ScrawdleStreak.finishText(s, s.added, s.bestBefore);
       }
+      // What Share will send, so there are no surprises.
+      const shareEl = dialog.querySelector(".finish-share");
+      shareEl.textContent = empty ? "" : shareLine(board.round, `${location.origin}${location.pathname}`, streakNow);
+      shareEl.hidden = !shareEl.textContent;
       streakEl.hidden = !streakEl.textContent;
       // A Time Challenge says how long it took (timedText).
       const timedEl = dialog.querySelector(".finish-timed");
       timedEl.textContent = empty ? "" : timedText(board.round.timed);
       timedEl.hidden = !timedEl.textContent;
-      // A blank canvas isn't celebrated: no "Made by you", and nothing to download.
-      dialog.querySelector(".finish-heading h1").textContent = empty ? "Nothing drawn yet." : "Made by you.";
+      // A blank canvas isn't celebrated, and nothing to download. Otherwise the heading names the drawing.
+      const { mode, timed } = board.round;
+      dialog.querySelector(".finish-heading h1").textContent = empty ? "Nothing drawn yet." : timed ? "Time Challenge \u00B7 done \u2713" : mode === "scrawl" ? "Daily Doodle \u00B7 done \u2713" : !daily ? "Free Play \u00B7 done \u2713" : "Daily Scrawl \u00B7 done \u2713";
+      // A daily drawing is done for today: say when the next parts come.
+      const nextEl = dialog.querySelector(".finish-next");
+      nextEl.textContent = daily && !empty && !timed ? `New parts in ${nextPartsIn()}` : "";
+      nextEl.hidden = !nextEl.textContent;
       downloadBtn.hidden = empty;
       dialog.showModal();
       try { sessionStorage.setItem(FINISH_KEY, "1"); } catch (err) { /* private browsing: a refresh just goes back to the drawing */ }
@@ -1445,7 +1501,7 @@
     return { open };
   }
 
-  const api = { floodFill, blendFill, FINISH_KEY, History, dayKey, brushWidthFactor, slotOf, SLOTS, timedText, COLORS, COLOR_NAMES, bookKey, keysToDrop, BOOK_MAX, shareLine };
+  const api = { floodFill, blendFill, FINISH_KEY, History, dayKey, brushWidthFactor, slotOf, SLOTS, timedText, nextPartsIn, COLORS, COLOR_NAMES, bookKey, keysToDrop, BOOK_MAX, shareLine };
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   else root.ScrawdleDrawing = { ...api, createBoard, createFinishScreen, HISTORY_BYTES, myDrawings, letterDrawing };
 })(typeof window !== "undefined" ? window : globalThis);

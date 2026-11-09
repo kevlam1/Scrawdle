@@ -19,7 +19,7 @@ test("Daily Scrawl is named as itself, not as Basic or Detailed", () => {
 
 test("Daily Free Play doesn't list its placeholder prompt", () => {
   const line = shareLine({ mode: "scrawl", daily: true, prompts: [{ label: "Daily Free Play", value: "Draw anything" }], day: "2026-11-05" }, URL_);
-  assert.match(line, /^My Scrawdle Daily Free Play drawing for /);
+  assert.match(line, /^My Scrawdle Daily Doodle drawing for /);
   assert.doesNotMatch(line, /Draw anything/);
 });
 
