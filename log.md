@@ -1499,7 +1499,7 @@ Artifact 4 is "For Someone Else," due Sunday, November 8. Our team of four (Kevi
 ## 75. Design review fixes: the drawing screen, home, gallery, Play again, and phones (2026-11-08) — Zainab
 
 **What I asked for**
-- A second, harder design review of the whole game against skribbl.io, Gartic Phone, Jackbox and Wordle, then fix what it found. Make my private copy the best version, taking anything useful from a second private copy I had another session working on.
+- A second, harder design review of the whole game against skribbl.io, Gartic Phone, Jackbox and Wordle, then fix what it found. Make my private copy the best version, taking anything useful from a second private copy I'd been testing in.
 - Let people play again after finishing, with a clean canvas.
 - The drawing screen should keep its look in a split-screen window instead of shrinking with the window's height, and the tools should sit under the canvas on phones.
 
