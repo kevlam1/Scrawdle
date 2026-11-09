@@ -1633,6 +1633,24 @@ Artifact 4 is "For Someone Else," due Sunday, November 8. Our team of four (Kevi
 
 ---
 
+## 82. Fixing the drawing screen after the merge pushed the canvas off the side (2026-11-08) — Angie
+
+**What I asked for**
+- After I merged, the drawing screen had the canvas pushed far off to the left, with the note, tools and settings gone and the buttons in a row next to the name. Why, and fix it.
+
+**What changed**
+- `frontend/arcade.css`: removed the "Wide screens" block at the very end of the file. It came from Zainab's PR #25 (commit 04d206a, "a bigger canvas on wide screens"), which merged into `main` just before my layout. Her block moved the Undo / Redo / Clear / Done deck into the right-hand column on windows wider than 17:10 and 1200px, and to do that it set the grid to three columns ("note stage settings" and "tools stage footer"). My layout sets seven columns for the same windows (an outer space, the note, a gap, the canvas, a gap, the right column, an outer space). Git merged the two files without a conflict because they touched different lines, but her block comes later in the file, so it won: three column names laid over seven columns put the canvas in the 250-unit-wide second column, and it spilled off the left edge of the window. In its place there is a short comment saying what was removed and why. Her block is still in the git history if the team wants the deck in the right column instead.
+- Nothing else of hers is touched: her changes to saving drafts, the ticks fix, the Free Play and Start over wording, and the My drawings code are all in `drawing.js`, `index.html` and `sketchbook.js`, and they do not touch the layout.
+
+**What I checked**
+- First I brought my copy up to the merged `main` and reproduced the picture: the canvas's left edge was at −209px at 1919×911. With her block removed, I looked at a screenshot (the note and the tool keys on the left, the canvas close to both, the settings on the right, the deck along the bottom with the crayon ledge over it) and measured 1919×911, 1366×768, 1097×520, 2560×1300, 1440×900 and 1024×768: the same canvas sizes as before the merge, no scrolling, and the ledge never covers a deck button. All 152 tests pass.
+- Not checked: the rest of the merged site by eye (home, Time Challenge, drafts), Safari and Firefox.
+
+**Decisions**
+- Two designs for the same screens cannot both apply, and the other one was the layout I had chosen, so hers went. Zainab should be told, so she is not surprised to find her deck move gone, and the team can decide whether the deck belongs in the right column.
+
+---
+
 ## Where AI misread me, or I had to correct course
 
 - Claude's first version of the start page put "What is this?" in the top right, where it collided with the "New set" button on the game screen. I caught it by running the page; Claude hadn't opened it in a browser.
@@ -1657,6 +1675,7 @@ Artifact 4 is "For Someone Else," due Sunday, November 8. Our team of four (Kevi
 - **I blamed the browser for a lock that probably wasn't a browser problem (Claude's slip, entries 62 and 63):** when you said the Daily Scrawl filter didn't unlock, Claude tested the unlock with a faked "published" marker and listed the browser, the private window, and the file-versus-localhost address as likely causes. That left out the likeliest one, which Claude only checked next time: the live database has no Daily Scrawl drawings, so update 004 was probably never run and publishing it is refused.
 - **My own edit helper dropped changes without saying so (Claude's slip, entries 56 to 58):** a script that patched the Supabase test stand-in returned the old text, so three of its edits vanished and the new tests failed with "is not a function". The failing tests caught it, nothing was committed, and the edits were redone. A check at the time of the home-screen change also looked at the export screen 700 ms after pressing Done drawing, before it had finished opening, and reported a failure that was only timing.
 - **Mock-ups at the wrong window size (Claude's slip, entry 76):** the mock-up images were made at a window 1919 px wide, where Size and opacity were already docked on the right; the screenshot Angie sent showed the Size key, which fits a window narrower than 1200 CSS px, probably about 1100 at a 175% zoom (inferred, not asked). Claude only noticed when it read the stylesheet. Building it, Claude measured the screen at many sizes instead of one, which turned up two problems that a single screenshot hid: the right-hand column made the canvas smaller than before on 4:3 and 16:10 windows, and in the two-column version the wide crayon ledge covered Undo, Redo, Clear and Done. Both were fixed before finishing.
+- **A merge that looked clean and was not (Claude's slip, entry 82):** Claude built the new drawing-screen layout on `arcade.css` without fetching to see whether Zainab's branch was changing the same screen, even though her `arcade-canvas` branch existed. Git merged the two without a conflict, because they touched different lines, but her block at the end of the file overrode the grid columns and pushed the canvas off the left edge once both were on `main`. Claude only found it when asked, by fetching and comparing; the fix was to remove her block, and nobody had asked her first.
 
 ---
 
