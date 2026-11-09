@@ -1496,6 +1496,22 @@ Artifact 4 is "For Someone Else," due Sunday, November 8. Our team of four (Kevi
 
 ---
 
+## 75. Drawing screen, home and gallery updates (2026-11-08) — Zainab
+
+**What I asked for**
+Make the drawing screen work on phones and in split-screen windows, tidy the home page and Public drawings, and let people play again after finishing.
+
+**What changed**
+The drawing screen has no bar, a flat grey behind the easel, a Size key instead of a right-hand column, and a stacked layout on phones and tall windows. The home cards show Continue / Done and the time to the next parts; Daily Free Play is now Daily Doodle. Leaving a drawing asks Save draft / Keep drawing / Discard. The finish screen has Play again and sends you to Public drawings after publishing. Public drawings has one All · Daily Scrawl · Daily Doodle switch. Small bug fixes throughout, and the Supabase library is served with the game.
+
+**What I checked**
+Every screen at ten window sizes, light and dark; 150 tests pass.
+
+**Decisions**
+Daily Doodle is a screen name only; the id and database are unchanged.
+
+---
+
 ## Where AI misread me, or I had to correct course
 
 - Claude's first version of the start page put "What is this?" in the top right, where it collided with the "New set" button on the game screen. I caught it by running the page; Claude hadn't opened it in a browser.

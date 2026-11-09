@@ -609,7 +609,7 @@
         <h1>Scrawdle: build log</h1>
         <p class="intro">
           A daily drawing game, built by a team of four with Claude Code: a new set of parts to draw each day, a gallery of what
-          other people drew, and private lobbies. Here are the 74 entries of our log with one sentence on each and the name of
+          other people drew, and private lobbies. Here are the 75 entries of our log with one sentence on each and the name of
           whoever wrote it. Open an entry to read everything they wrote for it.
         </p>
         <ul class="facts" aria-label="Project facts">
@@ -752,11 +752,12 @@
   </ul></div>
 </div>
 <div class="toc-group is-open">
-  <button class="toc-head" type="button" aria-expanded="true">Sunday 8 November <span class="count">3</span></button>
+  <button class="toc-head" type="button" aria-expanded="true">Sunday 8 November <span class="count">4</span></button>
   <div class="toc-list-wrap"><ul class="toc-list">
     <li><a href="#entry-72"><span class="n">72</span><span>The drawing screen fits phones again</span></a></li>
     <li><a href="#entry-73"><span class="n">73</span><span>Yesterday's winners move off the home screen</span></a></li>
     <li><a href="#entry-74"><span class="n">74</span><span>The arcade drawing screen, hearts for likes, and fixes from a full playtest</span></a></li>
+    <li><a href="#entry-75"><span class="n">75</span><span>Drawing screen, home and gallery updates</span></a></li>
   </ul></div>
 </div>
 <div class="toc-group is-open">
@@ -2020,6 +2021,23 @@
 <ul><li>A full review of the game in Chrome, Firefox and Safari's engine, at laptop and phone sizes and in light and dark mode, with every problem re-checked independently, plus research on how daily and drawing games handle flow, streaks, likes and sharing. Nothing wrote to the live database: publishing and lobbies were tested with a stand-in Supabase.</li><li>After the fixes: the 29-step walkthrough passes in all three browsers on laptop; the drawing screen fits with no overlaps at 12 window sizes from 823x514 (175% zoom) to 2560x1440; on 3 phone sizes the canvas is on the first screen and Done drawing is always reachable; the color picker can be used on phones; the heart toggles and counts; refreshing, publishing, Time Challenge and the home links behave as above.</li><li>The home changes and the canvas fix, in Chrome at laptop and phone size, light and dark: the corner notice and the icons show and the theme button still switches; a published Daily Scrawl drawing reopens on the canvas.</li><li>All 150 tests pass (17 new in <code>tests/syntax.test.js</code>, which checks every browser script parses).</li></ul>
 <p class="sub"><strong>Decisions</strong></p>
 <ul><li>One commit for the whole set, as the team asked, instead of many small ones.</li><li>Thumbs down has no button now; nothing is removed from the database, so it can come back.</li><li>The old thumbs button styles in <code>flow.css</code> (<code>.vote-bar</code>, <code>.vote</code>) are left in place, unused.</li><li>Not done tonight: a phone held sideways still lets the canvas cover most of the tools (already noted in entry 72); renaming Daily Free Play; replacing the Arial fallback with the game's fonts; a &quot;done for today&quot; home screen with a countdown.</li></ul>
+  </div></div></div>
+</article>
+<article class="entry" id="entry-75">
+  <h3 class="entry-head"><button type="button" aria-expanded="false" aria-controls="entry-75-body">
+    <span class="num">75</span>
+    <span><span class="title">Drawing screen, home and gallery updates<span class="by">by Zainab</span></span><span class="sum">Zainab reworked the drawing screen for phones and split screens (no bar, a Size key, a stacked layout), tidied the home page and Public drawings, added Save draft / Discard when leaving and Play again when finished, and renamed Daily Free Play to Daily Doodle on screen.</span></span>
+    <span class="caret" aria-hidden="true"></span>
+  </button></h3>
+  <div class="body" id="entry-75-body"><div class="body-in"><div class="body-pad">
+<p class="sub"><strong>What I asked for</strong></p>
+<p>Make the drawing screen work on phones and in split-screen windows, tidy the home page and Public drawings, and let people play again after finishing.</p>
+<p class="sub"><strong>What changed</strong></p>
+<p>The drawing screen has no bar, a flat grey behind the easel, a Size key instead of a right-hand column, and a stacked layout on phones and tall windows. The home cards show Continue / Done and the time to the next parts; Daily Free Play is now Daily Doodle. Leaving a drawing asks Save draft / Keep drawing / Discard. The finish screen has Play again and sends you to Public drawings after publishing. Public drawings has one All · Daily Scrawl · Daily Doodle switch. Small bug fixes throughout, and the Supabase library is served with the game.</p>
+<p class="sub"><strong>What I checked</strong></p>
+<p>Every screen at ten window sizes, light and dark; 150 tests pass.</p>
+<p class="sub"><strong>Decisions</strong></p>
+<p>Daily Doodle is a screen name only; the id and database are unchanged.</p>
   </div></div></div>
 </article>
       </section>
